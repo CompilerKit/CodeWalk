@@ -421,7 +421,14 @@ namespace ManualILSpy.Extention.Json
                     Write(',');
                     WriteLine();
                 }
-                value.AcceptVisitor(this);
+                if (value == null)
+                {
+                    VisitNull();
+                }
+                else
+                {
+                    value.AcceptVisitor(this);
+                }
             }
             CloseBrace(BraceStyle.Array);
         }
