@@ -28,9 +28,24 @@ namespace ManualILSpy
             language.DecompileMethod(method, output, options);
         }
 
-        private void Decomplie()
+        private void DecompileField(Language language, FieldDefinition field, ITextOutput output, DecompilationOptions options)
         {
+            language.DecompileField(field, output, options);
+        }
 
+        private void DecomplieType(Language language, TypeDefinition type, ITextOutput output, DecompilationOptions options)
+        {
+            language.DecompileType(type, output, options);
+        }
+
+        private void DecompileProperty(Language language, PropertyDefinition property, ITextOutput output, DecompilationOptions options)
+        {
+            language.DecompileProperty(property, output, options);
+        }
+
+        private void DecompileNameSpace(Language language, string nameSpace, IEnumerable<TypeDefinition> types, ITextOutput output, DecompilationOptions options)
+        {
+            language.DecompileNamespace(nameSpace, types, output, options);
         }
 
         public DecompilerSettings LoadDecompilerSettings()
@@ -52,36 +67,59 @@ namespace ManualILSpy
         {
             AssemblyDefinition assem = AssemblyDefinition.ReadAssembly(@"D:\[]New Project\TestILSpy\TestILSpy\bin\Debug\TestILSpy.exe");
             var types = assem.MainModule.Types;
-
+            
             StringBuilderTextOutput output = new StringBuilderTextOutput();
             CSharpLanguage csharp = new CSharpLanguage(output);
             DecompilationOptions options = new DecompilationOptions();
             options.DecompilerSettings = LoadDecompilerSettings();
 
-            JsonArray methodList = new JsonArray();
             JsonWriterVisitor visitor = new JsonWriterVisitor(output);
             visitor.Debug = true;
             StringBuilder builder = new StringBuilder();
-
+            JsonArray typeList = new JsonArray();
             foreach (var type in types)
             {
+                JsonObject typeObj = new JsonObject();
+                typeObj.Comment = "EnableCommentBtn_Click";
+                typeObj.AddJsonValues("namespace", new JsonElement(type.Namespace));
+                if (type.Namespace == null || type.Namespace.Length == 0)
+                {
+                    typeObj = null;
+                    continue;
+                }
+                
+                typeObj.AddJsonValues("name", new JsonElement(type.Name));
+                var fields = type.Fields;
+                JsonArray fieldList = new JsonArray();
+                foreach(var field in fields)
+                {
+                    DecompileField(csharp, field, output, options);
+                    fieldList.AddJsonValue(csharp.result);
+                }
+                if (fieldList.Count == 0)
+                {
+                    fieldList = null;
+                }
+                typeObj.AddJsonValues("fields", fieldList);
                 var methods = type.Methods;
+                JsonArray methodList = new JsonArray();
                 foreach (var method in methods)
                 {
                     DecompileMethod(csharp, method, output, options);
                     methodList.AddJsonValue(csharp.result);
                 }
+                if(methodList.Count == 0)
+                {
+                    methodList = null;
+                }
+                typeObj.AddJsonValues("methods", methodList);
+                typeList.AddJsonValue(typeObj);
             }
-            methodList.AcceptVisitor(visitor);
+            typeList.AcceptVisitor(visitor);
             builder.Append(visitor.ToString());
             string strJson;
             strJson = builder.ToString();
-            //strJson = csharp.writer.ToString();
-            string path = @"D:\[]Documents\testAstJsonRelease.txt";
-            if (visitor.Debug)
-            {
-                path = @"D:\[]Documents\testAstJsonDebug.txt";
-            }
+            string path = @"D:\[]Documents\testAstJsonDebug.txt";
             File.WriteAllText(path, strJson);
         }
 
