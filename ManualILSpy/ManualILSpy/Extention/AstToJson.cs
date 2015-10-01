@@ -183,7 +183,37 @@ namespace ManualILSpy.Extention
 
         public void VisitUndocumentedExpression(UndocumentedExpression undocumentedExpression)
         {
-            throw new NotImplementedException();
+            JsonObject expression = new JsonObject();
+            expression.Comment = "VisitUndocumentedExpression";
+            expression.AddJsonValues("expression-type", new JsonElement("undocumented-expression"));
+            switch (undocumentedExpression.UndocumentedExpressionType)
+            {
+                case UndocumentedExpressionType.ArgList:
+                case UndocumentedExpressionType.ArgListAccess:
+                    expression.AddJsonValues("type-info", new JsonElement(UndocumentedExpression.ArglistKeywordRole.Token));
+                    break;
+                case UndocumentedExpressionType.MakeRef:
+                    expression.AddJsonValues("type-info", new JsonElement(UndocumentedExpression.MakerefKeywordRole.Token));
+                    break;
+                case UndocumentedExpressionType.RefType:
+                    expression.AddJsonValues("type-info", new JsonElement(UndocumentedExpression.ReftypeKeywordRole.Token));
+                    break;
+                case UndocumentedExpressionType.RefValue:
+                    expression.AddJsonValues("type-info", new JsonElement(UndocumentedExpression.RefvalueKeywordRole.Token));
+                    break;
+                default:
+                    throw new Exception("unknowed type");
+            }
+            if (undocumentedExpression.Arguments.Count > 0)
+            {
+                expression.AddJsonValues("arguments", GetCommaSeparatedList(undocumentedExpression.Arguments));
+            }
+            else
+            {
+                expression.AddJsonValues("arguments", null);
+            }
+            jsonValueStack.Push(expression);
+            throw new Exception("first time testing");//implement already, but not tested
         }
 
         public void VisitArrayCreateExpression(ArrayCreateExpression arrayCreateExpression)
@@ -281,7 +311,15 @@ namespace ManualILSpy.Extention
 
         public void VisitAsExpression(AsExpression asExpression)
         {
-            throw new NotImplementedException();
+            JsonObject expression = new JsonObject();
+            expression.Comment = "VisitAsExpression";
+            expression.AddJsonValues("expression-type", new JsonElement("as-expression"));
+            expression.AddJsonValues("keyword", new JsonElement(AsExpression.AsKeywordRole.Token));
+            asExpression.Type.AcceptVisitor(this);
+            expression.AddJsonValues("type-info", jsonValueStack.Pop());
+
+            jsonValueStack.Push(expression);
+            throw new Exception("first time testing");//implement already, but not tested
         }
 
         public void VisitAssignmentExpression(AssignmentExpression assignmentExpression)
@@ -300,7 +338,13 @@ namespace ManualILSpy.Extention
 
         public void VisitBaseReferenceExpression(BaseReferenceExpression baseReferenceExpression)
         {
-            throw new NotImplementedException();
+            JsonObject expression = new JsonObject();
+            expression.Comment = "VisitBaseReferenceExpression";
+            expression.AddJsonValues("expression-type", new JsonElement("base-reference-expression"));
+            expression.AddJsonValues("keyword", new JsonElement("base"));
+
+            jsonValueStack.Push(expression);
+            throw new Exception("first time testing");//implement already, but not tested
         }
 
         public void VisitBinaryOperatorExpression(BinaryOperatorExpression binaryOperatorExpression)
@@ -332,22 +376,67 @@ namespace ManualILSpy.Extention
 
         public void VisitCheckedExpression(CheckedExpression checkedExpression)
         {
-            throw new NotImplementedException();
+            JsonObject expression = new JsonObject();
+            expression.Comment = "VisitCheckedExpression";
+            expression.AddJsonValues("expression-type", new JsonElement("checked-expression"));
+            expression.AddJsonValues("keyword", new JsonElement(CheckedExpression.CheckedKeywordRole.Token));
+            checkedExpression.Expression.AcceptVisitor(this);
+            expression.AddJsonValues("expression", jsonValueStack.Pop());
+
+            jsonValueStack.Push(expression);
+            throw new Exception("first time testing");//implement already, but not tested
         }
 
         public void VisitConditionalExpression(ConditionalExpression conditionalExpression)
         {
-            throw new NotImplementedException();
+            JsonObject expression = new JsonObject();
+            expression.Comment = "VisitConditionalExpression";
+            expression.AddJsonValues("expression-type", new JsonElement("conditional-expression"));
+            conditionalExpression.Condition.AcceptVisitor(this);
+            expression.AddJsonValues("condition", jsonValueStack.Pop());
+            conditionalExpression.TrueExpression.AcceptVisitor(this);
+            expression.AddJsonValues("true-expression", jsonValueStack.Pop());
+            conditionalExpression.FalseExpression.AcceptVisitor(this);
+            expression.AddJsonValues("false-expression", jsonValueStack.Pop());
+
+            jsonValueStack.Push(expression);
+            throw new Exception("first time testing");//implement already, but not tested
         }
 
         public void VisitDefaultValueExpression(DefaultValueExpression defaultValueExpression)
         {
-            throw new NotImplementedException();
+            JsonObject expression = new JsonObject();
+            expression.Comment = "VisitDefaultValueExpression";
+            expression.AddJsonValues("expression-type", new JsonElement("default-value-expression"));
+            expression.AddJsonValues("keyword", new JsonElement(DefaultValueExpression.DefaultKeywordRole.Token));
+            defaultValueExpression.Type.AcceptVisitor(this);
+            expression.AddJsonValues("type-info", jsonValueStack.Pop());
+
+            jsonValueStack.Push(expression);
+            throw new Exception("first time testing");//implement already, but not tested
         }
 
         public void VisitDirectionExpression(DirectionExpression directionExpression)
         {
-            throw new NotImplementedException();
+            JsonObject expression = new JsonObject();
+            expression.Comment = "VisitDirectionExpression";
+            expression.AddJsonValues("expression-type", new JsonElement("direction-expression"));
+            switch (directionExpression.FieldDirection)
+            {
+                case FieldDirection.Out:
+                    expression.AddJsonValues("keyword", new JsonElement(DirectionExpression.OutKeywordRole.Token));
+                    break;
+                case FieldDirection.Ref:
+                    expression.AddJsonValues("keyword", new JsonElement(DirectionExpression.RefKeywordRole.Token));
+                    break;
+                default:
+                    throw new NotSupportedException("Invalid value for FieldDirection");
+            }
+            directionExpression.Expression.AcceptVisitor(this);
+            expression.AddJsonValues("expression", jsonValueStack.Pop());
+
+            jsonValueStack.Push(expression);
+            throw new Exception("first time testing");//implement already, but not tested
         }
 
         public void VisitIdentifierExpression(IdentifierExpression identifierExpression)
@@ -379,12 +468,52 @@ namespace ManualILSpy.Extention
 
         public void VisitIsExpression(IsExpression isExpression)
         {
-            throw new NotImplementedException();
+            JsonObject expression = new JsonObject();
+            expression.Comment = "VisitIsExpression";
+            expression.AddJsonValues("expression-type", new JsonElement("is-expression"));
+            expression.AddJsonValues("keyword", new JsonElement(IsExpression.IsKeywordRole.Token));
+            isExpression.Type.AcceptVisitor(this);
+            expression.AddJsonValues("type-info", jsonValueStack.Pop());
+            isExpression.Expression.AcceptVisitor(this);
+            expression.AddJsonValues("expression", jsonValueStack.Pop());
+
+            jsonValueStack.Push(expression);
+            throw new Exception("first time testing");//implement already, but not tested
         }
 
         public void VisitLambdaExpression(LambdaExpression lambdaExpression)
         {
-            throw new NotImplementedException();
+            JsonObject expression = new JsonObject();
+            expression.Comment = "VisitLambdaExpression";
+            expression.AddJsonValues("expression-type", new JsonElement("lambda-expression"));
+            if (lambdaExpression.IsAsync)
+            {
+                expression.AddJsonValues("async-keyword", new JsonElement(LambdaExpression.AsyncModifierRole.Token));
+            }
+            if (LambdaNeedsParenthesis(lambdaExpression))
+            {
+                expression.AddJsonValues("parameters", GetCommaSeparatedList(lambdaExpression.Parameters));
+            }
+            else
+            {
+                lambdaExpression.Parameters.Single().AcceptVisitor(this);
+                expression.AddJsonValues("parameters", jsonValueStack.Pop());
+            }
+            lambdaExpression.Body.AcceptVisitor(this);
+            expression.AddJsonValues("body", jsonValueStack.Pop());
+
+            jsonValueStack.Push(expression);
+            throw new Exception("first time testing");//implement already, but not tested
+        }
+
+        bool LambdaNeedsParenthesis(LambdaExpression lambdaExpression)
+        {
+            if (lambdaExpression.Parameters.Count != 1)
+            {
+                return true;
+            }
+            var p = lambdaExpression.Parameters.Single();
+            return !(p.Type.IsNull && p.ParameterModifier == ParameterModifier.None);
         }
 
         public void VisitMemberReferenceExpression(MemberReferenceExpression memberReferenceExpression)
@@ -400,12 +529,28 @@ namespace ManualILSpy.Extention
 
         public void VisitNamedArgumentExpression(NamedArgumentExpression namedArgumentExpression)
         {
-            throw new NotImplementedException();
+            JsonObject expression = new JsonObject();
+            expression.Comment = "VisitNamedArgumentExpression";
+            expression.AddJsonValues("expression-type", new JsonElement("named-argument-expression"));
+            expression.AddJsonValues("identifier", GetIdentifier(namedArgumentExpression.NameToken));
+            namedArgumentExpression.Expression.AcceptVisitor(this);
+            expression.AddJsonValues("expression", jsonValueStack.Pop());
+
+            jsonValueStack.Push(expression);
+            throw new Exception("first time testing");//implement already, but not tested
         }
 
         public void VisitNamedExpression(NamedExpression namedExpression)
         {
-            throw new NotImplementedException();
+            JsonObject expression = new JsonObject();
+            expression.Comment = "VisitNamedExpression";
+            expression.AddJsonValues("expression-type", new JsonElement("named-expression"));
+            expression.AddJsonValues("identifier", GetIdentifier(namedExpression.NameToken));
+            namedExpression.Expression.AcceptVisitor(this);
+            expression.AddJsonValues("expression", jsonValueStack.Pop());
+
+            jsonValueStack.Push(expression);
+            throw new Exception("first time testing");//implement already, but not tested
         }
 
         public void VisitNullReferenceExpression(NullReferenceExpression nullReferenceExpression)
@@ -441,12 +586,25 @@ namespace ManualILSpy.Extention
 
         public void VisitAnonymousTypeCreateExpression(AnonymousTypeCreateExpression anonymousTypeCreateExpression)
         {
-            throw new NotImplementedException();
+            JsonObject expression = new JsonObject();
+            expression.Comment = "VisitAnonymousTypeCreateExpression";
+            expression.AddJsonValues("expression-type", new JsonElement("anonymous-type-create-expression"));
+            expression.AddJsonValues("keyword", new JsonElement(AnonymousTypeCreateExpression.NewKeywordRole.Token));
+            expression.AddJsonValues("elements", GetInitializerElements(anonymousTypeCreateExpression.Initializers));
+            jsonValueStack.Push(expression);
+            throw new Exception("first time testing");//implement already, but not tested
         }
 
         public void VisitParenthesizedExpression(ParenthesizedExpression parenthesizedExpression)
         {
-            throw new NotImplementedException();
+            JsonObject expression = new JsonObject();
+            expression.Comment = "VisitParenthesizedExpression";
+            expression.AddJsonValues("expression-type", new JsonElement("parenthesized-expression"));
+            parenthesizedExpression.Expression.AcceptVisitor(this);
+            expression.AddJsonValues("expression", jsonValueStack.Pop());
+
+            jsonValueStack.Push(expression);
+            throw new Exception("first time testing");//implement already, but not tested
         }
 
         public void VisitPointerReferenceExpression(PointerReferenceExpression pointerReferenceExpression)
@@ -460,6 +618,8 @@ namespace ManualILSpy.Extention
             expression.AddJsonValues("type-arguments", GetTypeArguments(pointerReferenceExpression.TypeArguments));
 
             jsonValueStack.Push(expression);
+
+            throw new Exception("first time testing");//implement already, but not tested
         }
 
         #region VisitPrimitiveExpression
@@ -483,7 +643,7 @@ namespace ManualILSpy.Extention
             expression.AddJsonValues("type-info", jsonValueStack.Pop());
 
             jsonValueStack.Push(expression);
-            throw new Exception("first time testing");//implement already, but never testing
+            throw new Exception("first time testing");//implement already, but not tested
         }
 
         public void VisitStackAllocExpression(StackAllocExpression stackAllocExpression)
@@ -496,7 +656,7 @@ namespace ManualILSpy.Extention
             expression.AddJsonValues("count-expression", GetCommaSeparatedList(new[] { stackAllocExpression.CountExpression }));
 
             jsonValueStack.Push(expression);
-            throw new Exception("first time testing");//implement already, but never testing
+            throw new Exception("first time testing");//implement already, but not tested
         }
 
         public void VisitThisReferenceExpression(ThisReferenceExpression thisReferenceExpression)
@@ -518,7 +678,6 @@ namespace ManualILSpy.Extention
             expression.AddJsonValues("type-info", jsonValueStack.Pop());
 
             jsonValueStack.Push(expression);
-            throw new Exception("first time testing");//implement already, but never testing
         }
 
         public void VisitTypeReferenceExpression(TypeReferenceExpression typeReferenceExpression)
@@ -560,7 +719,7 @@ namespace ManualILSpy.Extention
             expression.AddJsonValues("expression", jsonValueStack.Pop());
 
             jsonValueStack.Push(expression);
-            throw new Exception("first time testing");//implement already, but never testing
+            throw new Exception("first time testing");//implement already, but not tested
         }
 
         #endregion
@@ -684,17 +843,40 @@ namespace ManualILSpy.Extention
 
         public void VisitBreakStatement(BreakStatement breakStatement)
         {
-            throw new NotImplementedException();
+            JsonObject statement = new JsonObject();
+            statement.Comment = "VisitBreakStatement";
+            statement.AddJsonValues("statement-type", new JsonElement("break-statement"));
+            statement.AddJsonValues("keyword", new JsonElement("break"));
+
+            jsonValueStack.Push(statement);
+            //implement already, but not tested
+            throw new Exception("first time testing");
         }
 
         public void VisitCheckedStatement(CheckedStatement checkedStatement)
         {
-            throw new NotImplementedException();
+            JsonObject statement = new JsonObject();
+            statement.Comment = "VisitCheckedStatement";
+            statement.AddJsonValues("statement-type", new JsonElement("checked-statement"));
+            statement.AddJsonValues("keyword", new JsonElement(CheckedStatement.CheckedKeywordRole.Token));
+            checkedStatement.Body.AcceptVisitor(this);
+            statement.AddJsonValues("body", jsonValueStack.Pop());
+
+            jsonValueStack.Push(statement);
+            //implement already, but not tested
+            throw new Exception("first time testing");
         }
 
         public void VisitContinueStatement(ContinueStatement continueStatement)
         {
-            throw new NotImplementedException();
+            JsonObject statement = new JsonObject();
+            statement.Comment = "VisitContinueStatement";
+            statement.AddJsonValues("statement-type", new JsonElement("continue-statement"));
+            statement.AddJsonValues("keyword", new JsonElement(ContinueStatement.ContinueKeywordRole.Token));
+
+            jsonValueStack.Push(statement);
+            //implement already, but not tested
+            throw new Exception("first time testing");
         }
 
         public void VisitDoWhileStatement(DoWhileStatement doWhileStatement)
@@ -710,7 +892,12 @@ namespace ManualILSpy.Extention
 
         public void VisitEmptyStatement(EmptyStatement emptyStatement)
         {
-            throw new NotImplementedException();
+            JsonObject statement = new JsonObject();
+            statement.Comment = "VisitEmptyStatement";
+            statement.AddJsonValues("statement-type", new JsonElement("empty-statement"));
+            jsonValueStack.Push(statement);
+            //implement already, but not tested
+            throw new Exception("first time testing");
         }
 
         public void VisitExpressionStatement(ExpressionStatement expressionStatement)
@@ -720,7 +907,18 @@ namespace ManualILSpy.Extention
 
         public void VisitFixedStatement(FixedStatement fixedStatement)
         {
-            throw new NotImplementedException();
+            JsonObject statement = new JsonObject();
+            statement.Comment = "VisitFixedStatement";
+            statement.AddJsonValues("statement-type", new JsonElement("fixed-statement"));
+            statement.AddJsonValues("keyword", new JsonElement(FixedStatement.FixedKeywordRole.Token));
+            fixedStatement.Type.AcceptVisitor(this);
+            statement.AddJsonValues("type-info", jsonValueStack.Pop());
+            statement.AddJsonValues("variables", GetCommaSeparatedList(fixedStatement.Variables));
+            statement.AddJsonValues("embedded-statement", GetEmbeddedStatement(fixedStatement.EmbeddedStatement));
+
+            jsonValueStack.Push(statement);
+            //implement already, but not tested
+            throw new Exception("first time testing");
         }
 
         public void VisitForeachStatement(ForeachStatement foreachStatement)
@@ -756,17 +954,41 @@ namespace ManualILSpy.Extention
 
         public void VisitGotoCaseStatement(GotoCaseStatement gotoCaseStatement)
         {
-            throw new NotImplementedException();
+            JsonObject statement = new JsonObject();
+            statement.Comment = "VisitGotoCaseStatement";
+            statement.AddJsonValues("statement-type", new JsonElement("goto-case-statement"));
+            statement.AddJsonValues("goto-keyword", new JsonElement(GotoCaseStatement.GotoKeywordRole.Token));
+            statement.AddJsonValues("case-keyword", new JsonElement(GotoCaseStatement.CaseKeywordRole.Token));
+            gotoCaseStatement.LabelExpression.AcceptVisitor(this);
+            statement.AddJsonValues("label-expression", jsonValueStack.Pop());
+            jsonValueStack.Push(statement);
+            //implement already, but not tested
+            throw new Exception("first time testing");
         }
 
         public void VisitGotoDefaultStatement(GotoDefaultStatement gotoDefaultStatement)
         {
-            throw new NotImplementedException();
+            JsonObject statement = new JsonObject();
+            statement.Comment = "VisitGotoDefaultStatement";
+            statement.AddJsonValues("statement-type", new JsonElement("goto-default-statement"));
+            statement.AddJsonValues("goto-keyword", new JsonElement(GotoDefaultStatement.GotoKeywordRole.Token));
+            statement.AddJsonValues("default-keyword", new JsonElement(GotoDefaultStatement.DefaultKeywordRole.Token));
+            jsonValueStack.Push(statement);
+            //implement already, but not tested
+            throw new Exception("first time testing");
         }
 
         public void VisitGotoStatement(GotoStatement gotoStatement)
         {
-            throw new NotImplementedException();
+            JsonObject statement = new JsonObject();
+            statement.Comment = "VisitGotoStatement";
+            statement.AddJsonValues("statement-type", new JsonElement("goto-statement"));
+            statement.AddJsonValues("keyword", new JsonElement(GotoStatement.GotoKeywordRole.Token));
+            statement.AddJsonValues("identifier", GetIdentifier(gotoStatement.GetChildByRole(Roles.Identifier)));
+
+            jsonValueStack.Push(statement);
+            //implement already, but not tested
+            throw new Exception("first time testing");
         }
 
         public void VisitIfElseStatement(IfElseStatement ifElseStatement)
@@ -785,12 +1007,29 @@ namespace ManualILSpy.Extention
 
         public void VisitLabelStatement(LabelStatement labelStatement)
         {
-            throw new NotImplementedException();
+            JsonObject statement = new JsonObject();
+            statement.Comment = "VisitLabelStatement";
+            statement.AddJsonValues("statement-type", new JsonElement("label-statement"));
+            statement.AddJsonValues("identifier", GetIdentifier(labelStatement.GetChildByRole(Roles.Identifier)));
+
+            jsonValueStack.Push(statement);
+            //implement already, but not tested
+            throw new Exception("first time testing");
         }
 
         public void VisitLockStatement(LockStatement lockStatement)
         {
-            throw new NotImplementedException();
+            JsonObject statement = new JsonObject();
+            statement.Comment = "VisitLockStatement";
+            statement.AddJsonValues("statement-type", new JsonElement("lock-statement"));
+            statement.AddJsonValues("keyword", new JsonElement(LockStatement.LockKeywordRole.Token));
+            lockStatement.Expression.AcceptVisitor(this);
+            statement.AddJsonValues("expression", jsonValueStack.Pop());
+            statement.AddJsonValues("embedded-statement", GetEmbeddedStatement(lockStatement.EmbeddedStatement));
+
+            jsonValueStack.Push(statement);
+            //implement already, but not tested
+            throw new Exception("first time testing");
         }
 
         public void VisitReturnStatement(ReturnStatement returnStatement)
