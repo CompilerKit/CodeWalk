@@ -398,7 +398,7 @@ namespace ManualILSpy.Extention.Json
 
         public void VisitJsonArray(JsonArray jsonArr)
         {
-            if (jsonArr == null)
+            if (jsonArr == null || jsonArr.Count == 0)
             {
                 VisitNull();
                 return;
