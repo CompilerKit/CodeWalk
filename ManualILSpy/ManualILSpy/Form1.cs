@@ -63,11 +63,44 @@ namespace ManualILSpy
             return s;
         }
 
-        private void EnableCommentBtn_Click(object sender, EventArgs e)
+        JsonValue GetType(TypeDefinition type)
         {
-            AssemblyDefinition assem = AssemblyDefinition.ReadAssembly(@"D:\[]New Project\TestILSpy\TestILSpy\bin\Debug\TestILSpy.exe");
+            JsonElement element = new JsonElement();
+            if (type.IsInterface)
+            {
+                element.SetValue("interface");
+            }
+            else if (type.IsAbstract)
+            {
+                element.SetValue("abstract");
+            }
+            else if (type.IsEnum)
+            {
+                element.SetValue("enum");
+            }
+            else if (type.IsClass)
+            {
+                if (type.IsByReference)
+                {
+                    element.SetValue("class");
+                }
+                else
+                {
+                    element.SetValue("struct");
+                }
+            }
+            else
+            {
+                throw new Exception("unknowed type");
+            }
+            return element;
+        }
+
+        void Test(string assemPath)
+        {
+            AssemblyDefinition assem = AssemblyDefinition.ReadAssembly(assemPath);
             var types = assem.MainModule.Types;
-            
+
             StringBuilderTextOutput output = new StringBuilderTextOutput();
             CSharpLanguage csharp = new CSharpLanguage(output);
             DecompilationOptions options = new DecompilationOptions();
@@ -79,48 +112,79 @@ namespace ManualILSpy
             JsonArray typeList = new JsonArray();
             foreach (var type in types)
             {
-                JsonObject typeObj = new JsonObject();
-                typeObj.Comment = "EnableCommentBtn_Click";
-                typeObj.AddJsonValues("namespace", new JsonElement(type.Namespace));
-                if (type.Namespace == null || type.Namespace.Length == 0)
-                {
-                    typeObj = null;
-                    continue;
-                }
-                
-                typeObj.AddJsonValues("name", new JsonElement(type.Name));
-                var fields = type.Fields;
-                JsonArray fieldList = new JsonArray();
-                foreach(var field in fields)
-                {
-                    DecompileField(csharp, field, output, options);
-                    fieldList.AddJsonValue(csharp.result);
-                }
-                if (fieldList.Count == 0)
-                {
-                    fieldList = null;
-                }
-                typeObj.AddJsonValues("fields", fieldList);
-                var methods = type.Methods;
-                JsonArray methodList = new JsonArray();
-                foreach (var method in methods)
-                {
-                    DecompileMethod(csharp, method, output, options);
-                    methodList.AddJsonValue(csharp.result);
-                }
-                if(methodList.Count == 0)
-                {
-                    methodList = null;
-                }
-                typeObj.AddJsonValues("methods", methodList);
-                typeList.AddJsonValue(typeObj);
+                DecomplieType(csharp, type, output, options);
+                typeList.AddJsonValue(csharp.result);
             }
             typeList.AcceptVisitor(visitor);
             builder.Append(visitor.ToString());
             string strJson;
             strJson = builder.ToString();
-            string path = @"D:\[]Documents\testAstJsonDebug.txt";
+            string path = @"D:\[]Documents\testAstJsonDebug.json";
             File.WriteAllText(path, strJson);
+        }
+
+        private void EnableCommentBtn_Click(object sender, EventArgs e)
+        {
+            string path = @"D:\[]New Project\TestILSpy\TestILSpy\bin\Debug\TestILSpy.exe";
+            Test(path);
+            //AssemblyDefinition assem = AssemblyDefinition.ReadAssembly(path);
+            //var types = assem.MainModule.Types;
+
+            //StringBuilderTextOutput output = new StringBuilderTextOutput();
+            //CSharpLanguage csharp = new CSharpLanguage(output);
+            //DecompilationOptions options = new DecompilationOptions();
+
+            ////Test(path, csharp, options);
+            //options.DecompilerSettings = LoadDecompilerSettings();
+
+            //JsonWriterVisitor visitor = new JsonWriterVisitor(output);
+            //visitor.Debug = true;
+            //StringBuilder builder = new StringBuilder();
+            //JsonArray typeList = new JsonArray();
+            //foreach (var type in types)
+            //{
+            //    JsonObject typeObj = new JsonObject();
+            //    typeObj.Comment = "EnableCommentBtn_Click";
+            //    typeObj.AddJsonValues("namespace", new JsonElement(type.Namespace));
+            //    if (type.Namespace == null || type.Namespace.Length == 0)
+            //    {
+            //        typeObj = null;
+            //        continue;
+            //    }
+            //    typeObj.AddJsonValues("name", new JsonElement(type.Name));
+            //    typeObj.AddJsonValues("type", GetType(type));
+            //    var fields = type.Fields;
+            //    JsonArray fieldList = new JsonArray();
+            //    foreach (var field in fields)
+            //    {
+            //        DecompileField(csharp, field, output, options);
+            //        fieldList.AddJsonValue(csharp.result);
+            //    }
+            //    if (fieldList.Count == 0)
+            //    {
+            //        fieldList = null;
+            //    }
+            //    typeObj.AddJsonValues("fields", fieldList);
+            //    var methods = type.Methods;
+            //    JsonArray methodList = new JsonArray();
+            //    foreach (var method in methods)
+            //    {
+            //        DecompileMethod(csharp, method, output, options);
+            //        methodList.AddJsonValue(csharp.result);
+            //    }
+            //    if (methodList.Count == 0)
+            //    {
+            //        methodList = null;
+            //    }
+            //    typeObj.AddJsonValues("methods", methodList);
+            //    typeList.AddJsonValue(typeObj);
+            //}
+            //typeList.AcceptVisitor(visitor);
+            //builder.Append(visitor.ToString());
+            //string strJson;
+            //strJson = builder.ToString();
+            //string debugPath = @"D:\[]Documents\testAstJsonDebug.txt";
+            //File.WriteAllText(debugPath, strJson);
         }
 
         private void DisableCommentBtn_Click(object sender, EventArgs e)

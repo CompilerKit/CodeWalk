@@ -14,11 +14,12 @@ namespace ManualILSpy.Extention
     public class AstCSharpToJsonVisitor : IAstVisitor
     {
         Stack<JsonValue> jsonValueStack = new Stack<JsonValue>();
+        Dictionary<string, int> typeInfo = new Dictionary<string, int>();
+
         public JsonValue LastValue { get; private set; }
         
         public AstCSharpToJsonVisitor(ITextOutput output)
         {
-            methodNum = 0;
             constructorNum = 0;
         }
 
@@ -31,6 +32,29 @@ namespace ManualILSpy.Extention
         private JsonValue Pop()
         {
             return jsonValueStack.Pop();
+        }
+        #endregion
+
+        #region Type info
+        void ClearTypeInfo()
+        {
+            typeInfo.Clear();
+        }
+
+        List<string> TypeInfoKeys()
+        {
+            return new List<string>(typeInfo.Keys);
+        }
+
+        int GetTypeIndex(string type)
+        {
+            int index = 0;
+            if (!typeInfo.TryGetValue(type, out index))
+            {
+                index = typeInfo.Count;
+                typeInfo.Add(type, index);
+            }
+            return index;
         }
         #endregion
 
@@ -472,7 +496,7 @@ namespace ManualILSpy.Extention
             expression.AddJsonValues("expression", Pop());
 
             Push(expression);
-            throw new Exception("first time testing");//implement already, but not tested
+            //throw new Exception("first time testing");//implement already, but not tested
         }
 
         public void VisitIdentifierExpression(IdentifierExpression identifierExpression)
@@ -826,7 +850,7 @@ namespace ManualILSpy.Extention
 
             Push(visit);
             //implement already, but not tested
-            throw new Exception("first time testing");
+            //throw new Exception("first time testing");
         }
 
         public void VisitAttributeSection(AttributeSection attributeSection)
@@ -841,7 +865,7 @@ namespace ManualILSpy.Extention
 
             Push(visit);
             //implement already, but not tested
-            throw new Exception("first time testing");
+            //throw new Exception("first time testing");
         }
 
         public void VisitDelegateDeclaration(DelegateDeclaration delegateDeclaration)
@@ -878,11 +902,13 @@ namespace ManualILSpy.Extention
 
         public void VisitNamespaceDeclaration(NamespaceDeclaration namespaceDeclaration)
         {
+            ClearTypeInfo();
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitNamespaceDeclaration";
             declaration.AddJsonValues("keyword", GetKeyword(Roles.NamespaceKeyword));
             namespaceDeclaration.NamespaceName.AcceptVisitor(this);
             declaration.AddJsonValues("namespace-name", Pop());
+            declaration.AddJsonValues("namespace-info-list", GetMethodTypeInfo(TypeInfoKeys()));
             JsonArray memberList = new JsonArray();
             foreach(var member in namespaceDeclaration.Members)
             {
@@ -901,7 +927,7 @@ namespace ManualILSpy.Extention
 
             Push(declaration);
             //implement already, but not tested
-            throw new Exception("first time testing");
+            //throw new Exception("first time testing");
         }
 
         public void VisitTypeDeclaration(TypeDeclaration typeDeclaration)
@@ -948,7 +974,7 @@ namespace ManualILSpy.Extention
 
             Push(declaration);
             //implement already, but not tested
-            throw new Exception("first time testing");
+            //throw new Exception("first time testing");
         }
 
         public void VisitUsingAliasDeclaration(UsingAliasDeclaration usingAliasDeclaration)
@@ -968,15 +994,16 @@ namespace ManualILSpy.Extention
 
         public void VisitUsingDeclaration(UsingDeclaration usingDeclaration)
         {
+            ClearTypeInfo();
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitUsingDeclaration";
             declaration.AddJsonValues("keyword", GetKeyword(UsingAliasDeclaration.UsingKeywordRole));
             usingDeclaration.Import.AcceptVisitor(this);
             declaration.AddJsonValues("import", Pop());
-
+            declaration.AddJsonValues("import-info-list", GetMethodTypeInfo(TypeInfoKeys()));
             Push(declaration);
             //implement already, but not tested
-            throw new Exception("first time testing");
+            //throw new Exception("first time testing");
         }
 
         public void VisitExternAliasDeclaration(ExternAliasDeclaration externAliasDeclaration)
@@ -1025,7 +1052,7 @@ namespace ManualILSpy.Extention
 
             Push(statement);
             //implement already, but not tested
-            throw new Exception("first time testing");
+            //throw new Exception("first time testing");
         }
 
         public void VisitCheckedStatement(CheckedStatement checkedStatement)
@@ -1163,7 +1190,7 @@ namespace ManualILSpy.Extention
 
             Push(statement);
             //implement already, but not tested
-            throw new Exception("first time testing");
+            //throw new Exception("first time testing");
         }
 
         public void VisitIfElseStatement(IfElseStatement ifElseStatement)
@@ -1189,7 +1216,7 @@ namespace ManualILSpy.Extention
 
             Push(statement);
             //implement already, but not tested
-            throw new Exception("first time testing");
+            //throw new Exception("first time testing");
         }
 
         public void VisitLockStatement(LockStatement lockStatement)
@@ -1251,7 +1278,7 @@ namespace ManualILSpy.Extention
 
             Push(section);
             //implement already, but not tested
-            throw new Exception("first time testing");
+            //throw new Exception("first time testing");
         }
 
         public void VisitSwitchStatement(SwitchStatement switchStatement)
@@ -1278,7 +1305,7 @@ namespace ManualILSpy.Extention
 
             Push(statement);
             //implement already, but not tested
-            throw new Exception("first time testing");
+            //throw new Exception("first time testing");
         }
 
         public void VisitCaseLabel(CaseLabel caseLabel)
@@ -1298,7 +1325,7 @@ namespace ManualILSpy.Extention
 
             Push(label);
             //implement already, but not tested
-            throw new Exception("first time testing");
+            //throw new Exception("first time testing");
         }
 
         public void VisitThrowStatement(ThrowStatement throwStatement)
@@ -1318,7 +1345,7 @@ namespace ManualILSpy.Extention
             }
             Push(statement);
             //implement already, but not tested
-            throw new Exception("first time testing");
+            //throw new Exception("first time testing");
         }
 
         public void VisitTryCatchStatement(TryCatchStatement tryCatchStatement)
@@ -1344,7 +1371,7 @@ namespace ManualILSpy.Extention
             }
             Push(statement);
             //implement already, but not tested
-            throw new Exception("first time testing");
+            //throw new Exception("first time testing");
         }
 
         public void VisitCatchClause(CatchClause catchClause)
@@ -1366,7 +1393,7 @@ namespace ManualILSpy.Extention
 
             Push(visitCatch);
             //implement already, but not tested
-            throw new Exception("first time testing");
+            //throw new Exception("first time testing");
         }
 
         public void VisitUncheckedStatement(UncheckedStatement uncheckedStatement)
@@ -1499,10 +1526,7 @@ namespace ManualILSpy.Extention
         int constructorNum = 0;
         public void VisitConstructorDeclaration(ConstructorDeclaration constructorDeclaration)
         {
-            if (constructorNum > 0 || methodNum > 0)
-            {
-                typeInfoIndex.Clear();
-            }
+            ClearTypeInfo();
             JsonObject construct = new JsonObject();
             construct.Comment = "VisitConstructorDeclaration";
             TypeDeclaration type = constructorDeclaration.Parent as TypeDeclaration;
@@ -1584,7 +1608,7 @@ namespace ManualILSpy.Extention
 
             Push(declaration);
             //implement already, but not tested
-            throw new Exception("first time testing");
+            //throw new Exception("first time testing");
         }
 
         public void VisitEventDeclaration(EventDeclaration eventDeclaration)
@@ -1720,22 +1744,12 @@ namespace ManualILSpy.Extention
             //implement already, but not tested
             throw new Exception("first time testing");
         }
-
-        int methodNum;
-        JsonArray methodList;
-        Dictionary<string, int> typeInfoIndex = new Dictionary<string, int>();
+        
         public void VisitMethodDeclaration(MethodDeclaration methodDeclaration)
         {
+            ClearTypeInfo();
             JsonObject method = new JsonObject();
             method.Comment = "VisitMethodDeclaration";
-            if (methodNum == 0)
-            {
-                methodList = new JsonArray();
-            }
-            else
-            {
-                typeInfoIndex.Clear();
-            }
             method.AddJsonValues("name", new JsonElement(methodDeclaration.Name));
             //write modifier
             method.AddJsonValues("modifier", GetModifiers(methodDeclaration.ModifierTokens));
@@ -1747,11 +1761,9 @@ namespace ManualILSpy.Extention
             //write body
             method.AddJsonValues("body", GetMethodBody(methodDeclaration.Body));
             //write method type info
-            method.AddJsonValues("type-info-list", GetMethodTypeInfo(new List<string>(typeInfoIndex.Keys)));
-            methodList.AddJsonValue(method);
+            method.AddJsonValues("type-info-list", GetMethodTypeInfo(TypeInfoKeys()));
 
             Push(method);
-            methodNum++;
         }
 
         public void VisitOperatorDeclaration(OperatorDeclaration operatorDeclaration)
@@ -1796,13 +1808,8 @@ namespace ManualILSpy.Extention
         {
             JsonObject parameter = new JsonObject();
             parameter.Comment = "VisitParameterDeclaration";
-            int index;
             string type = parameterDeclaration.Type.ToString();
-            if (!typeInfoIndex.TryGetValue(type, out index))
-            {
-                index = typeInfoIndex.Count;
-                typeInfoIndex.Add(type, index);
-            }
+            int index = GetTypeIndex(type);
             parameter.AddJsonValues("type-info", new JsonElement(index));
             parameter.AddJsonValues("name", new JsonElement(parameterDeclaration.Name));
             Push(parameter);
@@ -1870,12 +1877,7 @@ namespace ManualILSpy.Extention
 
         JsonElement GetTypeInfo(string typeKeyword)
         {
-            int index = 0;
-            if (!typeInfoIndex.TryGetValue(typeKeyword, out index))
-            {
-                index = typeInfoIndex.Count;
-                typeInfoIndex.Add(typeKeyword, index);
-            }
+            int index = GetTypeIndex(typeKeyword);
             return new JsonElement(index);
         }
 
