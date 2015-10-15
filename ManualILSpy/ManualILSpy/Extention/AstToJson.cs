@@ -15,12 +15,12 @@ namespace ManualILSpy.Extention
     {
         Stack<JsonValue> jsonValueStack = new Stack<JsonValue>();
         Dictionary<string, int> typeInfo = new Dictionary<string, int>();
+        bool isLambda = false;
 
         public JsonValue LastValue { get; private set; }
         
         public AstCSharpToJsonVisitor(ITextOutput output)
         {
-            constructorNum = 0;
         }
 
         #region Stack
@@ -120,9 +120,14 @@ namespace ManualILSpy.Extention
             return typeArr;
         }
 
-        JsonValue GetIdentifier(Identifier identifier)
+        JsonElement GetIdentifier(Identifier identifier)
         {
-            return new JsonElement(identifier.Name);
+            string name = identifier.Name;
+            if (name[0] == '<' && name[1] == '>')
+            {
+                isLambda = true;
+            }
+            return new JsonElement(name);
         }
 
         JsonValue GetKeyword(TokenRole tokenRole)
@@ -379,7 +384,6 @@ namespace ManualILSpy.Extention
             expression.AddJsonValues("type-info", Pop());
 
             Push(expression);
-            throw new Exception("first time testing");//implement already, but not tested
         }
 
         public void VisitAssignmentExpression(AssignmentExpression assignmentExpression)
@@ -496,7 +500,6 @@ namespace ManualILSpy.Extention
             expression.AddJsonValues("expression", Pop());
 
             Push(expression);
-            //throw new Exception("first time testing");//implement already, but not tested
         }
 
         public void VisitIdentifierExpression(IdentifierExpression identifierExpression)
@@ -538,7 +541,6 @@ namespace ManualILSpy.Extention
             expression.AddJsonValues("expression", Pop());
 
             Push(expression);
-            throw new Exception("first time testing");//implement already, but not tested
         }
 
         public void VisitLambdaExpression(LambdaExpression lambdaExpression)
@@ -563,7 +565,6 @@ namespace ManualILSpy.Extention
             expression.AddJsonValues("body", Pop());
 
             Push(expression);
-            throw new Exception("first time testing");//implement already, but not tested
         }
 
         bool LambdaNeedsParenthesis(LambdaExpression lambdaExpression)
@@ -849,8 +850,6 @@ namespace ManualILSpy.Extention
             }
 
             Push(visit);
-            //implement already, but not tested
-            //throw new Exception("first time testing");
         }
 
         public void VisitAttributeSection(AttributeSection attributeSection)
@@ -864,8 +863,6 @@ namespace ManualILSpy.Extention
             visit.AddJsonValues("attributes", GetCommaSeparatedList(attributeSection.Attributes));
 
             Push(visit);
-            //implement already, but not tested
-            //throw new Exception("first time testing");
         }
 
         public void VisitDelegateDeclaration(DelegateDeclaration delegateDeclaration)
@@ -876,6 +873,7 @@ namespace ManualILSpy.Extention
             declaration.AddJsonValues("modifier", GetModifiers(delegateDeclaration.ModifierTokens));
             declaration.AddJsonValues("keyword", GetKeyword(Roles.DelegateKeyword));
             delegateDeclaration.ReturnType.AcceptVisitor(this);
+            declaration.AddJsonValues("return-type", Pop());
             declaration.AddJsonValues("identifier", GetIdentifier(delegateDeclaration.NameToken));
             declaration.AddJsonValues("type-parameters", GetTypeParameters(delegateDeclaration.TypeParameters));
             declaration.AddJsonValues("parameters", GetCommaSeparatedList(delegateDeclaration.Parameters));
@@ -896,8 +894,6 @@ namespace ManualILSpy.Extention
             declaration.AddJsonValues("constraint", contraintList);
 
             Push(declaration);
-            //implement already, but not tested
-            throw new Exception("first time testing");
         }
 
         public void VisitNamespaceDeclaration(NamespaceDeclaration namespaceDeclaration)
@@ -914,10 +910,11 @@ namespace ManualILSpy.Extention
             {
                 member.AcceptVisitor(this);
                 var temp = Pop();
-                if (temp != null)
+                if (temp != null && !isLambda)
                 {
                     memberList.AddJsonValue(temp);
                 }
+                isLambda = false;
             }
             if (memberList.Count == 0)
             {
@@ -926,10 +923,9 @@ namespace ManualILSpy.Extention
             declaration.AddJsonValues("members", memberList);
 
             Push(declaration);
-            //implement already, but not tested
-            //throw new Exception("first time testing");
         }
 
+        Dictionary<string, TypeDeclaration> lambdaClass = new Dictionary<string, TypeDeclaration>();
         public void VisitTypeDeclaration(TypeDeclaration typeDeclaration)
         {
             JsonObject declaration = new JsonObject();
@@ -951,7 +947,15 @@ namespace ManualILSpy.Extention
                     declaration.AddJsonValues("keyword", GetKeyword(Roles.ClassKeyword));
                     break;
             }
-            declaration.AddJsonValues("identifier", GetIdentifier(typeDeclaration.NameToken));
+            JsonElement identifier = GetIdentifier(typeDeclaration.NameToken);
+            bool thisTypeIsLamda = false;
+            if (isLambda)
+            {
+                thisTypeIsLamda = true;
+                lambdaClass[identifier.ElementValue] = typeDeclaration;
+                isLambda = false;
+            }
+            declaration.AddJsonValues("identifier", identifier);
             declaration.AddJsonValues("parameters", GetTypeParameters(typeDeclaration.TypeParameters));
             if (typeDeclaration.BaseTypes.Any())
             {
@@ -971,10 +975,12 @@ namespace ManualILSpy.Extention
                 memberArr.AddJsonValue(Pop());
             }
             declaration.AddJsonValues("members", memberArr);
-
+            if (thisTypeIsLamda)
+            {
+                declaration = null;
+            }
             Push(declaration);
-            //implement already, but not tested
-            //throw new Exception("first time testing");
+            isLambda = false;
         }
 
         public void VisitUsingAliasDeclaration(UsingAliasDeclaration usingAliasDeclaration)
@@ -1002,8 +1008,6 @@ namespace ManualILSpy.Extention
             declaration.AddJsonValues("import", Pop());
             declaration.AddJsonValues("import-info-list", GetMethodTypeInfo(TypeInfoKeys()));
             Push(declaration);
-            //implement already, but not tested
-            //throw new Exception("first time testing");
         }
 
         public void VisitExternAliasDeclaration(ExternAliasDeclaration externAliasDeclaration)
@@ -1051,8 +1055,6 @@ namespace ManualILSpy.Extention
             statement.AddJsonValues("keyword", new JsonElement("break"));
 
             Push(statement);
-            //implement already, but not tested
-            //throw new Exception("first time testing");
         }
 
         public void VisitCheckedStatement(CheckedStatement checkedStatement)
@@ -1189,22 +1191,108 @@ namespace ManualILSpy.Extention
             statement.AddJsonValues("identifier", GetIdentifier(gotoStatement.GetChildByRole(Roles.Identifier)));
 
             Push(statement);
-            //implement already, but not tested
-            //throw new Exception("first time testing");
         }
-
+        bool test11;
         public void VisitIfElseStatement(IfElseStatement ifElseStatement)
         {
+            test11 = true;
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitIfElseStatement";
             ifElseStatement.Condition.AcceptVisitor(this);
             statement.AddJsonValues("condition", Pop());
-
             ifElseStatement.TrueStatement.AcceptVisitor(this);
             statement.AddJsonValues("true-statement", Pop());
             ifElseStatement.FalseStatement.AcceptVisitor(this);
             statement.AddJsonValues("false-statement", Pop());
+            if (isLambda)
+            {
+                CreateLamda(statement);
+                isLambda = false;
+                test11 = false;
+                return;
+            }
+            test11 = false;
             Push(statement);
+        }
+        void CreateLamda(JsonObject ifElseNode)
+        {
+            JsonObject condition = GetValue("condition", ifElseNode);
+            JsonObject leftOperand = GetValue("left-operand", condition);
+            JsonElement identifier = GetElement("left-operand", leftOperand);
+
+            JsonObject trueStatement = GetValue("true-statement", ifElseNode);
+            JsonArray list = GetArray("statement-list", trueStatement);
+            JsonObject statement = (JsonObject)list.ValueList[0];
+            JsonObject rigthOperand = GetValue("right-operand", statement);
+            JsonObject arguments = GetValue("arguments", rigthOperand);
+            JsonElement methodName = GetElement("identifier-name", arguments);
+            JsonObject typeInfo = GetValue("type-info", arguments);
+            JsonObject memberRef = GetValue("type-info", typeInfo);
+            JsonElement memName = GetElement("member-name", memberRef);
+            
+            TypeDeclaration typeDeclare;
+            JsonObject lambdaExpression = new JsonObject();
+            if(lambdaClass.TryGetValue(memName.ElementValue, out typeDeclare))
+            {
+                lambdaExpression.Comment = "CreateLamda";
+                lambdaExpression.AddJsonValues("expression-type", new JsonElement("lambda-expression"));
+                foreach(var member in typeDeclare.Members)
+                {
+                    if(member is MethodDeclaration)
+                    {
+                        MethodDeclaration method = (MethodDeclaration)member;
+                        if (method.Name == methodName.ElementValue)
+                        {
+                            lambdaExpression.AddJsonValues("parameters", GetCommaSeparatedList(method.Parameters));
+                            method.Body.AcceptVisitor(this);
+                            lambdaExpression.AddJsonValues("body", Pop());
+                        }
+                    }
+                }
+                Push(lambdaExpression);
+            }
+        }
+
+        JsonObject GetValue(string key, JsonObject obj)
+        {
+            JsonValue value;
+            if(obj.Values.TryGetValue(key, out value))
+            {
+                if(value is JsonObject)
+                {
+                    JsonObject result = (JsonObject)value;
+                    return result;
+                }
+            }
+            return null;
+        }
+
+        JsonArray GetArray(string key, JsonObject obj)
+        {
+            JsonValue value;
+            if (obj.Values.TryGetValue(key, out value))
+            {
+                if (value is JsonArray)
+                {
+                    JsonArray result = (JsonArray)value;
+                    return result;
+                }
+            }
+            return null;
+        }
+
+        JsonElement GetElement(string key, JsonObject obj)
+        {
+            JsonValue value;
+            if (obj.Values.TryGetValue(key, out value))
+            {
+                if(value is JsonElement)
+                {
+                    JsonElement element = (JsonElement)value;
+                    return element;
+                }
+            }
+            return null;
         }
 
         public void VisitLabelStatement(LabelStatement labelStatement)
@@ -1215,8 +1303,6 @@ namespace ManualILSpy.Extention
             statement.AddJsonValues("identifier", GetIdentifier(labelStatement.GetChildByRole(Roles.Identifier)));
 
             Push(statement);
-            //implement already, but not tested
-            //throw new Exception("first time testing");
         }
 
         public void VisitLockStatement(LockStatement lockStatement)
@@ -1277,8 +1363,6 @@ namespace ManualILSpy.Extention
             section.AddJsonValues("statements", statement);
 
             Push(section);
-            //implement already, but not tested
-            //throw new Exception("first time testing");
         }
 
         public void VisitSwitchStatement(SwitchStatement switchStatement)
@@ -1304,8 +1388,6 @@ namespace ManualILSpy.Extention
             statement.AddJsonValues("switch-sections", sections);
 
             Push(statement);
-            //implement already, but not tested
-            //throw new Exception("first time testing");
         }
 
         public void VisitCaseLabel(CaseLabel caseLabel)
@@ -1324,8 +1406,6 @@ namespace ManualILSpy.Extention
             }
 
             Push(label);
-            //implement already, but not tested
-            //throw new Exception("first time testing");
         }
 
         public void VisitThrowStatement(ThrowStatement throwStatement)
@@ -1344,8 +1424,6 @@ namespace ManualILSpy.Extention
                 statement.AddJsonValues("expression", null);
             }
             Push(statement);
-            //implement already, but not tested
-            //throw new Exception("first time testing");
         }
 
         public void VisitTryCatchStatement(TryCatchStatement tryCatchStatement)
@@ -1370,8 +1448,6 @@ namespace ManualILSpy.Extention
                 statement.AddJsonValues("final-block", Pop());
             }
             Push(statement);
-            //implement already, but not tested
-            //throw new Exception("first time testing");
         }
 
         public void VisitCatchClause(CatchClause catchClause)
@@ -1392,8 +1468,6 @@ namespace ManualILSpy.Extention
             visitCatch.AddJsonValues("catch-body", Pop());
 
             Push(visitCatch);
-            //implement already, but not tested
-            //throw new Exception("first time testing");
         }
 
         public void VisitUncheckedStatement(UncheckedStatement uncheckedStatement)
@@ -1522,8 +1596,7 @@ namespace ManualILSpy.Extention
             //implement already, but not tested
             throw new Exception("first time testing");
         }
-
-        int constructorNum = 0;
+        
         public void VisitConstructorDeclaration(ConstructorDeclaration constructorDeclaration)
         {
             ClearTypeInfo();
@@ -1547,7 +1620,6 @@ namespace ManualILSpy.Extention
             }
             construct.AddJsonValues("body", GetMethodBody(constructorDeclaration.Body));
             Push(construct);
-            constructorNum++;
         }
 
         public void VisitConstructorInitializer(ConstructorInitializer constructorInitializer)
@@ -1607,8 +1679,6 @@ namespace ManualILSpy.Extention
             }
 
             Push(declaration);
-            //implement already, but not tested
-            //throw new Exception("first time testing");
         }
 
         public void VisitEventDeclaration(EventDeclaration eventDeclaration)
