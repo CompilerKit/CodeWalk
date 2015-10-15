@@ -774,25 +774,5 @@ namespace ManualILSpy.Extention.Json
             }
         }
     }
-
-    public class JsonWriter
-    {
-        ITextOutput writer;
-        JsonValue jsonValue;
-        public JsonWriter(ITextOutput output)
-        {
-            writer = output;
-        }
-
-        public void WriteJson(JsonValue value)
-        {
-            value.AcceptWriter(writer);
-        }
-
-        public override string ToString()
-        {
-            return writer.ToString();
-        }
-    }
     #endregion
 }
