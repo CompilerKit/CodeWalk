@@ -18,11 +18,187 @@ namespace ManualILSpy
 {
     public partial class Form1 : Form
     {
+        string _path;
+        string _debugPath;
+        string _releasePath;
         public Form1()
         {
             InitializeComponent();
+            scan_btn.Enabled = false;
+            decompile_panel.Enabled = false;
+            enable_rbtn.Checked = true;
+
+            _debugPath = @"D:\[]Documents\testAstJsonDebug.json";
+            _releasePath = @"D:\[]Documents\testAstJsonRelease.json";
+            debug_path_txt.Text = _debugPath;
+            release_path_txt.Text = _releasePath;
         }
 
+        private void Browse_btn_Click(object sender, EventArgs e)
+        {
+            _path = BrowsePath();
+            textBox1.Text = _path;
+            scan_btn.Enabled = true;
+        }
+
+        Dictionary<string, TypeDefinition> nodesTree = new Dictionary<string, TypeDefinition>();
+        private void Scan_Click(object sender, EventArgs e)
+        {
+            nodesTree.Clear();
+            AssemblyDefinition assem = AssemblyDefinition.ReadAssembly(_path);
+            var types = assem.MainModule.Types;
+
+            TreeNode node = new TreeNode();
+            foreach (var type in types)
+            {
+                treeView1.Nodes.Add(type.FullName);
+                nodesTree.Add(type.FullName, type);
+            }
+            decompile_panel.Enabled = true;
+        }
+
+        private void decompile_btn_Click(object sender, EventArgs e)
+        {
+            if (enable_rbtn.Checked)
+            {
+                Decompile(true);
+            }
+            else if (disable_rbtn.Checked)
+            {
+                Decompile(false);
+            }
+            else
+            {
+                MessageBox.Show("Please choose comment setting");
+            }
+        }
+
+        private void TestReadWriteJsonBtn_Click(object sender, EventArgs e)
+        {
+            string inputPath = @"D:\[]Documents\testAstJsonRelease.json";
+            string outputPath = @"D:\[]Documents\testWriteJson.json";
+
+            string jsonString = File.ReadAllText(inputPath);
+            JsonReader reader = new JsonReader(jsonString);
+            JsonValue value = reader.Read();
+
+            StringBuilderTextOutput output = new StringBuilderTextOutput();
+            JsonWriterVisitor writer = new JsonWriterVisitor(output);
+            value.AcceptVisitor(writer);
+
+            string jsonOut = writer.ToString();
+            File.WriteAllText(outputPath, jsonOut);
+        }
+
+        private void Decompile(bool debug)
+        {
+            string selected = GetSelectedNode();
+            if (selected == null)
+            {
+                MessageBox.Show("Please select node.");
+                return;
+            }
+            TypeDefinition type;
+            string json = "null";
+            if(nodesTree.TryGetValue(selected, out type))
+            {
+                json = GetJson(type, debug);
+            }
+            string resultPath = debug ? _debugPath
+                                      : _releasePath;
+            File.WriteAllText(resultPath, json);
+            MessageBox.Show("Success!!");
+        }
+
+        private string GetSelectedNode()
+        {
+            string selected = null;
+            int count = treeView1.Nodes.Count;
+            for (int i = 0; i < count; i++)
+            {
+                if (treeView1.Nodes[i].IsSelected)
+                {
+                    selected = treeView1.Nodes[i].Text;
+                    break;
+                }
+            }
+            return selected;
+        }
+
+        private string GetJson(IMemberDefinition node, bool debug)
+        {
+            StringBuilderTextOutput output = new StringBuilderTextOutput();
+            CSharpLanguage csharp = new CSharpLanguage(output);
+            DecompilationOptions options = new DecompilationOptions();
+            options.DecompilerSettings = LoadDecompilerSettings();
+
+            JsonWriterVisitor visitor = new JsonWriterVisitor(output);
+            visitor.Debug = debug;
+            if (node is TypeDefinition)
+            {
+                DecomplieType(csharp, (TypeDefinition)node, output, options);
+                JsonValue value = csharp.result;
+                value.AcceptVisitor(visitor);
+                return visitor.ToString();
+            }
+            else
+            {
+                MessageBox.Show("Not TypeDefinition");
+            }
+            return null;
+        }
+
+        OpenFileDialog _openFileDialog = new OpenFileDialog();
+        string _lastDirectory;
+        private string BrowsePath()
+        {
+            string path = null;
+            DialogResult result = _openFileDialog.ShowDialog();
+            if (result == DialogResult.OK)
+            {
+                _openFileDialog.Multiselect = false;
+                if (_lastDirectory != null)
+                {
+                    _openFileDialog.InitialDirectory = _lastDirectory;
+                }
+                path = _openFileDialog.FileName;
+                _lastDirectory = path;
+            }
+            else if (result != DialogResult.Cancel)
+            {
+                MessageBox.Show("Can't Open OpenFileDialog");
+            }
+            return path;
+        }
+
+        string Test(string assemPath, bool debuging)
+        {
+            AssemblyDefinition assem = AssemblyDefinition.ReadAssembly(assemPath);
+            var types = assem.MainModule.Types;
+
+            StringBuilderTextOutput output = new StringBuilderTextOutput();
+            CSharpLanguage csharp = new CSharpLanguage(output);
+            DecompilationOptions options = new DecompilationOptions();
+            options.DecompilerSettings = LoadDecompilerSettings();
+
+            JsonWriterVisitor visitor = new JsonWriterVisitor(output);
+            visitor.Debug = debuging;
+            StringBuilder builder = new StringBuilder();
+            JsonArray typeList = new JsonArray();
+            foreach (var type in types)
+            {
+                DecomplieType(csharp, type, output, options);
+                typeList.AddJsonValue(csharp.result);
+            }
+            typeList.AcceptVisitor(visitor);
+            builder.Append(visitor.ToString());
+            string strJson;
+            strJson = builder.ToString();
+            return strJson;
+            //string path = @"D:\[]Documents\testAstJsonDebug.json";
+            //File.WriteAllText(path, strJson);
+        }
+        
         private void DecompileMethod(Language language, MethodDefinition method, ITextOutput output, DecompilationOptions options)
         {
             language.DecompileMethod(method, output, options);
@@ -63,182 +239,26 @@ namespace ManualILSpy
             return s;
         }
 
-        JsonValue GetType(TypeDefinition type)
+        private void debug_path_txt_TextChanged(object sender, EventArgs e)
         {
-            JsonElement element = new JsonElement();
-            if (type.IsInterface)
-            {
-                element.SetValue("interface");
-            }
-            else if (type.IsAbstract)
-            {
-                element.SetValue("abstract");
-            }
-            else if (type.IsEnum)
-            {
-                element.SetValue("enum");
-            }
-            else if (type.IsClass)
-            {
-                if (type.IsByReference)
-                {
-                    element.SetValue("class");
-                }
-                else
-                {
-                    element.SetValue("struct");
-                }
-            }
-            else
-            {
-                throw new Exception("unknowed type");
-            }
-            return element;
+            _debugPath = debug_path_txt.Text;
         }
 
-        void Test(string assemPath)
+        private void release_path_txt_TextChanged(object sender, EventArgs e)
         {
-            AssemblyDefinition assem = AssemblyDefinition.ReadAssembly(assemPath);
-            var types = assem.MainModule.Types;
-
-            StringBuilderTextOutput output = new StringBuilderTextOutput();
-            CSharpLanguage csharp = new CSharpLanguage(output);
-            DecompilationOptions options = new DecompilationOptions();
-            options.DecompilerSettings = LoadDecompilerSettings();
-
-            JsonWriterVisitor visitor = new JsonWriterVisitor(output);
-            visitor.Debug = true;
-            StringBuilder builder = new StringBuilder();
-            JsonArray typeList = new JsonArray();
-            foreach (var type in types)
-            {
-                DecomplieType(csharp, type, output, options);
-                typeList.AddJsonValue(csharp.result);
-            }
-            typeList.AcceptVisitor(visitor);
-            builder.Append(visitor.ToString());
-            string strJson;
-            strJson = builder.ToString();
-            string path = @"D:\[]Documents\testAstJsonDebug.json";
-            File.WriteAllText(path, strJson);
+            _releasePath = release_path_txt.Text;
         }
 
-        private void EnableCommentBtn_Click(object sender, EventArgs e)
+        private void debug_path_btn_Click(object sender, EventArgs e)
         {
-            string path = @"D:\[]New Project\TestILSpy\TestILSpy\bin\Debug\TestILSpy.exe";
-            Test(path);
-            //AssemblyDefinition assem = AssemblyDefinition.ReadAssembly(path);
-            //var types = assem.MainModule.Types;
-
-            //StringBuilderTextOutput output = new StringBuilderTextOutput();
-            //CSharpLanguage csharp = new CSharpLanguage(output);
-            //DecompilationOptions options = new DecompilationOptions();
-
-            ////Test(path, csharp, options);
-            //options.DecompilerSettings = LoadDecompilerSettings();
-
-            //JsonWriterVisitor visitor = new JsonWriterVisitor(output);
-            //visitor.Debug = true;
-            //StringBuilder builder = new StringBuilder();
-            //JsonArray typeList = new JsonArray();
-            //foreach (var type in types)
-            //{
-            //    JsonObject typeObj = new JsonObject();
-            //    typeObj.Comment = "EnableCommentBtn_Click";
-            //    typeObj.AddJsonValues("namespace", new JsonElement(type.Namespace));
-            //    if (type.Namespace == null || type.Namespace.Length == 0)
-            //    {
-            //        typeObj = null;
-            //        continue;
-            //    }
-            //    typeObj.AddJsonValues("name", new JsonElement(type.Name));
-            //    typeObj.AddJsonValues("type", GetType(type));
-            //    var fields = type.Fields;
-            //    JsonArray fieldList = new JsonArray();
-            //    foreach (var field in fields)
-            //    {
-            //        DecompileField(csharp, field, output, options);
-            //        fieldList.AddJsonValue(csharp.result);
-            //    }
-            //    if (fieldList.Count == 0)
-            //    {
-            //        fieldList = null;
-            //    }
-            //    typeObj.AddJsonValues("fields", fieldList);
-            //    var methods = type.Methods;
-            //    JsonArray methodList = new JsonArray();
-            //    foreach (var method in methods)
-            //    {
-            //        DecompileMethod(csharp, method, output, options);
-            //        methodList.AddJsonValue(csharp.result);
-            //    }
-            //    if (methodList.Count == 0)
-            //    {
-            //        methodList = null;
-            //    }
-            //    typeObj.AddJsonValues("methods", methodList);
-            //    typeList.AddJsonValue(typeObj);
-            //}
-            //typeList.AcceptVisitor(visitor);
-            //builder.Append(visitor.ToString());
-            //string strJson;
-            //strJson = builder.ToString();
-            //string debugPath = @"D:\[]Documents\testAstJsonDebug.txt";
-            //File.WriteAllText(debugPath, strJson);
+            debug_path_txt.Text = BrowsePath();
+            _debugPath = debug_path_txt.Text;
         }
 
-        private void DisableCommentBtn_Click(object sender, EventArgs e)
+        private void release_path_btn_Click(object sender, EventArgs e)
         {
-            AssemblyDefinition assem = AssemblyDefinition.ReadAssembly(@"D:\[]New Project\TestILSpy\TestILSpy\bin\Debug\TestILSpy.exe");
-            var types = assem.MainModule.Types;
-
-            StringBuilderTextOutput output = new StringBuilderTextOutput();
-            CSharpLanguage csharp = new CSharpLanguage(output);
-            DecompilationOptions options = new DecompilationOptions();
-            options.DecompilerSettings = LoadDecompilerSettings();
-
-            JsonArray methodList = new JsonArray();
-            JsonWriterVisitor visitor = new JsonWriterVisitor(output);
-            visitor.Debug = false;
-            StringBuilder builder = new StringBuilder();
-
-            foreach (var type in types)
-            {
-                var methods = type.Methods;
-                foreach (var method in methods)
-                {
-                    DecompileMethod(csharp, method, output, options);
-                    methodList.AddJsonValue(csharp.result);
-                }
-            }
-            methodList.AcceptVisitor(visitor);
-            builder.Append(visitor.ToString());
-            string strJson;
-            strJson = builder.ToString();
-            //strJson = csharp.writer.ToString();
-            string path = @"D:\[]Documents\testAstJsonRelease.txt";
-            if (visitor.Debug)
-            {
-                path = @"D:\[]Documents\testAstJsonDebug.txt";
-            }
-            File.WriteAllText(path, strJson);
-        }
-
-        private void TestReadWriteJsonBtn_Click(object sender, EventArgs e)
-        {
-            string inputPath = @"D:\[]Documents\testAstJsonRelease.txt";
-            string outputPath = @"D:\[]Documents\testWriteJson.txt";
-
-            string jsonString = File.ReadAllText(inputPath);
-            JsonReader reader = new JsonReader(jsonString);
-            JsonValue value = reader.Read();
-
-            StringBuilderTextOutput output = new StringBuilderTextOutput();
-            JsonWriterVisitor writer = new JsonWriterVisitor(output);
-            value.AcceptVisitor(writer);
-
-            string jsonOut = writer.ToString();
-            File.WriteAllText(outputPath, jsonOut);
+            release_path_txt.Text = BrowsePath();
+            _releasePath = release_path_txt.Text;
         }
     }
 }
