@@ -464,7 +464,7 @@ namespace ManualILSpy.Extention
             expression.AddJsonValues("false-expression", Pop());
 
             Push(expression);
-            throw new Exception("first time testing");//implement already, but not tested
+            //throw new Exception("first time testing");//implement already, but not tested
         }
 
         public void VisitDefaultValueExpression(DefaultValueExpression defaultValueExpression)
@@ -477,7 +477,7 @@ namespace ManualILSpy.Extention
             expression.AddJsonValues("type-info", Pop());
 
             Push(expression);
-            throw new Exception("first time testing");//implement already, but not tested
+            //throw new Exception("first time testing");//implement already, but not tested
         }
 
         public void VisitDirectionExpression(DirectionExpression directionExpression)
@@ -665,7 +665,7 @@ namespace ManualILSpy.Extention
             expression.AddJsonValues("expression", Pop());
 
             Push(expression);
-            throw new Exception("first time testing");//implement already, but not tested
+            //throw new Exception("first time testing");//implement already, but not tested
         }
 
         public void VisitPointerReferenceExpression(PointerReferenceExpression pointerReferenceExpression)
@@ -690,6 +690,7 @@ namespace ManualILSpy.Extention
             expression.Comment = "VisitPrimitiveExpression";
             expression.AddJsonValues("expression-type", new JsonElement("primitive-expression"));
             expression.AddJsonValues("value", new JsonElement(primitiveExpression.Value.ToString()));
+            expression.AddJsonValues("unsafe-literal-value", new JsonElement(primitiveExpression.UnsafeLiteralValue));
             Push(expression);
         }
         #endregion
@@ -1025,7 +1026,6 @@ namespace ManualILSpy.Extention
         #endregion
 
         #region Statements
-
         public void VisitBlockStatement(BlockStatement blockStatement)
         {
             JsonObject statement = new JsonObject();
@@ -1510,7 +1510,7 @@ namespace ManualILSpy.Extention
 
             Push(statement);
             //implement already, but not tested
-            throw new Exception("first time testing");
+            //throw new Exception("first time testing");
         }
 
         public void VisitVariableDeclarationStatement(VariableDeclarationStatement variableDeclarationStatement)
@@ -1545,8 +1545,6 @@ namespace ManualILSpy.Extention
             statement.AddJsonValues("yield-keyword", GetKeyword(YieldBreakStatement.YieldKeywordRole));
             statement.AddJsonValues("break-keyword", GetKeyword(YieldBreakStatement.BreakKeywordRole));
             Push(statement);
-            //implement already, but not tested
-            throw new Exception("first time testing");
         }
 
         public void VisitYieldReturnStatement(YieldReturnStatement yieldReturnStatement)
@@ -1560,14 +1558,11 @@ namespace ManualILSpy.Extention
             statement.AddJsonValues("expression", Pop());
 
             Push(statement);
-            //implement already, but not tested
-            throw new Exception("first time testing");
         }
 
         #endregion
 
         #region TypeMembers
-
         public void VisitAccessor(Accessor accessor)
         {
             JsonObject visitAccessor = new JsonObject();
@@ -1594,7 +1589,7 @@ namespace ManualILSpy.Extention
 
             Push(visitAccessor);
             //implement already, but not tested
-            throw new Exception("first time testing");
+            //throw new Exception("first time testing");
         }
         
         public void VisitConstructorDeclaration(ConstructorDeclaration constructorDeclaration)
@@ -1827,12 +1822,16 @@ namespace ManualILSpy.Extention
             methodDeclaration.ReturnType.AcceptVisitor(this);
             method.AddJsonValues("return-type", Pop());
             //write parameters
+            //ParameterDeclaration param = new ParameterDeclaration("test", ParameterModifier.None);
+            //PrimitiveType type = new PrimitiveType("string");
+            //param.Type = type;
+            //methodDeclaration.AddChild(param, Roles.Parameter);
             method.AddJsonValues("parameters", GetCommaSeparatedList(methodDeclaration.Parameters));
             //write body
             method.AddJsonValues("body", GetMethodBody(methodDeclaration.Body));
             //write method type info
             method.AddJsonValues("type-info-list", GetMethodTypeInfo(TypeInfoKeys()));
-
+            
             Push(method);
         }
 
@@ -1878,10 +1877,35 @@ namespace ManualILSpy.Extention
         {
             JsonObject parameter = new JsonObject();
             parameter.Comment = "VisitParameterDeclaration";
-            string type = parameterDeclaration.Type.ToString();
-            int index = GetTypeIndex(type);
-            parameter.AddJsonValues("type-info", new JsonElement(index));
+            parameter.AddJsonValues("attributes", GetAttributes(parameterDeclaration.Attributes));
+            JsonValue keyword;
+            switch (parameterDeclaration.ParameterModifier)
+            {
+                case ParameterModifier.Out:
+                    keyword = GetKeyword(ParameterDeclaration.OutModifierRole);
+                    break;
+                case ParameterModifier.Params:
+                    keyword = GetKeyword(ParameterDeclaration.ParamsModifierRole);
+                    break;
+                case ParameterModifier.Ref:
+                    keyword = GetKeyword(ParameterDeclaration.RefModifierRole);
+                    break;
+                case ParameterModifier.This:
+                    keyword = GetKeyword(ParameterDeclaration.ThisModifierRole);
+                    break;
+                default:
+                    keyword = null;
+                    break;
+            }
+            parameter.AddJsonValues("modifier", keyword);
+            parameterDeclaration.Type.AcceptVisitor(this);
+            parameter.AddJsonValues("type-info", Pop());
             parameter.AddJsonValues("name", new JsonElement(parameterDeclaration.Name));
+            if (parameterDeclaration.DefaultExpression.IsNull)
+            {
+                parameterDeclaration.DefaultExpression.AcceptVisitor(this);
+                parameter.AddJsonValues("default-expression", Pop());
+            }
             Push(parameter);
         }
 
@@ -1916,13 +1940,12 @@ namespace ManualILSpy.Extention
 
             Push(declaration);
             //implement already, but not tested
-            throw new Exception("first time testing");
+            //throw new Exception("first time testing");
         }
 
         #endregion
 
         #region Other Node
-
         public void VisitVariableInitializer(VariableInitializer variableInitializer)
         {
             JsonObject variable = new JsonObject();
@@ -2042,19 +2065,19 @@ namespace ManualILSpy.Extention
         public void VisitNewLine(NewLineNode newLineNode)
         {
             //unused
-            throw new Exception("Unused");
+            throw new Exception("NewLineNode Unused");
         }
 
         public void VisitWhitespace(WhitespaceNode whitespaceNode)
         {
             //unused
-            throw new Exception("Unused");
+            throw new Exception("WhitespaceNode Unused");
         }
 
         public void VisitText(TextNode textNode)
         {
             //unused
-            throw new Exception("Unused");
+            throw new Exception("TextNode Unused");
         }
 
         public void VisitPreProcessorDirective(PreProcessorDirective preProcessorDirective)
@@ -2100,7 +2123,7 @@ namespace ManualILSpy.Extention
 
             Push(declaration);
             //implement already, but not tested
-            throw new Exception("first time testing");
+            //throw new Exception("first time testing");
         }
 
         public void VisitConstraint(Constraint constraint)
@@ -2109,6 +2132,7 @@ namespace ManualILSpy.Extention
             visit.Comment = "VisitConstraint";
             visit.AddJsonValues("keyword", GetKeyword(Roles.WhereKeyword));
             constraint.TypeParameter.AcceptVisitor(this);
+            visit.AddJsonValues("type-parameter", Pop());
             visit.AddJsonValues("base-types", GetCommaSeparatedList(constraint.BaseTypes));
 
             Push(visit);
