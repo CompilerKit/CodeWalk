@@ -21,6 +21,9 @@ namespace ManualILSpy
         string _path;
         string _debugPath;
         string _releasePath;
+        OpenFileDialog _browseExeOrDll;
+        OpenFileDialog _browseOutput;
+
         public Form1()
         {
             InitializeComponent();
@@ -28,33 +31,75 @@ namespace ManualILSpy
             decompile_panel.Enabled = false;
             enable_rbtn.Checked = true;
 
-            _debugPath = @"D:\[]Documents\testAstJsonDebug.json";
-            _releasePath = @"D:\[]Documents\testAstJsonRelease.json";
+            _browseExeOrDll = new OpenFileDialog();
+            _browseExeOrDll.Filter = "Execution File|*.exe|Dynamic-link library(dll) file|*.dll";
+            _browseOutput = new OpenFileDialog();
+            _browseOutput.Filter = "Text Files)|*.txt|Json Files|*.json";
+
+            _debugPath = @"D:\[]Documents\ManualILSpy\JsonDebug.json";
+            _releasePath = @"D:\[]Documents\ManualILSpy\JsonRelease.json";
             debug_path_txt.Text = _debugPath;
             release_path_txt.Text = _releasePath;
         }
 
         private void Browse_btn_Click(object sender, EventArgs e)
         {
-            _path = BrowsePath();
+            _path = BrowsePath(_browseExeOrDll);
             textBox1.Text = _path;
-            scan_btn.Enabled = true;
+            scan_btn.Enabled = !string.IsNullOrEmpty(textBox1.Text);
         }
 
-        Dictionary<string, TypeDefinition> nodesTree = new Dictionary<string, TypeDefinition>();
+        Dictionary<string, TypeDefinition> nodeTypeDef = new Dictionary<string, TypeDefinition>();
+        Dictionary<string, TreeNode> nodeTreeNode = new Dictionary<string, TreeNode>();
         private void Scan_Click(object sender, EventArgs e)
         {
-            nodesTree.Clear();
+            nodeTypeDef.Clear();
+            nodeTreeNode.Clear();
             AssemblyDefinition assem = AssemblyDefinition.ReadAssembly(_path);
             var types = assem.MainModule.Types;
-
+            var nameSpace = assem.MainModule.Types;
             TreeNode node = new TreeNode();
-            foreach (var type in types)
+            foreach (TypeDefinition type in types)
             {
-                treeView1.Nodes.Add(type.FullName);
-                nodesTree.Add(type.FullName, type);
+                if(nodeTreeNode.TryGetValue(type.Namespace, out node))
+                {
+                    node.Nodes.Add(type.Name);
+                }
+                else
+                {
+                    node = new TreeNode(type.Namespace);
+                    node.Nodes.Add(type.Name);
+                }
+                nodeTreeNode[type.Namespace] = node;
+                nodeTypeDef.Add(type.FullName, type);
+            }
+            List<string> keys = new List<string>(nodeTreeNode.Keys);
+            foreach(string key in keys)
+            {
+                if (nodeTreeNode.TryGetValue(key, out node))
+                    treeView1.Nodes.Add(node);
             }
             decompile_panel.Enabled = true;
+        }
+
+        private TreeNode GetTreeNodeByCondition(IEnumerable<TypeDefinition> types, string condition)
+        {
+            TypeDefinition def;
+            TreeNode node = new TreeNode(condition);
+            foreach(TypeDefinition type in types)
+            {
+                if(nodeTypeDef.TryGetValue(condition, out def))
+                {
+                    break;
+                }
+                if(condition == type.Namespace)
+                {
+                    treeView1.Nodes.Add(type.FullName);
+                    node.Nodes.Add(type.FullName);
+                    nodeTypeDef.Add(type.FullName, type);
+                }
+            }
+            return node;
         }
 
         private void decompile_btn_Click(object sender, EventArgs e)
@@ -92,7 +137,7 @@ namespace ManualILSpy
 
         private void Decompile(bool debug)
         {
-            string selected = GetSelectedNode();
+            string selected = FindSelectedNode(treeView1.Nodes);
             if (selected == null)
             {
                 MessageBox.Show("Please select node.");
@@ -100,7 +145,7 @@ namespace ManualILSpy
             }
             TypeDefinition type;
             string json = "null";
-            if(nodesTree.TryGetValue(selected, out type))
+            if(nodeTypeDef.TryGetValue(selected, out type))
             {
                 json = GetJson(type, debug);
             }
@@ -110,19 +155,45 @@ namespace ManualILSpy
             MessageBox.Show("Success!!");
         }
 
-        private string GetSelectedNode()
+        private string FindSelectedNode(TreeNodeCollection collection)
         {
             string selected = null;
-            int count = treeView1.Nodes.Count;
-            for (int i = 0; i < count; i++)
+            foreach(TreeNode node in collection)
             {
-                if (treeView1.Nodes[i].IsSelected)
+                selected = FindSelected(node);
+                if (selected != null)
                 {
-                    selected = treeView1.Nodes[i].Text;
+                    selected = node.Text + '.' + selected;
                     break;
                 }
             }
             return selected;
+        }
+
+        private string FindSelected(TreeNode node)
+        {
+            if (node.Nodes != null)
+            {
+                string selected = null;
+                int count = node.Nodes.Count;
+                for(int i = 0; i< count; i++)
+                {
+                    if(node.Nodes[i].IsSelected)
+                    {
+                        return node.Nodes[i].Text;
+                    }
+                    else if(node.Nodes[i].Nodes != null)
+                    {
+                        string temp = FindSelected(node.Nodes[i]);
+                        if (temp != null)
+                        {
+                            selected = node.Text + '.' + temp;
+                            return selected;
+                        }
+                    }
+                }
+            }
+            return null;
         }
 
         private string GetJson(IMemberDefinition node, bool debug)
@@ -147,56 +218,27 @@ namespace ManualILSpy
             }
             return null;
         }
-
-        OpenFileDialog _openFileDialog = new OpenFileDialog();
-        string _lastDirectory;
-        private string BrowsePath()
+        
+        string _lastDir;
+        private string BrowsePath(OpenFileDialog openFileDialog)
         {
             string path = null;
-            DialogResult result = _openFileDialog.ShowDialog();
+            DialogResult result = openFileDialog.ShowDialog();
             if (result == DialogResult.OK)
             {
-                _openFileDialog.Multiselect = false;
-                if (_lastDirectory != null)
+                openFileDialog.Multiselect = false;
+                if (_lastDir != null)
                 {
-                    _openFileDialog.InitialDirectory = _lastDirectory;
+                    openFileDialog.InitialDirectory = _lastDir;
                 }
-                path = _openFileDialog.FileName;
-                _lastDirectory = path;
+                path = openFileDialog.FileName;
+                _lastDir = path;
             }
             else if (result != DialogResult.Cancel)
             {
                 MessageBox.Show("Can't Open OpenFileDialog");
             }
             return path;
-        }
-
-        string Test(string assemPath, bool debuging)
-        {
-            AssemblyDefinition assem = AssemblyDefinition.ReadAssembly(assemPath);
-            var types = assem.MainModule.Types;
-
-            StringBuilderTextOutput output = new StringBuilderTextOutput();
-            CSharpLanguage csharp = new CSharpLanguage(output);
-            DecompilationOptions options = new DecompilationOptions();
-            options.DecompilerSettings = LoadDecompilerSettings();
-
-            JsonWriterVisitor visitor = new JsonWriterVisitor(output);
-            visitor.Debug = debuging;
-            StringBuilder builder = new StringBuilder();
-            JsonArray typeList = new JsonArray();
-            foreach (var type in types)
-            {
-                DecomplieType(csharp, type, output, options);
-                typeList.AddJsonValue(csharp.result);
-            }
-            typeList.AcceptVisitor(visitor);
-            builder.Append(visitor.ToString());
-            string strJson;
-            strJson = builder.ToString();
-            return strJson;
-            //string path = @"D:\[]Documents\testAstJsonDebug.json";
-            //File.WriteAllText(path, strJson);
         }
         
         private void DecompileMethod(Language language, MethodDefinition method, ITextOutput output, DecompilationOptions options)
@@ -251,14 +293,19 @@ namespace ManualILSpy
 
         private void debug_path_btn_Click(object sender, EventArgs e)
         {
-            debug_path_txt.Text = BrowsePath();
+            debug_path_txt.Text = BrowsePath(_browseOutput);
             _debugPath = debug_path_txt.Text;
         }
 
         private void release_path_btn_Click(object sender, EventArgs e)
         {
-            release_path_txt.Text = BrowsePath();
+            release_path_txt.Text = BrowsePath(_browseOutput);
             _releasePath = release_path_txt.Text;
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+            scan_btn.Enabled = !string.IsNullOrEmpty(textBox1.Text);
         }
     }
 }
