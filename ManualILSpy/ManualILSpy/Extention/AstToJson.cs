@@ -278,7 +278,7 @@ namespace ManualILSpy.Extention
                 expression.AddJsonValues("arguments", null);
             }
             Push(expression);
-            throw new Exception("first time testing");//implement already, but not tested
+            //throw new Exception("first time testing");//implement already, but not tested
         }
 
         public void VisitArrayCreateExpression(ArrayCreateExpression arrayCreateExpression)
@@ -1122,7 +1122,7 @@ namespace ManualILSpy.Extention
 
             Push(statement);
             //implement already, but not tested
-            throw new Exception("first time testing");
+            //throw new Exception("first time testing");
         }
 
         public void VisitForeachStatement(ForeachStatement foreachStatement)
@@ -1806,8 +1806,8 @@ namespace ManualILSpy.Extention
             declaration.AddJsonValues("children", children);
 
             Push(declaration);
-            //implement already, but not tested
-            throw new Exception("first time testing");
+            ////implement already, but not tested
+            //throw new Exception("first time testing");
         }
         
         public void VisitMethodDeclaration(MethodDeclaration methodDeclaration)
@@ -1870,7 +1870,7 @@ namespace ManualILSpy.Extention
 
             Push(declaration);
             //implement already, but not tested
-            throw new Exception("first time testing");
+            //throw new Exception("first time testing");
         }
 
         public void VisitParameterDeclaration(ParameterDeclaration parameterDeclaration)
