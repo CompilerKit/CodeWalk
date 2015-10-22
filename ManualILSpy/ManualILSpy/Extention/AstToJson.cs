@@ -105,7 +105,7 @@ namespace ManualILSpy.Extention
             }
         }
 
-        JsonValue GetMethodTypeInfo(List<string> typeInfoList)
+        JsonValue GetTypeInfoList(List<string> typeInfoList)
         {
             JsonArray typeArr = new JsonArray();
             typeArr.Comment = "GetMethodTypeInfo";
@@ -255,16 +255,17 @@ namespace ManualILSpy.Extention
             {
                 case UndocumentedExpressionType.ArgList:
                 case UndocumentedExpressionType.ArgListAccess:
-                    expression.AddJsonValues("type-info", GetKeyword(UndocumentedExpression.ArglistKeywordRole));
+                    GetTypeInfo(UndocumentedExpression.ArglistKeywordRole.Token);
+                    expression.AddJsonValues("type-info", GetTypeInfo(UndocumentedExpression.ArglistKeywordRole.Token));
                     break;
                 case UndocumentedExpressionType.MakeRef:
-                    expression.AddJsonValues("type-info", GetKeyword(UndocumentedExpression.MakerefKeywordRole));
+                    expression.AddJsonValues("type-info", GetTypeInfo(UndocumentedExpression.MakerefKeywordRole.Token));
                     break;
                 case UndocumentedExpressionType.RefType:
-                    expression.AddJsonValues("type-info", GetKeyword(UndocumentedExpression.ReftypeKeywordRole));
+                    expression.AddJsonValues("type-info", GetTypeInfo(UndocumentedExpression.ReftypeKeywordRole.Token));
                     break;
                 case UndocumentedExpressionType.RefValue:
-                    expression.AddJsonValues("type-info", GetKeyword(UndocumentedExpression.RefvalueKeywordRole));
+                    expression.AddJsonValues("type-info", GetTypeInfo(UndocumentedExpression.RefvalueKeywordRole.Token));
                     break;
                 default:
                     throw new Exception("unknowed type");
@@ -713,12 +714,13 @@ namespace ManualILSpy.Extention
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitStackAllocExpression";
             expression.AddJsonValues("expression-type", new JsonElement("stack-alloc-expression"));
+            expression.AddJsonValues("keyword", GetKeyword(StackAllocExpression.StackallocKeywordRole));
             stackAllocExpression.Type.AcceptVisitor(this);
             expression.AddJsonValues("type-info", Pop());
             expression.AddJsonValues("count-expression", GetCommaSeparatedList(new[] { stackAllocExpression.CountExpression }));
 
             Push(expression);
-            throw new Exception("first time testing");//implement already, but not tested
+            //throw new Exception("first time testing");//implement already, but not tested
         }
 
         public void VisitThisReferenceExpression(ThisReferenceExpression thisReferenceExpression)
@@ -905,7 +907,7 @@ namespace ManualILSpy.Extention
             declaration.AddJsonValues("keyword", GetKeyword(Roles.NamespaceKeyword));
             namespaceDeclaration.NamespaceName.AcceptVisitor(this);
             declaration.AddJsonValues("namespace-name", Pop());
-            declaration.AddJsonValues("namespace-info-list", GetMethodTypeInfo(TypeInfoKeys()));
+            declaration.AddJsonValues("namespace-info-list", GetTypeInfoList(TypeInfoKeys()));
             JsonArray memberList = new JsonArray();
             foreach(var member in namespaceDeclaration.Members)
             {
@@ -1007,7 +1009,7 @@ namespace ManualILSpy.Extention
             declaration.AddJsonValues("keyword", GetKeyword(UsingAliasDeclaration.UsingKeywordRole));
             usingDeclaration.Import.AcceptVisitor(this);
             declaration.AddJsonValues("import", Pop());
-            declaration.AddJsonValues("import-info-list", GetMethodTypeInfo(TypeInfoKeys()));
+            declaration.AddJsonValues("import-info-list", GetTypeInfoList(TypeInfoKeys()));
             Push(declaration);
         }
 
@@ -1777,6 +1779,7 @@ namespace ManualILSpy.Extention
 
         public void VisitIndexerDeclaration(IndexerDeclaration indexerDeclaration)
         {
+            ClearTypeInfo();
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitIndexerDeclaration";
             declaration.AddJsonValues("attributes", GetAttributes(indexerDeclaration.Attributes));
@@ -1804,7 +1807,7 @@ namespace ManualILSpy.Extention
                 children = null;
             }
             declaration.AddJsonValues("children", children);
-
+            declaration.AddJsonValues("type-info-list", GetTypeInfoList(TypeInfoKeys()));
             Push(declaration);
             ////implement already, but not tested
             //throw new Exception("first time testing");
@@ -1830,13 +1833,14 @@ namespace ManualILSpy.Extention
             //write body
             method.AddJsonValues("body", GetMethodBody(methodDeclaration.Body));
             //write method type info
-            method.AddJsonValues("type-info-list", GetMethodTypeInfo(TypeInfoKeys()));
+            method.AddJsonValues("type-info-list", GetTypeInfoList(TypeInfoKeys()));
             
             Push(method);
         }
 
         public void VisitOperatorDeclaration(OperatorDeclaration operatorDeclaration)
         {
+            ClearTypeInfo();
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitOperatorDeclaration";
             declaration.AddJsonValues("attributes", GetAttributes(operatorDeclaration.Attributes));
@@ -1866,6 +1870,7 @@ namespace ManualILSpy.Extention
                 declaration.AddJsonValues("operator-type", new JsonElement(OperatorDeclaration.GetToken(operatorDeclaration.OperatorType)));
             }
             declaration.AddJsonValues("parameters", GetCommaSeparatedList(operatorDeclaration.Parameters));
+            declaration.AddJsonValues("type-info-list", GetTypeInfoList(TypeInfoKeys()));
             declaration.AddJsonValues("body", GetMethodBody(operatorDeclaration.Body));
 
             Push(declaration);
@@ -1911,6 +1916,7 @@ namespace ManualILSpy.Extention
 
         public void VisitPropertyDeclaration(PropertyDeclaration propertyDeclaration)
         {
+            ClearTypeInfo();
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitPropertyDeclaration";
             declaration.AddJsonValues("attributes", GetAttributes(propertyDeclaration.Attributes));
@@ -1937,6 +1943,7 @@ namespace ManualILSpy.Extention
                 children = null;
             }
             declaration.AddJsonValues("children", children);
+            declaration.AddJsonValues("type-info-list", GetTypeInfoList(TypeInfoKeys()));
 
             Push(declaration);
             //implement already, but not tested
