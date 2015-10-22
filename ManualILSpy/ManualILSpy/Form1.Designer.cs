@@ -46,6 +46,7 @@
             // 
             // testReadWriteJsonBtn
             // 
+            this.testReadWriteJsonBtn.Enabled = false;
             this.testReadWriteJsonBtn.Location = new System.Drawing.Point(324, 212);
             this.testReadWriteJsonBtn.Name = "testReadWriteJsonBtn";
             this.testReadWriteJsonBtn.Size = new System.Drawing.Size(124, 35);
@@ -182,6 +183,8 @@
             this.Controls.Add(this.browse_btn);
             this.Controls.Add(this.textBox1);
             this.Controls.Add(this.testReadWriteJsonBtn);
+            this.MaximumSize = new System.Drawing.Size(473, 384);
+            this.MinimumSize = new System.Drawing.Size(473, 384);
             this.Name = "Form1";
             this.Text = "Form1";
             this.decompile_panel.ResumeLayout(false);

@@ -21,6 +21,7 @@ namespace ManualILSpy
         string _path;
         string _debugPath;
         string _releasePath;
+        string _initPathFile;
         OpenFileDialog _browseExeOrDll;
         OpenFileDialog _browseOutput;
 
@@ -36,10 +37,27 @@ namespace ManualILSpy
             _browseOutput = new OpenFileDialog();
             _browseOutput.Filter = "Text Files)|*.txt|Json Files|*.json";
 
-            _debugPath = @"D:\[]Documents\ManualILSpy\JsonDebug.json";
-            _releasePath = @"D:\[]Documents\ManualILSpy\JsonRelease.json";
+            _initPathFile = @".\default_path.txt";
+            ReadDefaultPath();
+
             debug_path_txt.Text = _debugPath;
             release_path_txt.Text = _releasePath;
+        }
+
+        private void ReadDefaultPath()
+        {
+            if (File.Exists(_initPathFile))
+            {
+                var text = File.ReadAllLines(_initPathFile);
+                _debugPath = text[0];
+                _releasePath = text[1];
+            }
+        }
+
+        private void WriteNewPath()
+        {
+            string[] paths = new string[] { _debugPath, _releasePath };
+            File.WriteAllLines(_initPathFile, paths);
         }
 
         private void Browse_btn_Click(object sender, EventArgs e)
@@ -153,6 +171,7 @@ namespace ManualILSpy
                                       : _releasePath;
             File.WriteAllText(resultPath, json);
             MessageBox.Show("Success!!");
+            System.Diagnostics.Process.Start(resultPath);
         }
 
         private string FindSelectedNode(TreeNodeCollection collection)
@@ -295,12 +314,14 @@ namespace ManualILSpy
         {
             debug_path_txt.Text = BrowsePath(_browseOutput);
             _debugPath = debug_path_txt.Text;
+            WriteNewPath();
         }
 
         private void release_path_btn_Click(object sender, EventArgs e)
         {
             release_path_txt.Text = BrowsePath(_browseOutput);
             _releasePath = release_path_txt.Text;
+            WriteNewPath();
         }
 
         private void textBox1_TextChanged(object sender, EventArgs e)
