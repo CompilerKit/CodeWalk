@@ -29,8 +29,7 @@ using System.Xml;
 using ICSharpCode.Decompiler;
 using ICSharpCode.Decompiler.Ast;
 using ICSharpCode.Decompiler.Ast.Transforms;
-//using ICSharpCode.ILSpy.Options;
-//using ICSharpCode.ILSpy.XmlDoc;
+using ICSharpCode.ILSpy.XmlDoc;
 using ICSharpCode.NRefactory.CSharp;
 using ManualILSpy.Extention;
 using Mono.Cecil;
@@ -168,7 +167,7 @@ namespace ICSharpCode.ILSpy
 
         public override void DecompileProperty(PropertyDefinition property, ITextOutput output, DecompilationOptions options)
         {
-            WriteCommentLine(output, TypeToString(property.DeclaringType, includeNamespace: true));
+            //WriteCommentLine(output, TypeToString(property.DeclaringType, includeNamespace: true));
             AstBuilder codeDomBuilder = CreateAstBuilder(options, currentType: property.DeclaringType, isSingleMember: true);
             codeDomBuilder.AddProperty(property);
             RunTransformsAndGenerateCode(codeDomBuilder, output, options);
@@ -176,7 +175,7 @@ namespace ICSharpCode.ILSpy
 
         public override void DecompileField(FieldDefinition field, ITextOutput output, DecompilationOptions options)
         {
-            WriteCommentLine(output, TypeToString(field.DeclaringType, includeNamespace: true));
+            //WriteCommentLine(output, TypeToString(field.DeclaringType, includeNamespace: true));
             AstBuilder codeDomBuilder = CreateAstBuilder(options, currentType: field.DeclaringType, isSingleMember: true);
             if (field.IsLiteral)
             {
@@ -255,7 +254,7 @@ namespace ICSharpCode.ILSpy
             {
                 try
                 {
-                    //AddXmlDocTransform.Run(astBuilder.SyntaxTree);
+                    AddXmlDocTransform.Run(astBuilder.SyntaxTree);
                 }
                 catch (XmlException ex)
                 {
