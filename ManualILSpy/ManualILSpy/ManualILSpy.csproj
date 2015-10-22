@@ -59,6 +59,7 @@
     <Compile Include="Extention\AstToJson.cs" />
     <Compile Include="Extention\MyJson.cs" />
     <Compile Include="Extention\TextOutput.cs" />
+    <Compile Include="ILSpy\AddXmlDocTransform.cs" />
     <Compile Include="ILSpy\AssemblyList.cs" />
     <Compile Include="ILSpy\CSharpLanguage.cs" />
     <Compile Include="ILSpy\DecompilerSetting.cs" />
@@ -73,6 +74,8 @@
     <Compile Include="ILSpy\GacInterop.cs" />
     <Compile Include="ILSpy\Language.cs" />
     <Compile Include="ILSpy\LoadAssembly.cs" />
+    <Compile Include="ILSpy\XmlDocKeyProvider.cs" />
+    <Compile Include="ILSpy\XmlDocLoader.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Form1.resx">

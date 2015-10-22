@@ -29,8 +29,7 @@ using System.Xml;
 using ICSharpCode.Decompiler;
 using ICSharpCode.Decompiler.Ast;
 using ICSharpCode.Decompiler.Ast.Transforms;
-//using ICSharpCode.ILSpy.Options;
-//using ICSharpCode.ILSpy.XmlDoc;
+using ICSharpCode.ILSpy.XmlDoc;
 using ICSharpCode.NRefactory.CSharp;
 using ManualILSpy.Extention;
 using Mono.Cecil;
@@ -255,7 +254,7 @@ namespace ICSharpCode.ILSpy
             {
                 try
                 {
-                    //AddXmlDocTransform.Run(astBuilder.SyntaxTree);
+                    AddXmlDocTransform.Run(astBuilder.SyntaxTree);
                 }
                 catch (XmlException ex)
                 {
