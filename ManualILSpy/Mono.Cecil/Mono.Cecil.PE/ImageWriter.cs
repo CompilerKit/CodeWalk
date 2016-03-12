@@ -1,29 +1,11 @@
 //
-// ImageWriter.cs
-//
 // Author:
 //   Jb Evain (jbevain@gmail.com)
 //
-// Copyright (c) 2008 - 2011 Jb Evain
+// Copyright (c) 2008 - 2015 Jb Evain
+// Copyright (c) 2008 - 2011 Novell, Inc.
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+// Licensed under the MIT/X11 license.
 //
 
 using System;
@@ -49,7 +31,7 @@ namespace Mono.Cecil.PE {
 
 		ByteBuffer win32_resources;
 
-		const uint pe_header_size = 0x178u;
+		const uint pe_header_size = 0x98u;
 		const uint section_header_size = 0x28u;
 		const uint file_alignment = 0x200;
 		const uint section_alignment = 0x2000;
@@ -58,6 +40,7 @@ namespace Mono.Cecil.PE {
 		internal const RVA text_rva = 0x2000;
 
 		readonly bool pe64;
+		readonly bool has_reloc;
 		readonly uint time_stamp;
 
 		internal Section text;
@@ -71,11 +54,12 @@ namespace Mono.Cecil.PE {
 		{
 			this.module = module;
 			this.metadata = metadata;
-			this.pe64 = module.Architecture != TargetArchitecture.I386;
+			this.pe64 = module.Architecture == TargetArchitecture.AMD64 || module.Architecture == TargetArchitecture.IA64;
+			this.has_reloc = module.Architecture == TargetArchitecture.I386;
 			this.GetDebugHeader ();
 			this.GetWin32Resources ();
 			this.text_map = BuildTextMap ();
-			this.sections = (ushort) (pe64 ? 1 : 2); // text + reloc
+			this.sections = (ushort) (has_reloc ? 2 : 1); // text + reloc?
 			this.time_stamp = (uint) DateTime.UtcNow.Subtract (new DateTime (1970, 1, 1)).TotalSeconds;
 		}
 
@@ -133,7 +117,7 @@ namespace Mono.Cecil.PE {
 				previous = rsrc;
 			}
 
-			if (!pe64)
+			if (has_reloc)
 				reloc = CreateSection (".reloc", 12u, previous);
 		}
 
@@ -187,6 +171,11 @@ namespace Mono.Cecil.PE {
 			});
 		}
 
+		ushort SizeOfOptionalHeader ()
+		{
+			return (ushort) (!pe64 ? 0xe0 : 0xf0);
+		}
+
 		void WritePEFileHeader ()
 		{
 			WriteUInt32 (0x00004550);		// Magic
@@ -195,7 +184,7 @@ namespace Mono.Cecil.PE {
 			WriteUInt32 (time_stamp);
 			WriteUInt32 (0);	// PointerToSymbolTable
 			WriteUInt32 (0);	// NumberOfSymbols
-			WriteUInt16 ((ushort) (!pe64 ? 0xe0 : 0xf0));	// SizeOfOptionalHeader
+			WriteUInt16 (SizeOfOptionalHeader ());	// SizeOfOptionalHeader
 
 			// ExecutableImage | (pe64 ? 32BitsMachine : LargeAddressAware)
 			var characteristics = (ushort) (0x0002 | (!pe64 ? 0x0100 : 0x0020));
@@ -213,6 +202,8 @@ namespace Mono.Cecil.PE {
 				return 0x8664;
 			case TargetArchitecture.IA64:
 				return 0x0200;
+			case TargetArchitecture.ARMv7:
+				return 0x01c4;
 			}
 
 			throw new NotSupportedException ();
@@ -392,13 +383,36 @@ namespace Mono.Cecil.PE {
 				WriteUInt64 (rva);
 		}
 
+		void PrepareSection (Section section)
+		{
+			MoveTo (section.PointerToRawData);
+
+			const int buffer_size = 4096;
+
+			if (section.SizeOfRawData <= buffer_size) {
+				Write (new byte [section.SizeOfRawData]);
+				MoveTo (section.PointerToRawData);
+				return;
+			}
+
+			var written = 0;
+			var buffer = new byte [buffer_size];
+			while (written != section.SizeOfRawData) {
+				var write_size = System.Math.Min((int) section.SizeOfRawData - written, buffer_size);
+				Write (buffer, 0, write_size);
+				written += write_size;
+			}
+
+			MoveTo (section.PointerToRawData);
+		}
+
 		void WriteText ()
 		{
-			MoveTo (text.PointerToRawData);
+			PrepareSection (text);
 
 			// ImportAddressTable
 
-			if (!pe64) {
+			if (has_reloc) {
 				WriteRVA (text_map.GetRVA (TextSegment.ImportHintNameTable));
 				WriteRVA (0);
 			}
@@ -453,7 +467,7 @@ namespace Mono.Cecil.PE {
 				WriteDebugDirectory ();
 			}
 
-			if (pe64)
+			if (!has_reloc)
 				return;
 
 			// ImportDirectory
@@ -477,7 +491,7 @@ namespace Mono.Cecil.PE {
 			WriteUInt16 (1);	// MinorVersion
 			WriteUInt32 (0);	// Reserved
 
-			var version = GetZeroTerminatedString (GetVersion ());
+			var version = GetZeroTerminatedString (module.runtime_version);
 			WriteUInt32 ((uint) version.Length);
 			WriteBytes (version);
 			WriteUInt16 (0);	// Flags
@@ -490,21 +504,6 @@ namespace Mono.Cecil.PE {
 			WriteStreamHeader (ref offset, TextSegment.UserStringHeap, "#US");
 			WriteStreamHeader (ref offset, TextSegment.GuidHeap, "#GUID");
 			WriteStreamHeader (ref offset, TextSegment.BlobHeap, "#Blob");
-		}
-
-		string GetVersion ()
-		{
-			switch (module.Runtime) {
-			case TargetRuntime.Net_1_0:
-				return "v1.0.3705";
-			case TargetRuntime.Net_1_1:
-				return "v1.1.4322";
-			case TargetRuntime.Net_2_0:
-				return "v2.0.50727";
-			case TargetRuntime.Net_4_0:
-			default:
-				return "v4.0.30319";
-			}
 		}
 
 		ushort GetStreamCount ()
@@ -529,9 +528,14 @@ namespace Mono.Cecil.PE {
 			offset += length;
 		}
 
+		static int GetZeroTerminatedStringLength (string @string)
+		{
+			return (@string.Length + 1 + 3) & ~3;
+		}
+
 		static byte [] GetZeroTerminatedString (string @string)
 		{
-			return GetString (@string, (@string.Length + 1 + 3) & ~3);
+			return GetString (@string, GetZeroTerminatedStringLength (@string));
 		}
 
 		static byte [] GetSimpleString (string @string)
@@ -629,13 +633,13 @@ namespace Mono.Cecil.PE {
 
 		void WriteRsrc ()
 		{
-			MoveTo (rsrc.PointerToRawData);
+			PrepareSection (rsrc);
 			WriteBuffer (win32_resources);
 		}
 
 		void WriteReloc ()
 		{
-			MoveTo (reloc.PointerToRawData);
+			PrepareSection (reloc);
 
 			var reloc_rva = text_map.GetRVA (TextSegment.StartupStub);
 			reloc_rva += module.Architecture == TargetArchitecture.IA64 ? 0x20u : 2;
@@ -651,8 +655,6 @@ namespace Mono.Cecil.PE {
 			default:
 				throw new NotSupportedException();
 			}
-
-			WriteBytes (new byte [file_alignment - reloc.VirtualSize]);
 		}
 
 		public void WriteImage ()
@@ -679,7 +681,7 @@ namespace Mono.Cecil.PE {
 				metadata.table_heap.FixupData (map.GetRVA (TextSegment.Data));
 			map.AddMap (TextSegment.StrongNameSignature, GetStrongNameLength (), 4);
 
-			map.AddMap (TextSegment.MetadataHeader, GetMetadataHeaderLength ());
+			map.AddMap (TextSegment.MetadataHeader, GetMetadataHeaderLength (module.RuntimeVersion));
 			map.AddMap (TextSegment.TableHeap, metadata.table_heap.length, 4);
 			map.AddMap (TextSegment.StringHeap, metadata.string_heap.length, 4);
 			map.AddMap (TextSegment.UserStringHeap, metadata.user_string_heap.IsEmpty ? 0 : metadata.user_string_heap.length, 4);
@@ -696,7 +698,7 @@ namespace Mono.Cecil.PE {
 
 			map.AddMap (TextSegment.DebugDirectory, debug_dir_len, 4);
 
-			if (pe64) {
+			if (!has_reloc) {
 				var start = map.GetNextRVA (TextSegment.DebugDirectory);
 				map.AddMap (TextSegment.ImportDirectory, new Range (start, 0));
 				map.AddMap (TextSegment.ImportHintNameTable, new Range (start, 0));
@@ -731,11 +733,11 @@ namespace Mono.Cecil.PE {
 			}
 		}
 
-		int GetMetadataHeaderLength ()
+		int GetMetadataHeaderLength (string runtimeVersion)
 		{
 			return
 				// MetadataHeader
-				40
+				20 + GetZeroTerminatedStringLength (runtimeVersion)
 				// #~ header
 				+ 12
 				// #Strings header
@@ -777,7 +779,7 @@ namespace Mono.Cecil.PE {
 
 		public uint GetHeaderSize ()
 		{
-			return pe_header_size + (sections * section_header_size);
+			return pe_header_size + SizeOfOptionalHeader () + (sections * section_header_size);
 		}
 
 		void PatchWin32Resources (ByteBuffer resources)

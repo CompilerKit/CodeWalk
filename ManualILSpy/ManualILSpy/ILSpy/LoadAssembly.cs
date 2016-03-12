@@ -25,6 +25,7 @@ using Mono.Cecil;
 
 namespace ICSharpCode.ILSpy
 {
+    
     /// <summary>
     /// Represents an assembly loaded into ILSpy.
     /// </summary>
@@ -203,39 +204,9 @@ namespace ICSharpCode.ILSpy
             }
         }
 
-        sealed class MyAssemblyResolver : IAssemblyResolver
-        {
-            readonly LoadedAssembly parent;
 
-            public MyAssemblyResolver(LoadedAssembly parent)
-            {
-                this.parent = parent;
-            }
 
-            public AssemblyDefinition Resolve(AssemblyNameReference name)
-            {
-                var node = parent.LookupReferencedAssembly(name);
-                return node != null ? node.AssemblyDefinition : null;
-            }
 
-            public AssemblyDefinition Resolve(AssemblyNameReference name, ReaderParameters parameters)
-            {
-                var node = parent.LookupReferencedAssembly(name);
-                return node != null ? node.AssemblyDefinition : null;
-            }
-
-            public AssemblyDefinition Resolve(string fullName)
-            {
-                var node = parent.LookupReferencedAssembly(fullName);
-                return node != null ? node.AssemblyDefinition : null;
-            }
-
-            public AssemblyDefinition Resolve(string fullName, ReaderParameters parameters)
-            {
-                var node = parent.LookupReferencedAssembly(fullName);
-                return node != null ? node.AssemblyDefinition : null;
-            }
-        }
 
         public IAssemblyResolver GetAssemblyResolver()
         {
@@ -337,6 +308,34 @@ namespace ICSharpCode.ILSpy
         {
             assemblyTask.Wait();
         }
+        sealed class MyAssemblyResolver : IAssemblyResolver
+        {
+            readonly LoadedAssembly parent;
 
+            public MyAssemblyResolver(LoadedAssembly parent)
+            {
+                this.parent = parent;
+            }
+            public AssemblyDefinition Resolve(AssemblyNameReference name)
+            {
+                var node = parent.LookupReferencedAssembly(name);
+                return node != null ? node.AssemblyDefinition : null;
+            }
+            public AssemblyDefinition Resolve(AssemblyNameReference name, ReaderParameters parameters)
+            {
+                var node = parent.LookupReferencedAssembly(name);
+                return node != null ? node.AssemblyDefinition : null;
+            }
+            public AssemblyDefinition Resolve(string fullName)
+            {
+                var node = parent.LookupReferencedAssembly(fullName);
+                return node != null ? node.AssemblyDefinition : null;
+            }
+            public AssemblyDefinition Resolve(string fullName, ReaderParameters parameters)
+            {
+                var node = parent.LookupReferencedAssembly(fullName);
+                return node != null ? node.AssemblyDefinition : null;
+            }
+        }
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
+
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -69,17 +69,56 @@ namespace ManualILSpy
 
         Dictionary<string, TypeDefinition> nodeTypeDef = new Dictionary<string, TypeDefinition>();
         Dictionary<string, TreeNode> nodeTreeNode = new Dictionary<string, TreeNode>();
+
+        sealed class MyAssemblyResolver : IAssemblyResolver
+        {
+            readonly LoadedAssembly parent;
+
+            public MyAssemblyResolver(LoadedAssembly parent)
+            {
+                this.parent = parent;
+            }
+            public AssemblyDefinition Resolve(AssemblyNameReference name)
+            {
+                var node = parent.LookupReferencedAssembly(name);
+                return node != null ? node.AssemblyDefinition : null;
+            }
+            public AssemblyDefinition Resolve(AssemblyNameReference name, ReaderParameters parameters)
+            {
+                var node = parent.LookupReferencedAssembly(name);
+                return node != null ? node.AssemblyDefinition : null;
+            }
+            public AssemblyDefinition Resolve(string fullName)
+            {
+                var node = parent.LookupReferencedAssembly(fullName);
+                return node != null ? node.AssemblyDefinition : null;
+            }
+            public AssemblyDefinition Resolve(string fullName, ReaderParameters parameters)
+            {
+                var node = parent.LookupReferencedAssembly(fullName);
+                return node != null ? node.AssemblyDefinition : null;
+            }
+        }
+
         private void Scan_Click(object sender, EventArgs e)
         {
             nodeTypeDef.Clear();
             nodeTreeNode.Clear();
-            AssemblyDefinition assem = AssemblyDefinition.ReadAssembly(_path);
+
+            DefaultAssemblyResolver asmResolver = new DefaultAssemblyResolver();
+            ReaderParameters readPars = new ReaderParameters(ReadingMode.Deferred);
+            readPars.AssemblyResolver = asmResolver;
+            //temp
+            asmResolver.AddSearchDirectory(Path.GetDirectoryName(_path));
+
+
+            AssemblyDefinition assem = AssemblyDefinition.ReadAssembly(_path, readPars);
             var types = assem.MainModule.Types;
             var nameSpace = assem.MainModule.Types;
             TreeNode node = new TreeNode();
             foreach (TypeDefinition type in types)
             {
-                if(nodeTreeNode.TryGetValue(type.Namespace, out node))
+                if (nodeTreeNode.TryGetValue(type.Namespace, out node))
                 {
                     node.Nodes.Add(type.Name);
                 }
@@ -92,7 +131,7 @@ namespace ManualILSpy
                 nodeTypeDef.Add(type.FullName, type);
             }
             List<string> keys = new List<string>(nodeTreeNode.Keys);
-            foreach(string key in keys)
+            foreach (string key in keys)
             {
                 if (nodeTreeNode.TryGetValue(key, out node))
                     treeView1.Nodes.Add(node);
@@ -104,13 +143,13 @@ namespace ManualILSpy
         {
             TypeDefinition def;
             TreeNode node = new TreeNode(condition);
-            foreach(TypeDefinition type in types)
+            foreach (TypeDefinition type in types)
             {
-                if(nodeTypeDef.TryGetValue(condition, out def))
+                if (nodeTypeDef.TryGetValue(condition, out def))
                 {
                     break;
                 }
-                if(condition == type.Namespace)
+                if (condition == type.Namespace)
                 {
                     treeView1.Nodes.Add(type.FullName);
                     node.Nodes.Add(type.FullName);
@@ -163,12 +202,15 @@ namespace ManualILSpy
             }
             TypeDefinition type;
             string json = "null";
-            if(nodeTypeDef.TryGetValue(selected, out type))
+            if (nodeTypeDef.TryGetValue(selected, out type))
             {
                 json = GetJson(type, debug);
             }
             string resultPath = debug ? _debugPath
                                       : _releasePath;
+
+            resultPath = "d:\\WImageTest\\test_output1";
+
             File.WriteAllText(resultPath, json);
             MessageBox.Show("Success!!");
             System.Diagnostics.Process.Start(resultPath);
@@ -177,7 +219,7 @@ namespace ManualILSpy
         private string FindSelectedNode(TreeNodeCollection collection)
         {
             string selected = null;
-            foreach(TreeNode node in collection)
+            foreach (TreeNode node in collection)
             {
                 selected = FindSelected(node);
                 if (selected != null)
@@ -195,13 +237,13 @@ namespace ManualILSpy
             {
                 string selected = null;
                 int count = node.Nodes.Count;
-                for(int i = 0; i< count; i++)
+                for (int i = 0; i < count; i++)
                 {
-                    if(node.Nodes[i].IsSelected)
+                    if (node.Nodes[i].IsSelected)
                     {
                         return node.Nodes[i].Text;
                     }
-                    else if(node.Nodes[i].Nodes != null)
+                    else if (node.Nodes[i].Nodes != null)
                     {
                         string temp = FindSelected(node.Nodes[i]);
                         if (temp != null)
@@ -237,7 +279,7 @@ namespace ManualILSpy
             }
             return null;
         }
-        
+
         string _lastDir;
         private string BrowsePath(OpenFileDialog openFileDialog)
         {
@@ -259,7 +301,7 @@ namespace ManualILSpy
             }
             return path;
         }
-        
+
         private void DecompileMethod(Language language, MethodDefinition method, ITextOutput output, DecompilationOptions options)
         {
             language.DecompileMethod(method, output, options);

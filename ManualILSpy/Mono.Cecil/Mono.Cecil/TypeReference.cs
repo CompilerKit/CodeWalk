@@ -1,29 +1,11 @@
 //
-// TypeReference.cs
-//
 // Author:
 //   Jb Evain (jbevain@gmail.com)
 //
-// Copyright (c) 2008 - 2011 Jb Evain
+// Copyright (c) 2008 - 2015 Jb Evain
+// Copyright (c) 2008 - 2011 Novell, Inc.
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+// Licensed under the MIT/X11 license.
 //
 
 using System;
@@ -84,7 +66,7 @@ namespace Mono.Cecil {
 			get { return base.Name; }
 			set {
 				base.Name = value;
-				fullname = null;
+				ClearFullName ();
 			}
 		}
 
@@ -92,7 +74,7 @@ namespace Mono.Cecil {
 			get { return @namespace; }
 			set {
 				@namespace = value;
-				fullname = null;
+				ClearFullName ();
 			}
 		}
 
@@ -147,6 +129,15 @@ namespace Mono.Cecil {
 
 				return scope;
 			}
+			set {
+				var declaring_type = this.DeclaringType;
+				if (declaring_type != null) {
+					declaring_type.Scope = value;
+					return;
+				}
+
+				scope = value;
+			}
 		}
 
 		public bool IsNested {
@@ -157,7 +148,7 @@ namespace Mono.Cecil {
 			get { return base.DeclaringType; }
 			set {
 				base.DeclaringType = value;
-				fullname = null;
+				ClearFullName ();
 			}
 		}
 
@@ -166,13 +157,12 @@ namespace Mono.Cecil {
 				if (fullname != null)
 					return fullname;
 
+				fullname = this.TypeFullName ();
+
 				if (IsNested)
-					return fullname = DeclaringType.FullName + "/" + Name;
+					fullname = DeclaringType.FullName + "/" + fullname;
 
-				if (string.IsNullOrEmpty (@namespace))
-					return fullname = Name;
-
-				return fullname = @namespace + "." + Name;
+				return fullname;
 			}
 		}
 
@@ -251,6 +241,11 @@ namespace Mono.Cecil {
 			value_type = valueType;
 		}
 
+		protected virtual void ClearFullName ()
+		{
+			this.fullname = null;
+		}
+
 		public virtual TypeReference GetElementType ()
 		{
 			return this;
@@ -289,6 +284,13 @@ namespace Mono.Cecil {
 			default:
 				return false;
 			}
+		}
+
+		public static string TypeFullName (this TypeReference self)
+		{
+			return string.IsNullOrEmpty (self.Namespace)
+				? self.Name
+				: self.Namespace + '.' + self.Name;
 		}
 
 		public static bool IsTypeOf (this TypeReference self, string @namespace, string name)
