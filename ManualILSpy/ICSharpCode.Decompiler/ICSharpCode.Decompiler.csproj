@@ -1,67 +1,39 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
-    <ProjectGuid>{984CC812-9470-4A13-AFF9-CC44068D666C}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{875D2732-2CC5-4349-838D-B099357568E6}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>ICSharpCode.Decompiler</RootNamespace>
-    <AssemblyName>ICSharpCode.Decompiler</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <AllowUnsafeBlocks>False</AllowUnsafeBlocks>
-    <NoStdLib>False</NoStdLib>
-    <WarningLevel>4</WarningLevel>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <SignAssembly>True</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\NRefactory\ICSharpCode.NRefactory.snk</AssemblyOriginatorKeyFile>
-    <DelaySign>False</DelaySign>
-    <AssemblyOriginatorKeyMode>File</AssemblyOriginatorKeyMode>
+    <RootNamespace>ICS.Decompiler</RootNamespace>
+    <AssemblyName>ICS.Decompiler</AssemblyName>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Platform)' == 'AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <RegisterForComInterop>False</RegisterForComInterop>
-    <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
-    <BaseAddress>448462848</BaseAddress>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>Full</DebugType>
-    <Optimize>False</Optimize>
-    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>PdbOnly</DebugType>
-    <Optimize>True</Optimize>
-    <CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
     <DefineConstants>TRACE</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(BuildNuGetPackage)' == 'True' ">
-    <OutputPath>bin\NuGet-$(Configuration)\</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ICSharpCode.NRefactory" Condition=" '$(BuildNuGetPackage)' == 'True' ">
-      <HintPath>..\packages\ICSharpCode.NRefactory.5.5.1\lib\Net40\ICSharpCode.NRefactory.dll</HintPath>
-    </Reference>
-    <Reference Include="ICSharpCode.NRefactory.CSharp" Condition=" '$(BuildNuGetPackage)' == 'True' ">
-      <HintPath>..\packages\ICSharpCode.NRefactory.5.5.1\lib\Net40\ICSharpCode.NRefactory.CSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="Mono.Cecil" Condition=" '$(BuildNuGetPackage)' == 'True' ">
-      <HintPath>..\packages\Mono.Cecil.0.9.5.4\lib\net40\Mono.Cecil.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Core">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
-    </Reference>
-    <Reference Include="System.Xml" />
-    <Reference Include="System.Xml.Linq">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Ast\Annotations.cs" />
@@ -86,10 +58,10 @@
     <Compile Include="Ast\Transforms\IntroduceQueryExpressions.cs" />
     <Compile Include="Ast\Transforms\IntroduceUnsafeModifier.cs" />
     <Compile Include="Ast\Transforms\IntroduceUsingDeclarations.cs" />
-    <Compile Include="Ast\Transforms\ReplaceMethodCallsWithOperators.cs" />
-    <Compile Include="Ast\Transforms\PushNegation.cs" />
-    <Compile Include="Ast\Transforms\TransformationPipeline.cs" />
     <Compile Include="Ast\Transforms\PatternStatementTransform.cs" />
+    <Compile Include="Ast\Transforms\PushNegation.cs" />
+    <Compile Include="Ast\Transforms\ReplaceMethodCallsWithOperators.cs" />
+    <Compile Include="Ast\Transforms\TransformationPipeline.cs" />
     <Compile Include="Ast\TypesHierarchyHelpers.cs" />
     <Compile Include="CecilExtensions.cs" />
     <Compile Include="CodeMappings.cs" />
@@ -114,8 +86,6 @@
     <Compile Include="FlowAnalysis\SsaVariable.cs" />
     <Compile Include="FlowAnalysis\TransformToSsa.cs" />
     <Compile Include="ILAst\AsyncDecompiler.cs" />
-    <Compile Include="ILAst\LiftedOperators.cs" />
-    <Compile Include="ILAst\InitializerPeepholeTransforms.cs" />
     <Compile Include="ILAst\DefaultDictionary.cs" />
     <Compile Include="ILAst\GotoRemoval.cs" />
     <Compile Include="ILAst\ILAstBuilder.cs" />
@@ -123,6 +93,8 @@
     <Compile Include="ILAst\ILAstTypes.cs" />
     <Compile Include="ILAst\ILCodes.cs" />
     <Compile Include="ILAst\ILInlining.cs" />
+    <Compile Include="ILAst\InitializerPeepholeTransforms.cs" />
+    <Compile Include="ILAst\LiftedOperators.cs" />
     <Compile Include="ILAst\LoopsAndConditions.cs" />
     <Compile Include="ILAst\PatternMatching.cs" />
     <Compile Include="ILAst\PeepholeTransform.cs" />
@@ -136,22 +108,31 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReferenceResolvingException.cs" />
     <Compile Include="TextOutputWriter.cs" />
-    <None Include="Properties\AssemblyInfo.template.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Mono.Cecil\Mono.Cecil.csproj"  Condition=" '$(BuildNuGetPackage)' != 'True' ">
-      <Project>{D68133BD-1E63-496E-9EDE-4FBDBF77B486}</Project>
+    <ProjectReference Include="..\Mono.Cecil\Mono.Cecil.csproj">
+      <Project>{d68133bd-1e63-496e-9ede-4fbdbf77b486}</Project>
       <Name>Mono.Cecil</Name>
     </ProjectReference>
-    <ProjectReference Include="..\NRefactory\ICSharpCode.NRefactory.CSharp\ICSharpCode.NRefactory.CSharp.csproj"  Condition=" '$(BuildNuGetPackage)' != 'True' ">
-      <Project>{53DCA265-3C3C-42F9-B647-F72BA678122B}</Project>
+    <ProjectReference Include="..\Mono.Cecil\symbols\pdb\Mono.Cecil.Pdb.csproj">
+      <Project>{63e6915c-7ea4-4d76-ab28-0d7191eea626}</Project>
+      <Name>Mono.Cecil.Pdb</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NRefactory\ICSharpCode.NRefactory.CSharp\ICSharpCode.NRefactory.CSharp.csproj">
+      <Project>{53dca265-3c3c-42f9-b647-f72ba678122b}</Project>
       <Name>ICSharpCode.NRefactory.CSharp</Name>
     </ProjectReference>
-    <ProjectReference Include="..\NRefactory\ICSharpCode.NRefactory\ICSharpCode.NRefactory.csproj" Condition=" '$(BuildNuGetPackage)' != 'True' ">
-      <Project>{3B2A5653-EC97-4001-BB9B-D90F1AF2C371}</Project>
+    <ProjectReference Include="..\NRefactory\ICSharpCode.NRefactory\ICSharpCode.NRefactory.csproj">
+      <Project>{3b2a5653-ec97-4001-bb9b-d90f1af2c371}</Project>
       <Name>ICSharpCode.NRefactory</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.Targets" />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
 </Project>

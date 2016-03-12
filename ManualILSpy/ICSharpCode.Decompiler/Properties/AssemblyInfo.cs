@@ -1,27 +1,36 @@
-﻿#region Using directives
-
-using System;
-using System.Resources;
-using System.Reflection;
+﻿using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-#endregion
-
-[assembly: AssemblyTitle("ICSharpCode.Decompiler")]
-[assembly: AssemblyDescription("IL decompiler engine")]
-[assembly: AssemblyCompany("ic#code")]
-[assembly: AssemblyProduct("ILSpy")]
-[assembly: AssemblyCopyright("Copyright 2011-2014 AlphaSierraPapa for the SharpDevelop Team")]
+// General Information about an assembly is controlled through the following 
+// set of attributes. Change these attribute values to modify the information
+// associated with an assembly.
+[assembly: AssemblyTitle("ICS.Decompiler")]
+[assembly: AssemblyDescription("")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("ICS.Decompiler")]
+[assembly: AssemblyCopyright("Copyright ©  2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
-// This sets the default COM visibility of types in the assembly to invisible.
-// If you need to expose a type to COM, use [ComVisible(true)] on that type.
+// Setting ComVisible to false makes the types in this assembly not visible 
+// to COM components.  If you need to access a type in this assembly from 
+// COM, set the ComVisible attribute to true on that type.
 [assembly: ComVisible(false)]
 
-[assembly: AssemblyVersion("2.3.1.1856")]
-[assembly: AssemblyInformationalVersion("2.3.1.1856-2726336b")]
-[assembly: NeutralResourcesLanguage("en-US")]
+// The following GUID is for the ID of the typelib if this project is exposed to COM
+[assembly: Guid("875d2732-2cc5-4349-838d-b099357568e6")]
 
-[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2243:AttributeStringLiteralsShouldParseCorrectly",
-	Justification = "AssemblyInformationalVersion does not need to be a parsable version")]
+// Version information for an assembly consists of the following four values:
+//
+//      Major Version
+//      Minor Version 
+//      Build Number
+//      Revision
+//
+// You can specify all the values or you can default the Build and Revision Numbers 
+// by using the '*' as shown below:
+// [assembly: AssemblyVersion("1.0.*")]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]

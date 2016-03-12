@@ -684,6 +684,7 @@ namespace ICSharpCode.ILSpy
             if (currentModule == null)
                 currentModule = currentType.Module;
             DecompilerSettings settings = options.DecompilerSettings;
+            
             if (isSingleMember)
             {
                 settings = settings.Clone();

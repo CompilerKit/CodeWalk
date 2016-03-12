@@ -478,7 +478,7 @@ namespace ICSharpCode.Decompiler.ILAst
 					if (forceInferChildren) {
 						InferTypeForExpression(expr.Arguments[0], typeSystem.TypedReference);
 					}
-					return new TypeReference("System", "RuntimeTypeHandle", module, module.TypeSystem.Corlib, true);
+					return new TypeReference("System", "RuntimeTypeHandle", module, module.TypeSystem.CoreLibrary, true);
 				case ILCode.Refanyval:
 					if (forceInferChildren) {
 						InferTypeForExpression(expr.Arguments[0], typeSystem.TypedReference);
