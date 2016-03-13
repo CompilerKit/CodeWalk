@@ -11,7 +11,7 @@ using System.Linq;
 
 namespace ManualILSpy.Extention
 {
-    public class AstCSharpToJsonVisitor : IAstVisitor
+    public partial class AstCSharpToJsonVisitor : IAstVisitor
     {
         Stack<JsonValue> jsonValueStack = new Stack<JsonValue>();
         Dictionary<string, int> typeInfo = new Dictionary<string, int>();
@@ -730,11 +730,9 @@ namespace ManualILSpy.Extention
             expression.Comment = "VisitThisReferenceExpression";
             expression.AddJsonValues("expression-type", new JsonElement("this-reference-expression"));
             expression.AddJsonValues("keyword", new JsonElement("this"));
+             
+            AddTypeInformation(expression, thisReferenceExpression);
 
-            //get type of this expression
-            var expressionType = thisReferenceExpression.Annotation<ICSharpCode.Decompiler.Ast.TypeInformation>();
-            int typeIndex = GetTypeIndex(expressionType.ExpectedType.FullName);
-            expression.AddJsonValues("type-info", new JsonElement(typeIndex));
             Push(expression);
         }
 

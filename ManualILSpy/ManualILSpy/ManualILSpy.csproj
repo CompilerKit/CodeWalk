@@ -42,7 +42,8 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Extention\AstToJson.cs" />
+    <Compile Include="Extention\AstCSharpToJsonVisitor.cs" />
+    <Compile Include="Extention\AstCSharpToJsonVisitor_1.cs" />
     <Compile Include="Extention\MyJson.cs" />
     <Compile Include="Extention\TextOutput.cs" />
     <Compile Include="ILSpy\AddXmlDocTransform.cs" />
