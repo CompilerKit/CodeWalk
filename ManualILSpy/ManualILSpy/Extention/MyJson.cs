@@ -38,7 +38,7 @@ namespace ManualILSpy.Extention.Json
             type = JsonValueType.Object;
         }
 
-        public void AddJsonValues(string key, JsonValue value)
+        public void AddJsonValue(string key, JsonValue value)
         {
             if (!Values.ContainsKey(key))
             {
@@ -49,7 +49,14 @@ namespace ManualILSpy.Extention.Json
                 throw new Exception("This key already contain value");
             }
         }
-
+        public void AddJsonValue(string key, int value)
+        {
+            AddJsonValue(key, new JsonElement(value));
+        }
+        public void AddJsonValue(string key, string value)
+        {
+            AddJsonValue(key, new JsonElement(value));
+        }
         public override void AcceptWriter(ITextOutput writer)
         {
             List<string> keyList = new List<string>(Values.Keys);
@@ -622,7 +629,7 @@ namespace ManualILSpy.Extention.Json
                 }
                 eat();
                 rightJsonValueType = GetJsonType();
-                obj.AddJsonValues(key, ReadByType(rightJsonValueType));
+                obj.AddJsonValue(key, ReadByType(rightJsonValueType));
                 if (CurrentChar == ',')
                 {
                     eat();

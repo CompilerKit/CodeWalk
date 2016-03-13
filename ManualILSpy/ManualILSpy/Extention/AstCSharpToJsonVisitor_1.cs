@@ -21,8 +21,23 @@ namespace ManualILSpy.Extention
         void AddTypeInformation(JsonObject jsonObject, Expression expression)
         {
             var expressionType = expression.Annotation<ICSharpCode.Decompiler.Ast.TypeInformation>();
-            int typeIndex = GetTypeIndex(expressionType.ExpectedType.FullName);
-            jsonObject.AddJsonValues("typeinfo", new JsonElement(typeIndex));
+            if (expressionType != null)
+            {
+                int typeIndex = GetTypeIndex(expressionType.ExpectedType.FullName);
+                jsonObject.AddJsonValue("typeinfo", new JsonElement(typeIndex));
+            }
+            else
+            {
+                throw new Exception("typeinfo not found!");
+            }
+        }
+        /// <summary>
+        /// get type info and push on stack
+        /// </summary>
+        public void PushWithTypeInfo(JsonObject jsonObject, Expression expression)
+        {
+            AddTypeInformation(jsonObject, expression);
+            Push(jsonObject);
         }
     }
 }

@@ -174,12 +174,12 @@ namespace ManualILSpy.Extention
             if (block != null)
             {
                 VisitBlockStatement(block);
-                embedded.AddJsonValues("block-statement", Pop());
+                embedded.AddJsonValue("block-statement", Pop());
             }
             else
             {
                 embeddedStatement.AcceptVisitor(this);
-                embedded.AddJsonValues("statement", Pop());
+                embedded.AddJsonValue("statement", Pop());
             }
             return embedded;
         }
@@ -234,15 +234,15 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitAnonymousMethodExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("anonymous-method-expression"));
-            expression.AddJsonValues("keyword", GetKeyword(AnonymousMethodExpression.AsyncModifierRole));
-            expression.AddJsonValues("delegate-keyword", GetKeyword(AnonymousMethodExpression.DelegateKeywordRole));
+            expression.AddJsonValue("expression-type", new JsonElement("anonymous-method-expression"));
+            expression.AddJsonValue("keyword", GetKeyword(AnonymousMethodExpression.AsyncModifierRole));
+            expression.AddJsonValue("delegate-keyword", GetKeyword(AnonymousMethodExpression.DelegateKeywordRole));
             if (anonymousMethodExpression.HasParameterList)
             {
-                expression.AddJsonValues("arguments", GetCommaSeparatedList(anonymousMethodExpression.Parameters));
+                expression.AddJsonValue("arguments", GetCommaSeparatedList(anonymousMethodExpression.Parameters));
             }
             anonymousMethodExpression.Body.AcceptVisitor(this);
-            expression.AddJsonValues("body", Pop());
+            expression.AddJsonValue("body", Pop());
             Push(expression);
         }
 
@@ -250,33 +250,33 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitUndocumentedExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("undocumented-expression"));
+            expression.AddJsonValue("expression-type", new JsonElement("undocumented-expression"));
             switch (undocumentedExpression.UndocumentedExpressionType)
             {
                 case UndocumentedExpressionType.ArgList:
                 case UndocumentedExpressionType.ArgListAccess:
                     GetTypeInfo(UndocumentedExpression.ArglistKeywordRole.Token);
-                    expression.AddJsonValues("type-info", GetTypeInfo(UndocumentedExpression.ArglistKeywordRole.Token));
+                    expression.AddJsonValue("type-info", GetTypeInfo(UndocumentedExpression.ArglistKeywordRole.Token));
                     break;
                 case UndocumentedExpressionType.MakeRef:
-                    expression.AddJsonValues("type-info", GetTypeInfo(UndocumentedExpression.MakerefKeywordRole.Token));
+                    expression.AddJsonValue("type-info", GetTypeInfo(UndocumentedExpression.MakerefKeywordRole.Token));
                     break;
                 case UndocumentedExpressionType.RefType:
-                    expression.AddJsonValues("type-info", GetTypeInfo(UndocumentedExpression.ReftypeKeywordRole.Token));
+                    expression.AddJsonValue("type-info", GetTypeInfo(UndocumentedExpression.ReftypeKeywordRole.Token));
                     break;
                 case UndocumentedExpressionType.RefValue:
-                    expression.AddJsonValues("type-info", GetTypeInfo(UndocumentedExpression.RefvalueKeywordRole.Token));
+                    expression.AddJsonValue("type-info", GetTypeInfo(UndocumentedExpression.RefvalueKeywordRole.Token));
                     break;
                 default:
                     throw new Exception("unknowed type");
             }
             if (undocumentedExpression.Arguments.Count > 0)
             {
-                expression.AddJsonValues("arguments", GetCommaSeparatedList(undocumentedExpression.Arguments));
+                expression.AddJsonValue("arguments", GetCommaSeparatedList(undocumentedExpression.Arguments));
             }
             else
             {
-                expression.AddJsonValues("arguments", null);
+                expression.AddJsonValue("arguments", null);
             }
             Push(expression);
             //throw new Exception("first time testing");//implement already, but not tested
@@ -286,13 +286,13 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitArrayCreateExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("array-create-expression"));
-            expression.AddJsonValues("keyword", GetKeyword(ArrayCreateExpression.NewKeywordRole));
+            expression.AddJsonValue("expression-type", new JsonElement("array-create-expression"));
+            expression.AddJsonValue("keyword", GetKeyword(ArrayCreateExpression.NewKeywordRole));
             arrayCreateExpression.Type.AcceptVisitor(this);
-            expression.AddJsonValues("array-type", Pop());
+            expression.AddJsonValue("array-type", Pop());
             if (arrayCreateExpression.Arguments.Count > 0)
             {
-                expression.AddJsonValues("arguments", GetCommaSeparatedList(arrayCreateExpression.Arguments));
+                expression.AddJsonValue("arguments", GetCommaSeparatedList(arrayCreateExpression.Arguments));
             }
             JsonArray specifierArr = new JsonArray();
             foreach (var specifier in arrayCreateExpression.AdditionalArraySpecifiers)
@@ -308,9 +308,9 @@ namespace ManualILSpy.Extention
             {
                 specifierArr = null;
             }
-            expression.AddJsonValues("specifier", specifierArr);
+            expression.AddJsonValue("specifier", specifierArr);
             arrayCreateExpression.Initializer.AcceptVisitor(this);
-            expression.AddJsonValues("initializer", Pop());
+            expression.AddJsonValue("initializer", Pop());
             Push(expression);
         }
 
@@ -318,19 +318,19 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitArrayInitializerExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("array-initializer-expression"));
+            expression.AddJsonValue("expression-type", new JsonElement("array-initializer-expression"));
             bool bracesAreOptional = arrayInitializerExpression.Elements.Count == 1
                 && IsObjectOrCollectionInitializer(arrayInitializerExpression.Parent)
                 && !CanBeConfusedWithObjectInitializer(arrayInitializerExpression.Elements.Single());
             if (bracesAreOptional && arrayInitializerExpression.LBraceToken.IsNull)
             {
                 arrayInitializerExpression.Elements.Single().AcceptVisitor(this);
-                expression.AddJsonValues("elements", Pop());
+                expression.AddJsonValue("elements", Pop());
             }
             else
             {
                 var json = GetInitializerElements(arrayInitializerExpression.Elements);
-                expression.AddJsonValues("elements", json);
+                expression.AddJsonValue("elements", json);
             }
             Push(expression);
         }
@@ -379,10 +379,10 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitAsExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("as-expression"));
-            expression.AddJsonValues("keyword", GetKeyword(AsExpression.AsKeywordRole));
+            expression.AddJsonValue("expression-type", new JsonElement("as-expression"));
+            expression.AddJsonValue("keyword", GetKeyword(AsExpression.AsKeywordRole));
             asExpression.Type.AcceptVisitor(this);
-            expression.AddJsonValues("type-info", Pop());
+            expression.AddJsonValue("type-info", Pop());
 
             Push(expression);
         }
@@ -391,13 +391,13 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitAssignmentExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("assignment-expression"));
+            expression.AddJsonValue("expression-type", new JsonElement("assignment-expression"));
             assignmentExpression.Left.AcceptVisitor(this);
-            expression.AddJsonValues("left-operand", Pop());
+            expression.AddJsonValue("left-operand", Pop());
             TokenRole operatorRole = AssignmentExpression.GetOperatorRole(assignmentExpression.Operator);
-            expression.AddJsonValues("operator", GetKeyword(operatorRole));
+            expression.AddJsonValue("operator", GetKeyword(operatorRole));
             assignmentExpression.Right.AcceptVisitor(this);
-            expression.AddJsonValues("right-operand", Pop());
+            expression.AddJsonValue("right-operand", Pop());
             Push(expression);
         }
 
@@ -405,8 +405,8 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitBaseReferenceExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("base-reference-expression"));
-            expression.AddJsonValues("keyword", new JsonElement("base"));
+            expression.AddJsonValue("expression-type", new JsonElement("base-reference-expression"));
+            expression.AddJsonValue("keyword", new JsonElement("base"));
 
             Push(expression);
             //throw new Exception("first time testing");//implement already, but not tested
@@ -416,37 +416,37 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitBinaryOperatorExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("binary-operator-expression"));
+            expression.AddJsonValue("expression-type", new JsonElement("binary-operator-expression"));
             binaryOperatorExpression.Left.AcceptVisitor(this);
-            expression.AddJsonValues("left-operand", Pop());
+            expression.AddJsonValue("left-operand", Pop());
             string opt = BinaryOperatorExpression.GetOperatorRole(binaryOperatorExpression.Operator).Token;
-            expression.AddJsonValues("operator", new JsonElement(opt));
+            expression.AddJsonValue("operator", new JsonElement(opt));
             binaryOperatorExpression.Right.AcceptVisitor(this);
-            expression.AddJsonValues("right-operand", Pop());
-            Push(expression);
-        }
+            expression.AddJsonValue("right-operand", Pop());
 
+
+            PushWithTypeInfo(expression, binaryOperatorExpression);
+        }
         public void VisitCastExpression(CastExpression castExpression)
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitCastExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("cast-expression"));
+            expression.AddJsonValue("expression-type", new JsonElement("cast-expression"));
             castExpression.Type.AcceptVisitor(this);
-            expression.AddJsonValues("type-info", Pop());
+            expression.AddJsonValue("type-info", Pop());
             castExpression.Expression.AcceptVisitor(this);
-            expression.AddJsonValues("expression", Pop());
+            expression.AddJsonValue("expression", Pop());
 
-            Push(expression);
+            PushWithTypeInfo(expression, castExpression);
         }
-
         public void VisitCheckedExpression(CheckedExpression checkedExpression)
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitCheckedExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("checked-expression"));
-            expression.AddJsonValues("keyword", GetKeyword(CheckedExpression.CheckedKeywordRole));
+            expression.AddJsonValue("expression-type", new JsonElement("checked-expression"));
+            expression.AddJsonValue("keyword", GetKeyword(CheckedExpression.CheckedKeywordRole));
             checkedExpression.Expression.AcceptVisitor(this);
-            expression.AddJsonValues("expression", Pop());
+            expression.AddJsonValue("expression", Pop());
 
             Push(expression);
             throw new Exception("first time testing");//implement already, but not tested
@@ -456,13 +456,13 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitConditionalExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("conditional-expression"));
+            expression.AddJsonValue("expression-type", new JsonElement("conditional-expression"));
             conditionalExpression.Condition.AcceptVisitor(this);
-            expression.AddJsonValues("condition", Pop());
+            expression.AddJsonValue("condition", Pop());
             conditionalExpression.TrueExpression.AcceptVisitor(this);
-            expression.AddJsonValues("true-expression", Pop());
+            expression.AddJsonValue("true-expression", Pop());
             conditionalExpression.FalseExpression.AcceptVisitor(this);
-            expression.AddJsonValues("false-expression", Pop());
+            expression.AddJsonValue("false-expression", Pop());
 
             Push(expression);
             //throw new Exception("first time testing");//implement already, but not tested
@@ -472,10 +472,10 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitDefaultValueExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("default-value-expression"));
-            expression.AddJsonValues("keyword", GetKeyword(DefaultValueExpression.DefaultKeywordRole));
+            expression.AddJsonValue("expression-type", new JsonElement("default-value-expression"));
+            expression.AddJsonValue("keyword", GetKeyword(DefaultValueExpression.DefaultKeywordRole));
             defaultValueExpression.Type.AcceptVisitor(this);
-            expression.AddJsonValues("type-info", Pop());
+            expression.AddJsonValue("type-info", Pop());
 
             Push(expression);
             //throw new Exception("first time testing");//implement already, but not tested
@@ -485,20 +485,20 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitDirectionExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("direction-expression"));
+            expression.AddJsonValue("expression-type", new JsonElement("direction-expression"));
             switch (directionExpression.FieldDirection)
             {
                 case FieldDirection.Out:
-                    expression.AddJsonValues("keyword", GetKeyword(DirectionExpression.OutKeywordRole));
+                    expression.AddJsonValue("keyword", GetKeyword(DirectionExpression.OutKeywordRole));
                     break;
                 case FieldDirection.Ref:
-                    expression.AddJsonValues("keyword", GetKeyword(DirectionExpression.RefKeywordRole));
+                    expression.AddJsonValue("keyword", GetKeyword(DirectionExpression.RefKeywordRole));
                     break;
                 default:
                     throw new NotSupportedException("Invalid value for FieldDirection");
             }
             directionExpression.Expression.AcceptVisitor(this);
-            expression.AddJsonValues("expression", Pop());
+            expression.AddJsonValue("expression", Pop());
 
             Push(expression);
         }
@@ -512,10 +512,10 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitIndexerExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("indexer-expression"));
+            expression.AddJsonValue("expression-type", new JsonElement("indexer-expression"));
             indexerExpression.Target.AcceptVisitor(this);
-            expression.AddJsonValues("target", Pop());
-            expression.AddJsonValues("arguments", GetCommaSeparatedList(indexerExpression.Arguments));
+            expression.AddJsonValue("target", Pop());
+            expression.AddJsonValue("arguments", GetCommaSeparatedList(indexerExpression.Arguments));
             Push(expression);
         }
 
@@ -523,10 +523,10 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitInvocationExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("invocation"));
+            expression.AddJsonValue("expression-type", new JsonElement("invocation"));
             invocationExpression.Target.AcceptVisitor(this);
-            expression.AddJsonValues("target", Pop());
-            expression.AddJsonValues("arguments", GetCommaSeparatedList(invocationExpression.Arguments));
+            expression.AddJsonValue("target", Pop());
+            expression.AddJsonValue("arguments", GetCommaSeparatedList(invocationExpression.Arguments));
             Push(expression);
         }
 
@@ -534,12 +534,12 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitIsExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("is-expression"));
-            expression.AddJsonValues("keyword", GetKeyword(IsExpression.IsKeywordRole));
+            expression.AddJsonValue("expression-type", new JsonElement("is-expression"));
+            expression.AddJsonValue("keyword", GetKeyword(IsExpression.IsKeywordRole));
             isExpression.Type.AcceptVisitor(this);
-            expression.AddJsonValues("type-info", Pop());
+            expression.AddJsonValue("type-info", Pop());
             isExpression.Expression.AcceptVisitor(this);
-            expression.AddJsonValues("expression", Pop());
+            expression.AddJsonValue("expression", Pop());
 
             Push(expression);
         }
@@ -548,22 +548,22 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitLambdaExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("lambda-expression"));
+            expression.AddJsonValue("expression-type", new JsonElement("lambda-expression"));
             if (lambdaExpression.IsAsync)
             {
-                expression.AddJsonValues("async-keyword", GetKeyword(LambdaExpression.AsyncModifierRole));
+                expression.AddJsonValue("async-keyword", GetKeyword(LambdaExpression.AsyncModifierRole));
             }
             if (LambdaNeedsParenthesis(lambdaExpression))
             {
-                expression.AddJsonValues("parameters", GetCommaSeparatedList(lambdaExpression.Parameters));
+                expression.AddJsonValue("parameters", GetCommaSeparatedList(lambdaExpression.Parameters));
             }
             else
             {
                 lambdaExpression.Parameters.Single().AcceptVisitor(this);
-                expression.AddJsonValues("parameters", Pop());
+                expression.AddJsonValue("parameters", Pop());
             }
             lambdaExpression.Body.AcceptVisitor(this);
-            expression.AddJsonValues("body", Pop());
+            expression.AddJsonValue("body", Pop());
 
             Push(expression);
         }
@@ -582,10 +582,10 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitMemberReferenceExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("member-reference"));
+            expression.AddJsonValue("expression-type", new JsonElement("member-reference"));
             memberReferenceExpression.Target.AcceptVisitor(this);
-            expression.AddJsonValues("target", Pop());
-            expression.AddJsonValues("identifier-name", GetIdentifier(memberReferenceExpression.MemberNameToken));
+            expression.AddJsonValue("target", Pop());
+            expression.AddJsonValue("identifier-name", GetIdentifier(memberReferenceExpression.MemberNameToken));
 
             Push(expression);
         }
@@ -594,10 +594,10 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitNamedArgumentExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("named-argument-expression"));
-            expression.AddJsonValues("identifier", GetIdentifier(namedArgumentExpression.NameToken));
+            expression.AddJsonValue("expression-type", new JsonElement("named-argument-expression"));
+            expression.AddJsonValue("identifier", GetIdentifier(namedArgumentExpression.NameToken));
             namedArgumentExpression.Expression.AcceptVisitor(this);
-            expression.AddJsonValues("expression", Pop());
+            expression.AddJsonValue("expression", Pop());
 
             Push(expression);
             throw new Exception("first time testing");//implement already, but not tested
@@ -607,10 +607,10 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitNamedExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("named-expression"));
-            expression.AddJsonValues("identifier", GetIdentifier(namedExpression.NameToken));
+            expression.AddJsonValue("expression-type", new JsonElement("named-expression"));
+            expression.AddJsonValue("identifier", GetIdentifier(namedExpression.NameToken));
             namedExpression.Expression.AcceptVisitor(this);
-            expression.AddJsonValues("expression", Pop());
+            expression.AddJsonValue("expression", Pop());
 
             Push(expression);
             //throw new Exception("first time testing");//implement already, but not tested
@@ -620,8 +620,8 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitNullReferenceExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("null-reference"));
-            expression.AddJsonValues("keyword", new JsonElement("null"));
+            expression.AddJsonValue("expression-type", new JsonElement("null-reference"));
+            expression.AddJsonValue("keyword", new JsonElement("null"));
             Push(expression);
         }
 
@@ -629,10 +629,10 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitObjectCreateExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("ObjectCreate"));
-            expression.AddJsonValues("keyword", GetKeyword(ObjectCreateExpression.NewKeywordRole));
+            expression.AddJsonValue("expression-type", new JsonElement("ObjectCreate"));
+            expression.AddJsonValue("keyword", GetKeyword(ObjectCreateExpression.NewKeywordRole));
             objectCreateExpression.Type.AcceptVisitor(this);
-            expression.AddJsonValues("type-info", Pop());
+            expression.AddJsonValue("type-info", Pop());
             bool useParenthesis = objectCreateExpression.Arguments.Any() || objectCreateExpression.Initializer.IsNull;
             if (!objectCreateExpression.LParToken.IsNull)
             {
@@ -640,10 +640,10 @@ namespace ManualILSpy.Extention
             }
             if (useParenthesis)
             {
-                expression.AddJsonValues("arguments", GetCommaSeparatedList(objectCreateExpression.Arguments));
+                expression.AddJsonValue("arguments", GetCommaSeparatedList(objectCreateExpression.Arguments));
             }
             objectCreateExpression.Initializer.AcceptVisitor(this);
-            expression.AddJsonValues("initializer", Pop());
+            expression.AddJsonValue("initializer", Pop());
             Push(expression);
         }
 
@@ -651,9 +651,9 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitAnonymousTypeCreateExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("anonymous-type-create-expression"));
-            expression.AddJsonValues("keyword", GetKeyword(AnonymousTypeCreateExpression.NewKeywordRole));
-            expression.AddJsonValues("elements", GetInitializerElements(anonymousTypeCreateExpression.Initializers));
+            expression.AddJsonValue("expression-type", new JsonElement("anonymous-type-create-expression"));
+            expression.AddJsonValue("keyword", GetKeyword(AnonymousTypeCreateExpression.NewKeywordRole));
+            expression.AddJsonValue("elements", GetInitializerElements(anonymousTypeCreateExpression.Initializers));
             Push(expression);
             //throw new Exception("first time testing");//implement already, but not tested
         }
@@ -662,9 +662,9 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitParenthesizedExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("parenthesized-expression"));
+            expression.AddJsonValue("expression-type", new JsonElement("parenthesized-expression"));
             parenthesizedExpression.Expression.AcceptVisitor(this);
-            expression.AddJsonValues("expression", Pop());
+            expression.AddJsonValue("expression", Pop());
 
             Push(expression);
             //throw new Exception("first time testing");//implement already, but not tested
@@ -674,11 +674,11 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitPointerReferenceExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("pointer-reference-expression"));
+            expression.AddJsonValue("expression-type", new JsonElement("pointer-reference-expression"));
             pointerReferenceExpression.Target.AcceptVisitor(this);
-            expression.AddJsonValues("target", Pop());
-            expression.AddJsonValues("identifier", GetIdentifier(pointerReferenceExpression.MemberNameToken));
-            expression.AddJsonValues("type-arguments", GetTypeArguments(pointerReferenceExpression.TypeArguments));
+            expression.AddJsonValue("target", Pop());
+            expression.AddJsonValue("identifier", GetIdentifier(pointerReferenceExpression.MemberNameToken));
+            expression.AddJsonValue("type-arguments", GetTypeArguments(pointerReferenceExpression.TypeArguments));
 
             Push(expression);
 
@@ -690,9 +690,9 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitPrimitiveExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("primitive-expression"));
-            expression.AddJsonValues("value", new JsonElement(primitiveExpression.Value.ToString()));
-            expression.AddJsonValues("unsafe-literal-value", new JsonElement(primitiveExpression.UnsafeLiteralValue));
+            expression.AddJsonValue("expression-type", new JsonElement("primitive-expression"));
+            expression.AddJsonValue("value", new JsonElement(primitiveExpression.Value.ToString()));
+            expression.AddJsonValue("unsafe-literal-value", new JsonElement(primitiveExpression.UnsafeLiteralValue));
             Push(expression);
         }
         #endregion
@@ -701,10 +701,10 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitSizeOfExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("sizeof-expression"));
-            expression.AddJsonValues("keyword", GetKeyword(SizeOfExpression.SizeofKeywordRole));
+            expression.AddJsonValue("expression-type", new JsonElement("sizeof-expression"));
+            expression.AddJsonValue("keyword", GetKeyword(SizeOfExpression.SizeofKeywordRole));
             sizeOfExpression.Type.AcceptVisitor(this);
-            expression.AddJsonValues("type-info", Pop());
+            expression.AddJsonValue("type-info", Pop());
 
             Push(expression);
             throw new Exception("first time testing");//implement already, but not tested
@@ -714,11 +714,11 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitStackAllocExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("stack-alloc-expression"));
-            expression.AddJsonValues("keyword", GetKeyword(StackAllocExpression.StackallocKeywordRole));
+            expression.AddJsonValue("expression-type", new JsonElement("stack-alloc-expression"));
+            expression.AddJsonValue("keyword", GetKeyword(StackAllocExpression.StackallocKeywordRole));
             stackAllocExpression.Type.AcceptVisitor(this);
-            expression.AddJsonValues("type-info", Pop());
-            expression.AddJsonValues("count-expression", GetCommaSeparatedList(new[] { stackAllocExpression.CountExpression }));
+            expression.AddJsonValue("type-info", Pop());
+            expression.AddJsonValue("count-expression", GetCommaSeparatedList(new[] { stackAllocExpression.CountExpression }));
 
             Push(expression);
             //throw new Exception("first time testing");//implement already, but not tested
@@ -728,9 +728,9 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitThisReferenceExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("this-reference-expression"));
-            expression.AddJsonValues("keyword", new JsonElement("this"));
-             
+            expression.AddJsonValue("expression-type", new JsonElement("this-reference-expression"));
+            expression.AddJsonValue("keyword", new JsonElement("this"));
+
             AddTypeInformation(expression, thisReferenceExpression);
 
             Push(expression);
@@ -740,10 +740,10 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitTypeOfExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("typeof-expression"));
-            expression.AddJsonValues("keyword", GetKeyword(TypeOfExpression.TypeofKeywordRole));
+            expression.AddJsonValue("expression-type", new JsonElement("typeof-expression"));
+            expression.AddJsonValue("keyword", GetKeyword(TypeOfExpression.TypeofKeywordRole));
             typeOfExpression.Type.AcceptVisitor(this);
-            expression.AddJsonValues("type-info", Pop());
+            expression.AddJsonValue("type-info", Pop());
 
             Push(expression);
         }
@@ -757,22 +757,22 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitUnaryOperatorExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("unary-operator-expression"));
+            expression.AddJsonValue("expression-type", new JsonElement("unary-operator-expression"));
             UnaryOperatorType opType = unaryOperatorExpression.Operator;
             var opSymbol = UnaryOperatorExpression.GetOperatorRole(opType);
             if (opType == UnaryOperatorType.Await)
             {
-                expression.AddJsonValues("symbol", GetKeyword(opSymbol));
+                expression.AddJsonValue("symbol", GetKeyword(opSymbol));
             }
             else if (!(opType == UnaryOperatorType.PostIncrement || opType == UnaryOperatorType.PostDecrement))
             {
-                expression.AddJsonValues("symbol", GetKeyword(opSymbol));
+                expression.AddJsonValue("symbol", GetKeyword(opSymbol));
             }
             unaryOperatorExpression.Expression.AcceptVisitor(this);
-            expression.AddJsonValues("expression", Pop());
+            expression.AddJsonValue("expression", Pop());
             if (opType == UnaryOperatorType.PostIncrement || opType == UnaryOperatorType.PostDecrement)
             {
-                expression.AddJsonValues("symbol", GetKeyword(opSymbol));
+                expression.AddJsonValue("symbol", GetKeyword(opSymbol));
             }
             Push(expression);
         }
@@ -781,10 +781,10 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitUncheckedExpression";
-            expression.AddJsonValues("expression-type", new JsonElement("unchecked-expression"));
-            expression.AddJsonValues("keyword", GetKeyword(UncheckedExpression.UncheckedKeywordRole));
+            expression.AddJsonValue("expression-type", new JsonElement("unchecked-expression"));
+            expression.AddJsonValue("keyword", GetKeyword(UncheckedExpression.UncheckedKeywordRole));
             uncheckedExpression.Expression.AcceptVisitor(this);
-            expression.AddJsonValues("expression", Pop());
+            expression.AddJsonValue("expression", Pop());
 
             Push(expression);
             throw new Exception("first time testing");//implement already, but not tested
@@ -850,10 +850,10 @@ namespace ManualILSpy.Extention
             JsonObject visit = new JsonObject();
             visit.Comment = "VisitAttribute";
             attribute.Type.AcceptVisitor(this);
-            visit.AddJsonValues("type", Pop());
+            visit.AddJsonValue("type", Pop());
             if (attribute.Arguments.Count != 0 || !attribute.GetChildByRole(Roles.LPar).IsNull)
             {
-                visit.AddJsonValues("arguments", GetCommaSeparatedList(attribute.Arguments));
+                visit.AddJsonValue("arguments", GetCommaSeparatedList(attribute.Arguments));
             }
 
             Push(visit);
@@ -865,9 +865,9 @@ namespace ManualILSpy.Extention
             visit.Comment = "VisitAttributeSection";
             if (!string.IsNullOrEmpty(attributeSection.AttributeTarget))
             {
-                visit.AddJsonValues("keyword", new JsonElement(attributeSection.AttributeTarget));
+                visit.AddJsonValue("keyword", new JsonElement(attributeSection.AttributeTarget));
             }
-            visit.AddJsonValues("attributes", GetCommaSeparatedList(attributeSection.Attributes));
+            visit.AddJsonValue("attributes", GetCommaSeparatedList(attributeSection.Attributes));
 
             Push(visit);
         }
@@ -877,14 +877,14 @@ namespace ManualILSpy.Extention
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitDelegateDeclaration";
 
-            declaration.AddJsonValues("attributes", GetAttributes(delegateDeclaration.Attributes));
-            declaration.AddJsonValues("modifier", GetModifiers(delegateDeclaration.ModifierTokens));
-            declaration.AddJsonValues("keyword", GetKeyword(Roles.DelegateKeyword));
+            declaration.AddJsonValue("attributes", GetAttributes(delegateDeclaration.Attributes));
+            declaration.AddJsonValue("modifier", GetModifiers(delegateDeclaration.ModifierTokens));
+            declaration.AddJsonValue("keyword", GetKeyword(Roles.DelegateKeyword));
             delegateDeclaration.ReturnType.AcceptVisitor(this);
-            declaration.AddJsonValues("return-type", Pop());
-            declaration.AddJsonValues("identifier", GetIdentifier(delegateDeclaration.NameToken));
-            declaration.AddJsonValues("type-parameters", GetTypeParameters(delegateDeclaration.TypeParameters));
-            declaration.AddJsonValues("parameters", GetCommaSeparatedList(delegateDeclaration.Parameters));
+            declaration.AddJsonValue("return-type", Pop());
+            declaration.AddJsonValue("identifier", GetIdentifier(delegateDeclaration.NameToken));
+            declaration.AddJsonValue("type-parameters", GetTypeParameters(delegateDeclaration.TypeParameters));
+            declaration.AddJsonValue("parameters", GetCommaSeparatedList(delegateDeclaration.Parameters));
 
             JsonArray contraintList = new JsonArray();
             foreach (Constraint constraint in delegateDeclaration.Constraints)
@@ -900,7 +900,7 @@ namespace ManualILSpy.Extention
             {
                 contraintList = null;
             }
-            declaration.AddJsonValues("constraint", contraintList);
+            declaration.AddJsonValue("constraint", contraintList);
 
             Push(declaration);
         }
@@ -910,10 +910,10 @@ namespace ManualILSpy.Extention
             ClearTypeInfo();
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitNamespaceDeclaration";
-            declaration.AddJsonValues("keyword", GetKeyword(Roles.NamespaceKeyword));
+            declaration.AddJsonValue("keyword", GetKeyword(Roles.NamespaceKeyword));
             namespaceDeclaration.NamespaceName.AcceptVisitor(this);
-            declaration.AddJsonValues("namespace-name", Pop());
-            declaration.AddJsonValues("namespace-info-list", GetTypeInfoList(TypeInfoKeys()));
+            declaration.AddJsonValue("namespace-name", Pop());
+            declaration.AddJsonValue("namespace-info-list", GetTypeInfoList(TypeInfoKeys()));
             JsonArray memberList = new JsonArray();
             foreach (var member in namespaceDeclaration.Members)
             {
@@ -929,7 +929,7 @@ namespace ManualILSpy.Extention
             {
                 memberList = null;
             }
-            declaration.AddJsonValues("members", memberList);
+            declaration.AddJsonValue("members", memberList);
 
             Push(declaration);
         }
@@ -939,21 +939,21 @@ namespace ManualILSpy.Extention
         {
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitTypeDeclaration";
-            declaration.AddJsonValues("attributes", GetAttributes(typeDeclaration.Attributes));
-            declaration.AddJsonValues("modifiers", GetModifiers(typeDeclaration.ModifierTokens));
+            declaration.AddJsonValue("attributes", GetAttributes(typeDeclaration.Attributes));
+            declaration.AddJsonValue("modifiers", GetModifiers(typeDeclaration.ModifierTokens));
             switch (typeDeclaration.ClassType)
             {
                 case ClassType.Enum:
-                    declaration.AddJsonValues("keyword", GetKeyword(Roles.EnumKeyword));
+                    declaration.AddJsonValue("keyword", GetKeyword(Roles.EnumKeyword));
                     break;
                 case ClassType.Interface:
-                    declaration.AddJsonValues("keyword", GetKeyword(Roles.InterfaceKeyword));
+                    declaration.AddJsonValue("keyword", GetKeyword(Roles.InterfaceKeyword));
                     break;
                 case ClassType.Struct:
-                    declaration.AddJsonValues("keyword", GetKeyword(Roles.StructKeyword));
+                    declaration.AddJsonValue("keyword", GetKeyword(Roles.StructKeyword));
                     break;
                 default:
-                    declaration.AddJsonValues("keyword", GetKeyword(Roles.ClassKeyword));
+                    declaration.AddJsonValue("keyword", GetKeyword(Roles.ClassKeyword));
                     break;
             }
             JsonElement identifier = GetIdentifier(typeDeclaration.NameToken);
@@ -964,11 +964,11 @@ namespace ManualILSpy.Extention
                 lambdaClass[identifier.ElementValue] = typeDeclaration;
                 isLambda = false;
             }
-            declaration.AddJsonValues("identifier", identifier);
-            declaration.AddJsonValues("parameters", GetTypeParameters(typeDeclaration.TypeParameters));
+            declaration.AddJsonValue("identifier", identifier);
+            declaration.AddJsonValue("parameters", GetTypeParameters(typeDeclaration.TypeParameters));
             if (typeDeclaration.BaseTypes.Any())
             {
-                declaration.AddJsonValues("base-types", GetCommaSeparatedList(typeDeclaration.BaseTypes));
+                declaration.AddJsonValue("base-types", GetCommaSeparatedList(typeDeclaration.BaseTypes));
             }
             JsonArray constraintArr = new JsonArray();
             foreach (Constraint constraint in typeDeclaration.Constraints)
@@ -976,14 +976,14 @@ namespace ManualILSpy.Extention
                 constraint.AcceptVisitor(this);
                 constraintArr.AddJsonValue(Pop());
             }
-            declaration.AddJsonValues("constraint", constraintArr);
+            declaration.AddJsonValue("constraint", constraintArr);
             JsonArray memberArr = new JsonArray();
             foreach (var member in typeDeclaration.Members)
             {
                 member.AcceptVisitor(this);
                 memberArr.AddJsonValue(Pop());
             }
-            declaration.AddJsonValues("members", memberArr);
+            declaration.AddJsonValue("members", memberArr);
             if (thisTypeIsLamda)
             {
                 declaration = null;
@@ -996,11 +996,11 @@ namespace ManualILSpy.Extention
         {
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitUsingAliasDeclaration";
-            declaration.AddJsonValues("keyword", GetKeyword(UsingAliasDeclaration.UsingKeywordRole));
-            declaration.AddJsonValues("identifier", GetIdentifier(usingAliasDeclaration.GetChildByRole(UsingAliasDeclaration.AliasRole)));
-            declaration.AddJsonValues("assign-token", GetKeyword(Roles.Assign));
+            declaration.AddJsonValue("keyword", GetKeyword(UsingAliasDeclaration.UsingKeywordRole));
+            declaration.AddJsonValue("identifier", GetIdentifier(usingAliasDeclaration.GetChildByRole(UsingAliasDeclaration.AliasRole)));
+            declaration.AddJsonValue("assign-token", GetKeyword(Roles.Assign));
             usingAliasDeclaration.Import.AcceptVisitor(this);
-            declaration.AddJsonValues("import", Pop());
+            declaration.AddJsonValue("import", Pop());
 
             Push(declaration);
             //implement already, but not tested
@@ -1012,10 +1012,10 @@ namespace ManualILSpy.Extention
             ClearTypeInfo();
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitUsingDeclaration";
-            declaration.AddJsonValues("keyword", GetKeyword(UsingDeclaration.UsingKeywordRole));
+            declaration.AddJsonValue("keyword", GetKeyword(UsingDeclaration.UsingKeywordRole));
             usingDeclaration.Import.AcceptVisitor(this);
-            declaration.AddJsonValues("import", Pop());
-            declaration.AddJsonValues("import-info-list", GetTypeInfoList(TypeInfoKeys()));
+            declaration.AddJsonValue("import", Pop());
+            declaration.AddJsonValue("import-info-list", GetTypeInfoList(TypeInfoKeys()));
             Push(declaration);
         }
 
@@ -1024,9 +1024,9 @@ namespace ManualILSpy.Extention
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitExternAliasDeclaration";
 
-            declaration.AddJsonValues("extern-keyword", GetKeyword(Roles.ExternKeyword));
-            declaration.AddJsonValues("alias-keyword", GetKeyword(Roles.AliasKeyword));
-            declaration.AddJsonValues("identifier", GetIdentifier(externAliasDeclaration.NameToken));
+            declaration.AddJsonValue("extern-keyword", GetKeyword(Roles.ExternKeyword));
+            declaration.AddJsonValue("alias-keyword", GetKeyword(Roles.AliasKeyword));
+            declaration.AddJsonValue("identifier", GetIdentifier(externAliasDeclaration.NameToken));
 
             Push(declaration);
             //implement already, but not tested
@@ -1039,7 +1039,7 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitBlockStatement";
-            statement.AddJsonValues("statement-type", new JsonElement("block-statement"));
+            statement.AddJsonValue("statement-type", new JsonElement("block-statement"));
             int count = blockStatement.Statements.Count;
             if (count == 0)
             {
@@ -1052,7 +1052,7 @@ namespace ManualILSpy.Extention
                 node.AcceptVisitor(this);
                 stmtList.AddJsonValue(Pop());
             }
-            statement.AddJsonValues("statement-list", stmtList);
+            statement.AddJsonValue("statement-list", stmtList);
             Push(statement);
         }
 
@@ -1060,8 +1060,8 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitBreakStatement";
-            statement.AddJsonValues("statement-type", new JsonElement("break-statement"));
-            statement.AddJsonValues("keyword", new JsonElement("break"));
+            statement.AddJsonValue("statement-type", new JsonElement("break-statement"));
+            statement.AddJsonValue("keyword", new JsonElement("break"));
 
             Push(statement);
         }
@@ -1070,10 +1070,10 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitCheckedStatement";
-            statement.AddJsonValues("statement-type", new JsonElement("checked-statement"));
-            statement.AddJsonValues("keyword", GetKeyword(CheckedStatement.CheckedKeywordRole));
+            statement.AddJsonValue("statement-type", new JsonElement("checked-statement"));
+            statement.AddJsonValue("keyword", GetKeyword(CheckedStatement.CheckedKeywordRole));
             checkedStatement.Body.AcceptVisitor(this);
-            statement.AddJsonValues("body", Pop());
+            statement.AddJsonValue("body", Pop());
 
             Push(statement);
             //implement already, but not tested
@@ -1084,8 +1084,8 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitContinueStatement";
-            statement.AddJsonValues("statement-type", new JsonElement("continue-statement"));
-            statement.AddJsonValues("keyword", GetKeyword(ContinueStatement.ContinueKeywordRole));
+            statement.AddJsonValue("statement-type", new JsonElement("continue-statement"));
+            statement.AddJsonValue("keyword", GetKeyword(ContinueStatement.ContinueKeywordRole));
 
             Push(statement);
             //implement already, but not tested
@@ -1096,10 +1096,10 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitDoWhileStatement";
-            statement.AddJsonValues("statement-type", new JsonElement("do-while-statement"));
+            statement.AddJsonValue("statement-type", new JsonElement("do-while-statement"));
             doWhileStatement.Condition.AcceptVisitor(this);
-            statement.AddJsonValues("condition", Pop());
-            statement.AddJsonValues("statement-list", GetEmbeddedStatement(doWhileStatement.EmbeddedStatement));
+            statement.AddJsonValue("condition", Pop());
+            statement.AddJsonValue("statement-list", GetEmbeddedStatement(doWhileStatement.EmbeddedStatement));
             Push(statement);
         }
 
@@ -1107,7 +1107,7 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitEmptyStatement";
-            statement.AddJsonValues("statement-type", new JsonElement("empty-statement"));
+            statement.AddJsonValue("statement-type", new JsonElement("empty-statement"));
             Push(statement);
             //implement already, but not tested
             throw new Exception("first time testing");
@@ -1122,12 +1122,12 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitFixedStatement";
-            statement.AddJsonValues("statement-type", new JsonElement("fixed-statement"));
-            statement.AddJsonValues("keyword", GetKeyword(FixedStatement.FixedKeywordRole));
+            statement.AddJsonValue("statement-type", new JsonElement("fixed-statement"));
+            statement.AddJsonValue("keyword", GetKeyword(FixedStatement.FixedKeywordRole));
             fixedStatement.Type.AcceptVisitor(this);
-            statement.AddJsonValues("type-info", Pop());
-            statement.AddJsonValues("variables", GetCommaSeparatedList(fixedStatement.Variables));
-            statement.AddJsonValues("embedded-statement", GetEmbeddedStatement(fixedStatement.EmbeddedStatement));
+            statement.AddJsonValue("type-info", Pop());
+            statement.AddJsonValue("variables", GetCommaSeparatedList(fixedStatement.Variables));
+            statement.AddJsonValue("embedded-statement", GetEmbeddedStatement(fixedStatement.EmbeddedStatement));
 
             Push(statement);
             //implement already, but not tested
@@ -1138,14 +1138,14 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitForeachStatement";
-            statement.AddJsonValues("statement-type", new JsonElement("ForEach"));
-            statement.AddJsonValues("keyword", GetKeyword(ForeachStatement.ForeachKeywordRole));
+            statement.AddJsonValue("statement-type", new JsonElement("ForEach"));
+            statement.AddJsonValue("keyword", GetKeyword(ForeachStatement.ForeachKeywordRole));
             foreachStatement.VariableType.AcceptVisitor(this);
-            statement.AddJsonValues("local-variable-type", Pop());
-            statement.AddJsonValues("local-variable-name", GetIdentifier(foreachStatement.VariableNameToken));
+            statement.AddJsonValue("local-variable-type", Pop());
+            statement.AddJsonValue("local-variable-name", GetIdentifier(foreachStatement.VariableNameToken));
             foreachStatement.InExpression.AcceptVisitor(this);
-            statement.AddJsonValues("in-expression", Pop());
-            statement.AddJsonValues("embedded-statement", GetEmbeddedStatement(foreachStatement.EmbeddedStatement));
+            statement.AddJsonValue("in-expression", Pop());
+            statement.AddJsonValue("embedded-statement", GetEmbeddedStatement(foreachStatement.EmbeddedStatement));
             Push(statement);
         }
 
@@ -1153,15 +1153,15 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitForStatement";
-            statement.AddJsonValues("keyword", GetKeyword(ForStatement.ForKeywordRole));
-            statement.AddJsonValues("initializer", GetCommaSeparatedList(forStatement.Initializers));
+            statement.AddJsonValue("keyword", GetKeyword(ForStatement.ForKeywordRole));
+            statement.AddJsonValue("initializer", GetCommaSeparatedList(forStatement.Initializers));
             forStatement.Condition.AcceptVisitor(this);
-            statement.AddJsonValues("condition", Pop());
+            statement.AddJsonValue("condition", Pop());
             if (forStatement.Iterators.Any())
             {
-                statement.AddJsonValues("iterators", GetCommaSeparatedList(forStatement.Iterators));
+                statement.AddJsonValue("iterators", GetCommaSeparatedList(forStatement.Iterators));
             }
-            statement.AddJsonValues("embedded-statement", GetEmbeddedStatement(forStatement.EmbeddedStatement));
+            statement.AddJsonValue("embedded-statement", GetEmbeddedStatement(forStatement.EmbeddedStatement));
             Push(statement);
         }
 
@@ -1169,11 +1169,11 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitGotoCaseStatement";
-            statement.AddJsonValues("statement-type", new JsonElement("goto-case-statement"));
-            statement.AddJsonValues("goto-keyword", GetKeyword(GotoCaseStatement.GotoKeywordRole));
-            statement.AddJsonValues("case-keyword", GetKeyword(GotoCaseStatement.CaseKeywordRole));
+            statement.AddJsonValue("statement-type", new JsonElement("goto-case-statement"));
+            statement.AddJsonValue("goto-keyword", GetKeyword(GotoCaseStatement.GotoKeywordRole));
+            statement.AddJsonValue("case-keyword", GetKeyword(GotoCaseStatement.CaseKeywordRole));
             gotoCaseStatement.LabelExpression.AcceptVisitor(this);
-            statement.AddJsonValues("label-expression", Pop());
+            statement.AddJsonValue("label-expression", Pop());
             Push(statement);
             //implement already, but not tested
             throw new Exception("first time testing");
@@ -1183,9 +1183,9 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitGotoDefaultStatement";
-            statement.AddJsonValues("statement-type", new JsonElement("goto-default-statement"));
-            statement.AddJsonValues("goto-keyword", GetKeyword(GotoDefaultStatement.GotoKeywordRole));
-            statement.AddJsonValues("default-keyword", GetKeyword(GotoDefaultStatement.DefaultKeywordRole));
+            statement.AddJsonValue("statement-type", new JsonElement("goto-default-statement"));
+            statement.AddJsonValue("goto-keyword", GetKeyword(GotoDefaultStatement.GotoKeywordRole));
+            statement.AddJsonValue("default-keyword", GetKeyword(GotoDefaultStatement.DefaultKeywordRole));
             Push(statement);
             //implement already, but not tested
             throw new Exception("first time testing");
@@ -1195,9 +1195,9 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitGotoStatement";
-            statement.AddJsonValues("statement-type", new JsonElement("goto-statement"));
-            statement.AddJsonValues("keyword", GetKeyword(GotoStatement.GotoKeywordRole));
-            statement.AddJsonValues("identifier", GetIdentifier(gotoStatement.GetChildByRole(Roles.Identifier)));
+            statement.AddJsonValue("statement-type", new JsonElement("goto-statement"));
+            statement.AddJsonValue("keyword", GetKeyword(GotoStatement.GotoKeywordRole));
+            statement.AddJsonValue("identifier", GetIdentifier(gotoStatement.GetChildByRole(Roles.Identifier)));
 
             Push(statement);
         }
@@ -1208,11 +1208,11 @@ namespace ManualILSpy.Extention
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitIfElseStatement";
             ifElseStatement.Condition.AcceptVisitor(this);
-            statement.AddJsonValues("condition", Pop());
+            statement.AddJsonValue("condition", Pop());
             ifElseStatement.TrueStatement.AcceptVisitor(this);
-            statement.AddJsonValues("true-statement", Pop());
+            statement.AddJsonValue("true-statement", Pop());
             ifElseStatement.FalseStatement.AcceptVisitor(this);
-            statement.AddJsonValues("false-statement", Pop());
+            statement.AddJsonValue("false-statement", Pop());
             if (isLambda)
             {
                 CreateLamda(statement);
@@ -1244,7 +1244,7 @@ namespace ManualILSpy.Extention
             if (lambdaClass.TryGetValue(memName.ElementValue, out typeDeclare))
             {
                 lambdaExpression.Comment = "CreateLamda";
-                lambdaExpression.AddJsonValues("expression-type", new JsonElement("lambda-expression"));
+                lambdaExpression.AddJsonValue("expression-type", new JsonElement("lambda-expression"));
                 foreach (var member in typeDeclare.Members)
                 {
                     if (member is MethodDeclaration)
@@ -1252,9 +1252,9 @@ namespace ManualILSpy.Extention
                         MethodDeclaration method = (MethodDeclaration)member;
                         if (method.Name == methodName.ElementValue)
                         {
-                            lambdaExpression.AddJsonValues("parameters", GetCommaSeparatedList(method.Parameters));
+                            lambdaExpression.AddJsonValue("parameters", GetCommaSeparatedList(method.Parameters));
                             method.Body.AcceptVisitor(this);
-                            lambdaExpression.AddJsonValues("body", Pop());
+                            lambdaExpression.AddJsonValue("body", Pop());
                         }
                     }
                 }
@@ -1308,8 +1308,8 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitLabelStatement";
-            statement.AddJsonValues("statement-type", new JsonElement("label-statement"));
-            statement.AddJsonValues("identifier", GetIdentifier(labelStatement.GetChildByRole(Roles.Identifier)));
+            statement.AddJsonValue("statement-type", new JsonElement("label-statement"));
+            statement.AddJsonValue("identifier", GetIdentifier(labelStatement.GetChildByRole(Roles.Identifier)));
 
             Push(statement);
         }
@@ -1318,11 +1318,11 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitLockStatement";
-            statement.AddJsonValues("statement-type", new JsonElement("lock-statement"));
-            statement.AddJsonValues("keyword", GetKeyword(LockStatement.LockKeywordRole));
+            statement.AddJsonValue("statement-type", new JsonElement("lock-statement"));
+            statement.AddJsonValue("keyword", GetKeyword(LockStatement.LockKeywordRole));
             lockStatement.Expression.AcceptVisitor(this);
-            statement.AddJsonValues("expression", Pop());
-            statement.AddJsonValues("embedded-statement", GetEmbeddedStatement(lockStatement.EmbeddedStatement));
+            statement.AddJsonValue("expression", Pop());
+            statement.AddJsonValue("embedded-statement", GetEmbeddedStatement(lockStatement.EmbeddedStatement));
 
             Push(statement);
             //implement already, but not tested
@@ -1333,12 +1333,12 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitReturnStatement";
-            statement.AddJsonValues("statement-type", new JsonElement("return-statement"));
-            statement.AddJsonValues("keyword", GetKeyword(ReturnStatement.ReturnKeywordRole));
+            statement.AddJsonValue("statement-type", new JsonElement("return-statement"));
+            statement.AddJsonValue("keyword", GetKeyword(ReturnStatement.ReturnKeywordRole));
             if (!returnStatement.Expression.IsNull)
             {
                 returnStatement.Expression.AcceptVisitor(this);
-                statement.AddJsonValues("expression", Pop());
+                statement.AddJsonValue("expression", Pop());
             }
             Push(statement);
         }
@@ -1358,7 +1358,7 @@ namespace ManualILSpy.Extention
             {
                 label = null;
             }
-            section.AddJsonValues("label", label);
+            section.AddJsonValue("label", label);
             JsonArray statement = new JsonArray();
             foreach (var stmt in switchSection.Statements)
             {
@@ -1369,7 +1369,7 @@ namespace ManualILSpy.Extention
             {
                 statement = null;
             }
-            section.AddJsonValues("statements", statement);
+            section.AddJsonValue("statements", statement);
 
             Push(section);
         }
@@ -1378,10 +1378,10 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitSwitchStatement";
-            statement.AddJsonValues("statement-type", new JsonElement("switch-statement"));
-            statement.AddJsonValues("keyword", GetKeyword(SwitchStatement.SwitchKeywordRole));
+            statement.AddJsonValue("statement-type", new JsonElement("switch-statement"));
+            statement.AddJsonValue("keyword", GetKeyword(SwitchStatement.SwitchKeywordRole));
             switchStatement.Expression.AcceptVisitor(this);
-            statement.AddJsonValues("expression", Pop());
+            statement.AddJsonValue("expression", Pop());
             JsonArray sections = new JsonArray();
             foreach (var sec in switchStatement.SwitchSections)
             {
@@ -1394,7 +1394,7 @@ namespace ManualILSpy.Extention
             {
                 sections = null;
             }
-            statement.AddJsonValues("switch-sections", sections);
+            statement.AddJsonValue("switch-sections", sections);
 
             Push(statement);
         }
@@ -1405,13 +1405,13 @@ namespace ManualILSpy.Extention
             label.Comment = "VisitCaseLabel";
             if (caseLabel.Expression.IsNull)
             {
-                label.AddJsonValues("keyword", GetKeyword(CaseLabel.DefaultKeywordRole));
+                label.AddJsonValue("keyword", GetKeyword(CaseLabel.DefaultKeywordRole));
             }
             else
             {
-                label.AddJsonValues("keyword", GetKeyword(CaseLabel.CaseKeywordRole));
+                label.AddJsonValue("keyword", GetKeyword(CaseLabel.CaseKeywordRole));
                 caseLabel.Expression.AcceptVisitor(this);
-                label.AddJsonValues("expression", Pop());
+                label.AddJsonValue("expression", Pop());
             }
 
             Push(label);
@@ -1421,16 +1421,16 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitThrowStatement";
-            statement.AddJsonValues("statement-type", new JsonElement("throw-statement"));
-            statement.AddJsonValues("keyword", GetKeyword(ThrowStatement.ThrowKeywordRole));
+            statement.AddJsonValue("statement-type", new JsonElement("throw-statement"));
+            statement.AddJsonValue("keyword", GetKeyword(ThrowStatement.ThrowKeywordRole));
             if (!throwStatement.Expression.IsNull)
             {
                 throwStatement.Expression.AcceptVisitor(this);
-                statement.AddJsonValues("expression", Pop());
+                statement.AddJsonValue("expression", Pop());
             }
             else
             {
-                statement.AddJsonValues("expression", null);
+                statement.AddJsonValue("expression", null);
             }
             Push(statement);
         }
@@ -1439,22 +1439,22 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitTryCatchStatement";
-            statement.AddJsonValues("statement-type", new JsonElement("try-catch-statement"));
-            statement.AddJsonValues("try-keyword", GetKeyword(TryCatchStatement.TryKeywordRole));
+            statement.AddJsonValue("statement-type", new JsonElement("try-catch-statement"));
+            statement.AddJsonValue("try-keyword", GetKeyword(TryCatchStatement.TryKeywordRole));
             tryCatchStatement.TryBlock.AcceptVisitor(this);
-            statement.AddJsonValues("try-block", Pop());
+            statement.AddJsonValue("try-block", Pop());
             JsonArray catchClauseList = new JsonArray();
             foreach (var catchClause in tryCatchStatement.CatchClauses)
             {
                 catchClause.AcceptVisitor(this);
                 catchClauseList.AddJsonValue(Pop());
             }
-            statement.AddJsonValues("catch-clause", catchClauseList);
+            statement.AddJsonValue("catch-clause", catchClauseList);
             if (!tryCatchStatement.FinallyBlock.IsNull)
             {
-                statement.AddJsonValues("final-keyword", GetKeyword(TryCatchStatement.FinallyKeywordRole));
+                statement.AddJsonValue("final-keyword", GetKeyword(TryCatchStatement.FinallyKeywordRole));
                 tryCatchStatement.FinallyBlock.AcceptVisitor(this);
-                statement.AddJsonValues("final-block", Pop());
+                statement.AddJsonValue("final-block", Pop());
             }
             Push(statement);
         }
@@ -1463,18 +1463,18 @@ namespace ManualILSpy.Extention
         {
             JsonObject visitCatch = new JsonObject();
             visitCatch.Comment = "VisitCatchClause";
-            visitCatch.AddJsonValues("catch-keyword", GetKeyword(CatchClause.CatchKeywordRole));
+            visitCatch.AddJsonValue("catch-keyword", GetKeyword(CatchClause.CatchKeywordRole));
             if (!catchClause.Type.IsNull)
             {
                 catchClause.Type.AcceptVisitor(this);
-                visitCatch.AddJsonValues("type-info", Pop());
+                visitCatch.AddJsonValue("type-info", Pop());
                 if (!string.IsNullOrEmpty(catchClause.VariableName))
                 {
-                    visitCatch.AddJsonValues("identifier", GetIdentifier(catchClause.VariableNameToken));
+                    visitCatch.AddJsonValue("identifier", GetIdentifier(catchClause.VariableNameToken));
                 }
             }
             catchClause.Body.AcceptVisitor(this);
-            visitCatch.AddJsonValues("catch-body", Pop());
+            visitCatch.AddJsonValue("catch-body", Pop());
 
             Push(visitCatch);
         }
@@ -1483,10 +1483,10 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitUncheckedStatement";
-            statement.AddJsonValues("statement-type", new JsonElement("unchecked-statement"));
-            statement.AddJsonValues("keyword", GetKeyword(UncheckedStatement.UncheckedKeywordRole));
+            statement.AddJsonValue("statement-type", new JsonElement("unchecked-statement"));
+            statement.AddJsonValue("keyword", GetKeyword(UncheckedStatement.UncheckedKeywordRole));
             uncheckedStatement.Body.AcceptVisitor(this);
-            statement.AddJsonValues("body", Pop());
+            statement.AddJsonValue("body", Pop());
 
             Push(statement);
             //implement already, but not tested
@@ -1497,10 +1497,10 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitUnsafeStatement";
-            statement.AddJsonValues("statement-type", new JsonElement("unsafe-statement"));
-            statement.AddJsonValues("keyword", GetKeyword(UnsafeStatement.UnsafeKeywordRole));
+            statement.AddJsonValue("statement-type", new JsonElement("unsafe-statement"));
+            statement.AddJsonValue("keyword", GetKeyword(UnsafeStatement.UnsafeKeywordRole));
             unsafeStatement.Body.AcceptVisitor(this);
-            statement.AddJsonValues("body", Pop());
+            statement.AddJsonValue("body", Pop());
 
             Push(statement);
             //implement already, but not tested
@@ -1511,11 +1511,11 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitUsingStatement";
-            statement.AddJsonValues("statement-type", new JsonElement("using-statement"));
-            statement.AddJsonValues("keyword", GetKeyword(UsingStatement.UsingKeywordRole));
+            statement.AddJsonValue("statement-type", new JsonElement("using-statement"));
+            statement.AddJsonValue("keyword", GetKeyword(UsingStatement.UsingKeywordRole));
             usingStatement.ResourceAcquisition.AcceptVisitor(this);
-            statement.AddJsonValues("resource-acquisition", Pop());
-            statement.AddJsonValues("embeded-statement", GetEmbeddedStatement(usingStatement.EmbeddedStatement));
+            statement.AddJsonValue("resource-acquisition", Pop());
+            statement.AddJsonValue("embeded-statement", GetEmbeddedStatement(usingStatement.EmbeddedStatement));
 
             Push(statement);
             //implement already, but not tested
@@ -1526,12 +1526,12 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitVariableDeclarationStatement";
-            statement.AddJsonValues("statement-type", new JsonElement("variable-declaration"));
+            statement.AddJsonValue("statement-type", new JsonElement("variable-declaration"));
             JsonValue modifier = GetModifiers(variableDeclarationStatement.GetChildrenByRole(VariableDeclarationStatement.ModifierRole));
-            statement.AddJsonValues("modifier", modifier);
+            statement.AddJsonValue("modifier", modifier);
             variableDeclarationStatement.Type.AcceptVisitor(this);
-            statement.AddJsonValues("declaration-type-info", Pop());
-            statement.AddJsonValues("variables-list", GetCommaSeparatedList(variableDeclarationStatement.Variables));
+            statement.AddJsonValue("declaration-type-info", Pop());
+            statement.AddJsonValue("variables-list", GetCommaSeparatedList(variableDeclarationStatement.Variables));
             Push(statement);
         }
 
@@ -1539,10 +1539,10 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitWhileStatement";
-            statement.AddJsonValues("statement-type", new JsonElement("while-statement"));
+            statement.AddJsonValue("statement-type", new JsonElement("while-statement"));
             whileStatement.Condition.AcceptVisitor(this);
-            statement.AddJsonValues("condition", Pop());
-            statement.AddJsonValues("statement-list", GetEmbeddedStatement(whileStatement.EmbeddedStatement));
+            statement.AddJsonValue("condition", Pop());
+            statement.AddJsonValue("statement-list", GetEmbeddedStatement(whileStatement.EmbeddedStatement));
             Push(statement);
         }
 
@@ -1550,9 +1550,9 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitYieldBreakStatement";
-            statement.AddJsonValues("statement-type", new JsonElement("yield-break-statement"));
-            statement.AddJsonValues("yield-keyword", GetKeyword(YieldBreakStatement.YieldKeywordRole));
-            statement.AddJsonValues("break-keyword", GetKeyword(YieldBreakStatement.BreakKeywordRole));
+            statement.AddJsonValue("statement-type", new JsonElement("yield-break-statement"));
+            statement.AddJsonValue("yield-keyword", GetKeyword(YieldBreakStatement.YieldKeywordRole));
+            statement.AddJsonValue("break-keyword", GetKeyword(YieldBreakStatement.BreakKeywordRole));
             Push(statement);
         }
 
@@ -1560,11 +1560,11 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitYieldReturnStatement";
-            statement.AddJsonValues("statement-type", new JsonElement("yield-return-statement"));
-            statement.AddJsonValues("yield-keyword", GetKeyword(YieldReturnStatement.YieldKeywordRole));
-            statement.AddJsonValues("return-keyword", GetKeyword(YieldReturnStatement.ReturnKeywordRole));
+            statement.AddJsonValue("statement-type", new JsonElement("yield-return-statement"));
+            statement.AddJsonValue("yield-keyword", GetKeyword(YieldReturnStatement.YieldKeywordRole));
+            statement.AddJsonValue("return-keyword", GetKeyword(YieldReturnStatement.ReturnKeywordRole));
             yieldReturnStatement.Expression.AcceptVisitor(this);
-            statement.AddJsonValues("expression", Pop());
+            statement.AddJsonValue("expression", Pop());
 
             Push(statement);
         }
@@ -1576,25 +1576,25 @@ namespace ManualILSpy.Extention
         {
             JsonObject visitAccessor = new JsonObject();
             visitAccessor.Comment = "VisitAccessor";
-            visitAccessor.AddJsonValues("attributes", GetAttributes(accessor.Attributes));
-            visitAccessor.AddJsonValues("modifier", GetModifiers(accessor.ModifierTokens));
+            visitAccessor.AddJsonValue("attributes", GetAttributes(accessor.Attributes));
+            visitAccessor.AddJsonValue("modifier", GetModifiers(accessor.ModifierTokens));
             if (accessor.Role == PropertyDeclaration.GetterRole)
             {
-                visitAccessor.AddJsonValues("keyword", new JsonElement("get"));
+                visitAccessor.AddJsonValue("keyword", new JsonElement("get"));
             }
             else if (accessor.Role == PropertyDeclaration.SetterRole)
             {
-                visitAccessor.AddJsonValues("keyword", new JsonElement("set"));
+                visitAccessor.AddJsonValue("keyword", new JsonElement("set"));
             }
             else if (accessor.Role == CustomEventDeclaration.AddAccessorRole)
             {
-                visitAccessor.AddJsonValues("keyword", new JsonElement("add"));
+                visitAccessor.AddJsonValue("keyword", new JsonElement("add"));
             }
             else if (accessor.Role == CustomEventDeclaration.RemoveAccessorRole)
             {
-                visitAccessor.AddJsonValues("keyword", new JsonElement("remove"));
+                visitAccessor.AddJsonValue("keyword", new JsonElement("remove"));
             }
-            visitAccessor.AddJsonValues("body", GetMethodBody(accessor.Body));
+            visitAccessor.AddJsonValue("body", GetMethodBody(accessor.Body));
 
             Push(visitAccessor);
             //implement already, but not tested
@@ -1609,20 +1609,20 @@ namespace ManualILSpy.Extention
             TypeDeclaration type = constructorDeclaration.Parent as TypeDeclaration;
             if (type != null && type.Name != constructorDeclaration.Name)
             {
-                construct.AddJsonValues("type", GetIdentifier((Identifier)type.NameToken.Clone()));
+                construct.AddJsonValue("type", GetIdentifier((Identifier)type.NameToken.Clone()));
             }
             else
             {
-                construct.AddJsonValues("name", new JsonElement(constructorDeclaration.Name));
+                construct.AddJsonValue("name", new JsonElement(constructorDeclaration.Name));
             }
-            construct.AddJsonValues("modifier", GetModifiers(constructorDeclaration.ModifierTokens));
-            construct.AddJsonValues("parameters", GetCommaSeparatedList(constructorDeclaration.Parameters));
+            construct.AddJsonValue("modifier", GetModifiers(constructorDeclaration.ModifierTokens));
+            construct.AddJsonValue("parameters", GetCommaSeparatedList(constructorDeclaration.Parameters));
             if (!constructorDeclaration.Initializer.IsNull)
             {
                 constructorDeclaration.Initializer.AcceptVisitor(this);
-                construct.AddJsonValues("initializer", Pop());
+                construct.AddJsonValue("initializer", Pop());
             }
-            construct.AddJsonValues("body", GetMethodBody(constructorDeclaration.Body));
+            construct.AddJsonValue("body", GetMethodBody(constructorDeclaration.Body));
             Push(construct);
         }
 
@@ -1632,13 +1632,13 @@ namespace ManualILSpy.Extention
             initializer.Comment = "VisitConstructorInitializer";
             if (constructorInitializer.ConstructorInitializerType == ConstructorInitializerType.This)
             {
-                initializer.AddJsonValues("keyword", GetKeyword(ConstructorInitializer.ThisKeywordRole));
+                initializer.AddJsonValue("keyword", GetKeyword(ConstructorInitializer.ThisKeywordRole));
             }
             else
             {
-                initializer.AddJsonValues("keyword", GetKeyword(ConstructorInitializer.BaseKeywordRole));
+                initializer.AddJsonValue("keyword", GetKeyword(ConstructorInitializer.BaseKeywordRole));
             }
-            initializer.AddJsonValues("arguments", GetCommaSeparatedList(constructorInitializer.Arguments));
+            initializer.AddJsonValue("arguments", GetCommaSeparatedList(constructorInitializer.Arguments));
 
             Push(initializer);
             //implement already, but not tested
@@ -1649,19 +1649,19 @@ namespace ManualILSpy.Extention
         {
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitDestructorDeclaration";
-            declaration.AddJsonValues("attributes", GetAttributes(destructorDeclaration.Attributes));
-            declaration.AddJsonValues("modifier", GetModifiers(destructorDeclaration.ModifierTokens));
-            declaration.AddJsonValues("tilde-role", GetKeyword(DestructorDeclaration.TildeRole));
+            declaration.AddJsonValue("attributes", GetAttributes(destructorDeclaration.Attributes));
+            declaration.AddJsonValue("modifier", GetModifiers(destructorDeclaration.ModifierTokens));
+            declaration.AddJsonValue("tilde-role", GetKeyword(DestructorDeclaration.TildeRole));
             TypeDeclaration type = destructorDeclaration.Parent as TypeDeclaration;
             if (type != null && type.Name != destructorDeclaration.Name)
             {
-                declaration.AddJsonValues("name", GetIdentifier((Identifier)type.NameToken.Clone()));
+                declaration.AddJsonValue("name", GetIdentifier((Identifier)type.NameToken.Clone()));
             }
             else
             {
-                declaration.AddJsonValues("name", GetIdentifier(destructorDeclaration.NameToken));
+                declaration.AddJsonValue("name", GetIdentifier(destructorDeclaration.NameToken));
             }
-            declaration.AddJsonValues("body", GetMethodBody(destructorDeclaration.Body));
+            declaration.AddJsonValue("body", GetMethodBody(destructorDeclaration.Body));
 
             Push(declaration);
             //implement already, but not tested
@@ -1672,14 +1672,14 @@ namespace ManualILSpy.Extention
         {
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitEnumMemberDeclaration";
-            declaration.AddJsonValues("attributes", GetAttributes(enumMemberDeclaration.Attributes));
-            declaration.AddJsonValues("modifier", GetModifiers(enumMemberDeclaration.ModifierTokens));
-            declaration.AddJsonValues("identifier", GetIdentifier(enumMemberDeclaration.NameToken));
+            declaration.AddJsonValue("attributes", GetAttributes(enumMemberDeclaration.Attributes));
+            declaration.AddJsonValue("modifier", GetModifiers(enumMemberDeclaration.ModifierTokens));
+            declaration.AddJsonValue("identifier", GetIdentifier(enumMemberDeclaration.NameToken));
             if (!enumMemberDeclaration.Initializer.IsNull)
             {
-                declaration.AddJsonValues("assign-role", GetKeyword(Roles.Assign));
+                declaration.AddJsonValue("assign-role", GetKeyword(Roles.Assign));
                 enumMemberDeclaration.Initializer.AcceptVisitor(this);
-                declaration.AddJsonValues("initializer", Pop());
+                declaration.AddJsonValue("initializer", Pop());
             }
 
             Push(declaration);
@@ -1689,12 +1689,12 @@ namespace ManualILSpy.Extention
         {
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitEventDeclaration";
-            declaration.AddJsonValues("attributes", GetAttributes(eventDeclaration.Attributes));
-            declaration.AddJsonValues("modifier", GetModifiers(eventDeclaration.ModifierTokens));
-            declaration.AddJsonValues("keyword", GetKeyword(EventDeclaration.EventKeywordRole));
+            declaration.AddJsonValue("attributes", GetAttributes(eventDeclaration.Attributes));
+            declaration.AddJsonValue("modifier", GetModifiers(eventDeclaration.ModifierTokens));
+            declaration.AddJsonValue("keyword", GetKeyword(EventDeclaration.EventKeywordRole));
             eventDeclaration.ReturnType.AcceptVisitor(this);
-            declaration.AddJsonValues("return-type", Pop());
-            declaration.AddJsonValues("variables", GetCommaSeparatedList(eventDeclaration.Variables));
+            declaration.AddJsonValue("return-type", Pop());
+            declaration.AddJsonValue("variables", GetCommaSeparatedList(eventDeclaration.Variables));
 
             Push(declaration);
             //implement already, but not tested
@@ -1705,13 +1705,13 @@ namespace ManualILSpy.Extention
         {
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitCustomEventDeclaration";
-            declaration.AddJsonValues("attributes", GetAttributes(customEventDeclaration.Attributes));
-            declaration.AddJsonValues("modifier", GetModifiers(customEventDeclaration.ModifierTokens));
-            declaration.AddJsonValues("keyword", GetKeyword(EventDeclaration.EventKeywordRole));
+            declaration.AddJsonValue("attributes", GetAttributes(customEventDeclaration.Attributes));
+            declaration.AddJsonValue("modifier", GetModifiers(customEventDeclaration.ModifierTokens));
+            declaration.AddJsonValue("keyword", GetKeyword(EventDeclaration.EventKeywordRole));
             customEventDeclaration.ReturnType.AcceptVisitor(this);
-            declaration.AddJsonValues("return-type", Pop());
-            declaration.AddJsonValues("private-implementation-type", GetPrivateImplementationType(customEventDeclaration.PrivateImplementationType));
-            declaration.AddJsonValues("identifier", GetIdentifier(customEventDeclaration.NameToken));
+            declaration.AddJsonValue("return-type", Pop());
+            declaration.AddJsonValue("private-implementation-type", GetPrivateImplementationType(customEventDeclaration.PrivateImplementationType));
+            declaration.AddJsonValue("identifier", GetIdentifier(customEventDeclaration.NameToken));
             JsonArray children = new JsonArray();
             foreach (AstNode node in customEventDeclaration.Children)
             {
@@ -1729,7 +1729,7 @@ namespace ManualILSpy.Extention
             {
                 children = null;
             }
-            declaration.AddJsonValues("children", children);
+            declaration.AddJsonValue("children", children);
 
             Push(declaration);
             //implement already, but not tested
@@ -1740,11 +1740,11 @@ namespace ManualILSpy.Extention
         {
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitFieldDeclaration";
-            declaration.AddJsonValues("attributes", GetAttributes(fieldDeclaration.Attributes));
-            declaration.AddJsonValues("modifier", GetModifiers(fieldDeclaration.ModifierTokens));
+            declaration.AddJsonValue("attributes", GetAttributes(fieldDeclaration.Attributes));
+            declaration.AddJsonValue("modifier", GetModifiers(fieldDeclaration.ModifierTokens));
             fieldDeclaration.ReturnType.AcceptVisitor(this);
-            declaration.AddJsonValues("return-type", Pop());
-            declaration.AddJsonValues("variables", GetCommaSeparatedList(fieldDeclaration.Variables));
+            declaration.AddJsonValue("return-type", Pop());
+            declaration.AddJsonValue("variables", GetCommaSeparatedList(fieldDeclaration.Variables));
 
             Push(declaration);
         }
@@ -1753,12 +1753,12 @@ namespace ManualILSpy.Extention
         {
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitFixedFieldDeclaration";
-            declaration.AddJsonValues("attributes", GetAttributes(fixedFieldDeclaration.Attributes));
-            declaration.AddJsonValues("modifier", GetModifiers(fixedFieldDeclaration.ModifierTokens));
-            declaration.AddJsonValues("keyword", GetKeyword(FixedFieldDeclaration.FixedKeywordRole));
+            declaration.AddJsonValue("attributes", GetAttributes(fixedFieldDeclaration.Attributes));
+            declaration.AddJsonValue("modifier", GetModifiers(fixedFieldDeclaration.ModifierTokens));
+            declaration.AddJsonValue("keyword", GetKeyword(FixedFieldDeclaration.FixedKeywordRole));
             fixedFieldDeclaration.ReturnType.AcceptVisitor(this);
-            declaration.AddJsonValues("return-type", Pop());
-            declaration.AddJsonValues("variables", GetCommaSeparatedList(fixedFieldDeclaration.Variables));
+            declaration.AddJsonValue("return-type", Pop());
+            declaration.AddJsonValue("variables", GetCommaSeparatedList(fixedFieldDeclaration.Variables));
 
             Push(declaration);
             //implement already, but not tested
@@ -1769,15 +1769,15 @@ namespace ManualILSpy.Extention
         {
             JsonObject initializer = new JsonObject();
             initializer.Comment = "VisitFixedVariableInitializer";
-            initializer.AddJsonValues("identifier", GetIdentifier(fixedVariableInitializer.NameToken));
+            initializer.AddJsonValue("identifier", GetIdentifier(fixedVariableInitializer.NameToken));
             if (!fixedVariableInitializer.CountExpression.IsNull)
             {
                 fixedVariableInitializer.CountExpression.AcceptVisitor(this);
-                initializer.AddJsonValues("count-expression", Pop());
+                initializer.AddJsonValue("count-expression", Pop());
             }
             else
             {
-                initializer.AddJsonValues("count-expression", null);
+                initializer.AddJsonValue("count-expression", null);
             }
             Push(initializer);
             //implement already, but not tested
@@ -1789,13 +1789,13 @@ namespace ManualILSpy.Extention
             ClearTypeInfo();
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitIndexerDeclaration";
-            declaration.AddJsonValues("attributes", GetAttributes(indexerDeclaration.Attributes));
-            declaration.AddJsonValues("modifier", GetModifiers(indexerDeclaration.ModifierTokens));
+            declaration.AddJsonValue("attributes", GetAttributes(indexerDeclaration.Attributes));
+            declaration.AddJsonValue("modifier", GetModifiers(indexerDeclaration.ModifierTokens));
             indexerDeclaration.ReturnType.AcceptVisitor(this);
-            declaration.AddJsonValues("return-type", Pop());
-            declaration.AddJsonValues("private-implementation-type", GetPrivateImplementationType(indexerDeclaration.PrivateImplementationType));
-            declaration.AddJsonValues("keyword", GetKeyword(IndexerDeclaration.ThisKeywordRole));
-            declaration.AddJsonValues("parameters", GetCommaSeparatedList(indexerDeclaration.Parameters));
+            declaration.AddJsonValue("return-type", Pop());
+            declaration.AddJsonValue("private-implementation-type", GetPrivateImplementationType(indexerDeclaration.PrivateImplementationType));
+            declaration.AddJsonValue("keyword", GetKeyword(IndexerDeclaration.ThisKeywordRole));
+            declaration.AddJsonValue("parameters", GetCommaSeparatedList(indexerDeclaration.Parameters));
             JsonArray children = new JsonArray();
             foreach (AstNode node in indexerDeclaration.Children)
             {
@@ -1813,8 +1813,8 @@ namespace ManualILSpy.Extention
             {
                 children = null;
             }
-            declaration.AddJsonValues("children", children);
-            declaration.AddJsonValues("type-info-list", GetTypeInfoList(TypeInfoKeys()));
+            declaration.AddJsonValue("children", children);
+            declaration.AddJsonValue("type-info-list", GetTypeInfoList(TypeInfoKeys()));
             Push(declaration);
             ////implement already, but not tested
             //throw new Exception("first time testing");
@@ -1825,22 +1825,22 @@ namespace ManualILSpy.Extention
             ClearTypeInfo();
             JsonObject method = new JsonObject();
             method.Comment = "VisitMethodDeclaration";
-            method.AddJsonValues("name", new JsonElement(methodDeclaration.Name));
+            method.AddJsonValue("name", new JsonElement(methodDeclaration.Name));
             //write modifier
-            method.AddJsonValues("modifier", GetModifiers(methodDeclaration.ModifierTokens));
+            method.AddJsonValue("modifier", GetModifiers(methodDeclaration.ModifierTokens));
             //write return type
             methodDeclaration.ReturnType.AcceptVisitor(this);
-            method.AddJsonValues("return-type", Pop());
+            method.AddJsonValue("return-type", Pop());
             //write parameters
             //ParameterDeclaration param = new ParameterDeclaration("test", ParameterModifier.None);
             //PrimitiveType type = new PrimitiveType("string");
             //param.Type = type;
             //methodDeclaration.AddChild(param, Roles.Parameter);
-            method.AddJsonValues("parameters", GetCommaSeparatedList(methodDeclaration.Parameters));
+            method.AddJsonValue("parameters", GetCommaSeparatedList(methodDeclaration.Parameters));
             //write body
-            method.AddJsonValues("body", GetMethodBody(methodDeclaration.Body));
+            method.AddJsonValue("body", GetMethodBody(methodDeclaration.Body));
             //write method type info
-            method.AddJsonValues("type-info-list", GetTypeInfoList(TypeInfoKeys()));
+            method.AddJsonValue("type-info-list", GetTypeInfoList(TypeInfoKeys()));
 
             Push(method);
         }
@@ -1850,35 +1850,35 @@ namespace ManualILSpy.Extention
             ClearTypeInfo();
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitOperatorDeclaration";
-            declaration.AddJsonValues("attributes", GetAttributes(operatorDeclaration.Attributes));
-            declaration.AddJsonValues("modifier", GetModifiers(operatorDeclaration.ModifierTokens));
+            declaration.AddJsonValue("attributes", GetAttributes(operatorDeclaration.Attributes));
+            declaration.AddJsonValue("modifier", GetModifiers(operatorDeclaration.ModifierTokens));
             if (operatorDeclaration.OperatorType == OperatorType.Explicit)
             {
-                declaration.AddJsonValues("keyword", GetKeyword(OperatorDeclaration.ExplicitRole));
+                declaration.AddJsonValue("keyword", GetKeyword(OperatorDeclaration.ExplicitRole));
             }
             else if (operatorDeclaration.OperatorType == OperatorType.Implicit)
             {
-                declaration.AddJsonValues("keyword", GetKeyword(OperatorDeclaration.ImplicitRole));
+                declaration.AddJsonValue("keyword", GetKeyword(OperatorDeclaration.ImplicitRole));
             }
             else
             {
                 operatorDeclaration.ReturnType.AcceptVisitor(this);
-                declaration.AddJsonValues("return-type", Pop());
+                declaration.AddJsonValue("return-type", Pop());
             }
-            declaration.AddJsonValues("operator-keyword", GetKeyword(OperatorDeclaration.OperatorKeywordRole));
+            declaration.AddJsonValue("operator-keyword", GetKeyword(OperatorDeclaration.OperatorKeywordRole));
             if (operatorDeclaration.OperatorType == OperatorType.Explicit
                 || operatorDeclaration.OperatorType == OperatorType.Implicit)
             {
                 operatorDeclaration.ReturnType.AcceptVisitor(this);
-                declaration.AddJsonValues("return-type", Pop());
+                declaration.AddJsonValue("return-type", Pop());
             }
             else
             {
-                declaration.AddJsonValues("operator-type", new JsonElement(OperatorDeclaration.GetToken(operatorDeclaration.OperatorType)));
+                declaration.AddJsonValue("operator-type", new JsonElement(OperatorDeclaration.GetToken(operatorDeclaration.OperatorType)));
             }
-            declaration.AddJsonValues("parameters", GetCommaSeparatedList(operatorDeclaration.Parameters));
-            declaration.AddJsonValues("type-info-list", GetTypeInfoList(TypeInfoKeys()));
-            declaration.AddJsonValues("body", GetMethodBody(operatorDeclaration.Body));
+            declaration.AddJsonValue("parameters", GetCommaSeparatedList(operatorDeclaration.Parameters));
+            declaration.AddJsonValue("type-info-list", GetTypeInfoList(TypeInfoKeys()));
+            declaration.AddJsonValue("body", GetMethodBody(operatorDeclaration.Body));
 
             Push(declaration);
             //implement already, but not tested
@@ -1889,7 +1889,7 @@ namespace ManualILSpy.Extention
         {
             JsonObject parameter = new JsonObject();
             parameter.Comment = "VisitParameterDeclaration";
-            parameter.AddJsonValues("attributes", GetAttributes(parameterDeclaration.Attributes));
+            parameter.AddJsonValue("attributes", GetAttributes(parameterDeclaration.Attributes));
             JsonValue keyword;
             switch (parameterDeclaration.ParameterModifier)
             {
@@ -1909,14 +1909,14 @@ namespace ManualILSpy.Extention
                     keyword = null;
                     break;
             }
-            parameter.AddJsonValues("modifier", keyword);
+            parameter.AddJsonValue("modifier", keyword);
             parameterDeclaration.Type.AcceptVisitor(this);
-            parameter.AddJsonValues("type-info", Pop());
-            parameter.AddJsonValues("name", new JsonElement(parameterDeclaration.Name));
+            parameter.AddJsonValue("type-info", Pop());
+            parameter.AddJsonValue("name", new JsonElement(parameterDeclaration.Name));
             if (parameterDeclaration.DefaultExpression.IsNull)
             {
                 parameterDeclaration.DefaultExpression.AcceptVisitor(this);
-                parameter.AddJsonValues("default-expression", Pop());
+                parameter.AddJsonValue("default-expression", Pop());
             }
             Push(parameter);
         }
@@ -1926,12 +1926,12 @@ namespace ManualILSpy.Extention
             ClearTypeInfo();
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitPropertyDeclaration";
-            declaration.AddJsonValues("attributes", GetAttributes(propertyDeclaration.Attributes));
-            declaration.AddJsonValues("modifier", GetModifiers(propertyDeclaration.ModifierTokens));
+            declaration.AddJsonValue("attributes", GetAttributes(propertyDeclaration.Attributes));
+            declaration.AddJsonValue("modifier", GetModifiers(propertyDeclaration.ModifierTokens));
             propertyDeclaration.ReturnType.AcceptVisitor(this);
-            declaration.AddJsonValues("return-type", Pop());
-            declaration.AddJsonValues("private-implementation-type", GetPrivateImplementationType(propertyDeclaration.PrivateImplementationType));
-            declaration.AddJsonValues("identifier", GetIdentifier(propertyDeclaration.NameToken));
+            declaration.AddJsonValue("return-type", Pop());
+            declaration.AddJsonValue("private-implementation-type", GetPrivateImplementationType(propertyDeclaration.PrivateImplementationType));
+            declaration.AddJsonValue("identifier", GetIdentifier(propertyDeclaration.NameToken));
             JsonArray children = new JsonArray();
             foreach (AstNode node in propertyDeclaration.Children)
             {
@@ -1949,8 +1949,8 @@ namespace ManualILSpy.Extention
             {
                 children = null;
             }
-            declaration.AddJsonValues("children", children);
-            declaration.AddJsonValues("type-info-list", GetTypeInfoList(TypeInfoKeys()));
+            declaration.AddJsonValue("children", children);
+            declaration.AddJsonValue("type-info-list", GetTypeInfoList(TypeInfoKeys()));
 
             Push(declaration);
             //implement already, but not tested
@@ -1964,15 +1964,15 @@ namespace ManualILSpy.Extention
         {
             JsonObject variable = new JsonObject();
             variable.Comment = "VisitVariableInitializer";
-            variable.AddJsonValues("variable-name", GetIdentifier(variableInitializer.NameToken));
+            variable.AddJsonValue("variable-name", GetIdentifier(variableInitializer.NameToken));
             if (!variableInitializer.Initializer.IsNull)
             {
                 variableInitializer.Initializer.AcceptVisitor(this);
-                variable.AddJsonValues("initializer", Pop());
+                variable.AddJsonValue("initializer", Pop());
             }
             else
             {
-                variable.AddJsonValues("initializer", null);
+                variable.AddJsonValue("initializer", null);
             }
             Push(variable);
         }
@@ -2014,8 +2014,8 @@ namespace ManualILSpy.Extention
             JsonObject memtype = new JsonObject();
             memtype.Comment = "VisitMemberType";
             memberType.Target.AcceptVisitor(this);
-            memtype.AddJsonValues("type-info", Pop());
-            memtype.AddJsonValues("member-name", GetIdentifier(memberType.MemberNameToken));
+            memtype.AddJsonValue("type-info", Pop());
+            memtype.AddJsonValue("member-name", GetIdentifier(memberType.MemberNameToken));
             Push(memtype);
         }
 
@@ -2052,24 +2052,24 @@ namespace ManualILSpy.Extention
             switch (comment.CommentType)
             {
                 case CommentType.Documentation:
-                    visit.AddJsonValues("comment-type", new JsonElement("documentation"));
+                    visit.AddJsonValue("comment-type", new JsonElement("documentation"));
                     break;
                 case CommentType.InactiveCode:
-                    visit.AddJsonValues("comment-type", new JsonElement("inactive-code"));
+                    visit.AddJsonValue("comment-type", new JsonElement("inactive-code"));
                     break;
                 case CommentType.MultiLine:
-                    visit.AddJsonValues("comment-type", new JsonElement("multiline"));
+                    visit.AddJsonValue("comment-type", new JsonElement("multiline"));
                     break;
                 case CommentType.MultiLineDocumentation:
-                    visit.AddJsonValues("comment-type", new JsonElement("multiline-documentation"));
+                    visit.AddJsonValue("comment-type", new JsonElement("multiline-documentation"));
                     break;
                 case CommentType.SingleLine:
-                    visit.AddJsonValues("comment-type", new JsonElement("single-line"));
+                    visit.AddJsonValue("comment-type", new JsonElement("single-line"));
                     break;
                 default:
                     throw new NotSupportedException("Invalid value for CommentType");
             }
-            visit.AddJsonValues("comment-content", new JsonElement(comment.Content));
+            visit.AddJsonValue("comment-content", new JsonElement(comment.Content));
 
             Push(visit);
             //implement already, but not tested
@@ -2100,14 +2100,14 @@ namespace ManualILSpy.Extention
             visit.Comment = "VisitPreProcessorDirective";
             var type = preProcessorDirective.Type;
             string typeStr = "#" + type.ToString().ToLowerInvariant();
-            visit.AddJsonValues("preprocessordirective-type", new JsonElement(typeStr));
+            visit.AddJsonValue("preprocessordirective-type", new JsonElement(typeStr));
             if (!string.IsNullOrEmpty(preProcessorDirective.Argument))
             {
-                visit.AddJsonValues("argument", new JsonElement(preProcessorDirective.Argument));
+                visit.AddJsonValue("argument", new JsonElement(preProcessorDirective.Argument));
             }
             else
             {
-                visit.AddJsonValues("argument", null);
+                visit.AddJsonValue("argument", null);
             }
 
             Push(visit);
@@ -2119,21 +2119,21 @@ namespace ManualILSpy.Extention
         {
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitTypeParameterDeclaration";
-            declaration.AddJsonValues("attributes", GetAttributes(typeParameterDeclaration.Attributes));
+            declaration.AddJsonValue("attributes", GetAttributes(typeParameterDeclaration.Attributes));
             switch (typeParameterDeclaration.Variance)
             {
                 case VarianceModifier.Invariant:
                     break;
                 case VarianceModifier.Covariant:
-                    declaration.AddJsonValues("keyword", GetKeyword(TypeParameterDeclaration.OutVarianceKeywordRole));
+                    declaration.AddJsonValue("keyword", GetKeyword(TypeParameterDeclaration.OutVarianceKeywordRole));
                     break;
                 case VarianceModifier.Contravariant:
-                    declaration.AddJsonValues("keyword", GetKeyword(TypeParameterDeclaration.InVarianceKeywordRole));
+                    declaration.AddJsonValue("keyword", GetKeyword(TypeParameterDeclaration.InVarianceKeywordRole));
                     break;
                 default:
                     throw new NotSupportedException("Invalid value for VarianceModifier");
             }
-            declaration.AddJsonValues("identifier", GetIdentifier(typeParameterDeclaration.NameToken));
+            declaration.AddJsonValue("identifier", GetIdentifier(typeParameterDeclaration.NameToken));
 
             Push(declaration);
             //implement already, but not tested
@@ -2144,10 +2144,10 @@ namespace ManualILSpy.Extention
         {
             JsonObject visit = new JsonObject();
             visit.Comment = "VisitConstraint";
-            visit.AddJsonValues("keyword", GetKeyword(Roles.WhereKeyword));
+            visit.AddJsonValue("keyword", GetKeyword(Roles.WhereKeyword));
             constraint.TypeParameter.AcceptVisitor(this);
-            visit.AddJsonValues("type-parameter", Pop());
-            visit.AddJsonValues("base-types", GetCommaSeparatedList(constraint.BaseTypes));
+            visit.AddJsonValue("type-parameter", Pop());
+            visit.AddJsonValue("base-types", GetCommaSeparatedList(constraint.BaseTypes));
 
             Push(visit);
             //implement already, but not tested
