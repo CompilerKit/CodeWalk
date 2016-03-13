@@ -38,7 +38,7 @@ namespace ManualILSpy.Extention.Json
             type = JsonValueType.Object;
         }
 
-        public void AddJsonValues(string key, JsonValue value)
+        public void AddJsonValue(string key, JsonValue value)
         {
             if (!Values.ContainsKey(key))
             {
@@ -622,7 +622,7 @@ namespace ManualILSpy.Extention.Json
                 }
                 eat();
                 rightJsonValueType = GetJsonType();
-                obj.AddJsonValues(key, ReadByType(rightJsonValueType));
+                obj.AddJsonValue(key, ReadByType(rightJsonValueType));
                 if (CurrentChar == ',')
                 {
                     eat();

@@ -24,7 +24,7 @@ namespace ManualILSpy.Extention
             if (expressionType != null)
             {
                 int typeIndex = GetTypeIndex(expressionType.ExpectedType.FullName);
-                jsonObject.AddJsonValues("typeinfo", new JsonElement(typeIndex));
+                jsonObject.AddJsonValue("typeinfo", new JsonElement(typeIndex));
             }
             else
             {
