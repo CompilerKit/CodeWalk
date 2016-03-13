@@ -31,13 +31,20 @@ namespace ManualILSpy.Extention
                 throw new Exception("typeinfo not found!");
             }
         }
-        /// <summary>
-        /// get type info and push on stack
-        /// </summary>
-        public void PushWithTypeInfo(JsonObject jsonObject, Expression expression)
+        
+        void AddVisitComment<T>(JsonObject jsonObject)
         {
-            AddTypeInformation(jsonObject, expression);
-            Push(jsonObject);
+            jsonObject.Comment = "Visit" + typeof(T).Name;
+        }
+        JsonObject CreateJsonExpression<T>(T expression)
+            where T : Expression
+        {
+            JsonObject jsonObject = new JsonObject();
+            //1. add visit comment
+            AddVisitComment<T>(jsonObject);
+            //2. add type info
+            AddTypeInformation(jsonObject, expression); 
+            return jsonObject;
         }
     }
 }

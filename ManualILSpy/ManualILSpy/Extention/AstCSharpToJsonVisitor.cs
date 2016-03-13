@@ -276,7 +276,7 @@ namespace ManualILSpy.Extention
             }
             else
             {
-                expression.AddJsonValue("arguments", null);
+                expression.AddJsonNull("arguments");
             }
             Push(expression);
             //throw new Exception("first time testing");//implement already, but not tested
@@ -414,7 +414,7 @@ namespace ManualILSpy.Extention
 
         public void VisitBinaryOperatorExpression(BinaryOperatorExpression binaryOperatorExpression)
         {
-            JsonObject expression = new JsonObject();
+            JsonObject expression = CreateJsonExpression(binaryOperatorExpression);
             expression.Comment = "VisitBinaryOperatorExpression";
             expression.AddJsonValue("expression-type", new JsonElement("binary-operator-expression"));
             binaryOperatorExpression.Left.AcceptVisitor(this);
@@ -425,19 +425,20 @@ namespace ManualILSpy.Extention
             expression.AddJsonValue("right-operand", Pop());
 
 
-            PushWithTypeInfo(expression, binaryOperatorExpression);
+            Push(expression);
         }
         public void VisitCastExpression(CastExpression castExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitCastExpression";
+            JsonObject expression = CreateJsonExpression(castExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("cast-expression"));
             castExpression.Type.AcceptVisitor(this);
             expression.AddJsonValue("type-info", Pop());
             castExpression.Expression.AcceptVisitor(this);
             expression.AddJsonValue("expression", Pop());
 
-            PushWithTypeInfo(expression, castExpression);
+            Push(expression);
+
         }
         public void VisitCheckedExpression(CheckedExpression checkedExpression)
         {
@@ -1430,7 +1431,7 @@ namespace ManualILSpy.Extention
             }
             else
             {
-                statement.AddJsonValue("expression", null);
+                statement.AddJsonNull("expression");
             }
             Push(statement);
         }
@@ -1777,7 +1778,7 @@ namespace ManualILSpy.Extention
             }
             else
             {
-                initializer.AddJsonValue("count-expression", null);
+                initializer.AddJsonNull("count-expression");
             }
             Push(initializer);
             //implement already, but not tested
@@ -1972,7 +1973,7 @@ namespace ManualILSpy.Extention
             }
             else
             {
-                variable.AddJsonValue("initializer", null);
+                variable.AddJsonNull("initializer");
             }
             Push(variable);
         }
@@ -2107,7 +2108,7 @@ namespace ManualILSpy.Extention
             }
             else
             {
-                visit.AddJsonValue("argument", null);
+                visit.AddJsonNull("argument");
             }
 
             Push(visit);
