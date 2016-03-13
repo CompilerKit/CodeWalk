@@ -72,7 +72,6 @@ namespace ManualILSpy.Extention
                 }
             }
         }
-
         void AddVisitComment<T>(JsonObject jsonObject)
         {
             jsonObject.Comment = "Visit" + typeof(T).Name;
@@ -83,9 +82,16 @@ namespace ManualILSpy.Extention
             JsonObject jsonObject = new JsonObject();
             //1. add visit comment
             AddVisitComment<T>(jsonObject);
-            //2. add type info
+            //2. cs spec expression type
+            jsonObject.AddJsonValue("expression-type", CsSpecAstName.GetCsSpecName<T>());
+            //3. add type info of the expression
             AddTypeInformation(jsonObject, expression);
+
             return jsonObject;
         }
+
     }
+
+
+
 }
