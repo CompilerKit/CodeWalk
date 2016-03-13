@@ -54,11 +54,12 @@ namespace ManualILSpy.Extention
                     }
                     else if (objectAnonation is Mono.Cecil.MethodDefinition)
                     {
+                        //get deletegate type of this method?
+                        //TODO: review here
                         Mono.Cecil.MethodDefinition methodef = (Mono.Cecil.MethodDefinition)objectAnonation;
                         //write field type info
-                        int typeIndex = GetTypeIndex(methodef.ReturnType.FullName);
-                        jsonObject.AddJsonValue("typeinfo", typeIndex);
-
+                        //TODO: review here
+                        jsonObject.AddJsonValue("typeinfo", -1);
                     }
                     else {
                         throw new Exception("typeinfo not found!");
