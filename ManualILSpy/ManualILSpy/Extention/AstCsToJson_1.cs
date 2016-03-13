@@ -118,6 +118,11 @@ namespace ManualILSpy.Extention
             astType.AcceptVisitor(this);
             return Pop();
         }
+        JsonValue GenStatement(Statement stmt)
+        {
+            stmt.AcceptVisitor(this);
+            return Pop();
+        }
         JsonObject CreateJsonEntityDeclaration<T>(T entityDecl)
             where T : EntityDeclaration
         {
