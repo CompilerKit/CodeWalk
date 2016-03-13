@@ -51,6 +51,11 @@ namespace ManualILSpy.Extention
                         int typeIndex = GetTypeIndex(fieldDef.FieldType.FullName);
                         jsonObject.AddJsonValue("t_index", typeIndex);
                         jsonObject.AddJsonValue("t_info", fieldDef.FieldType.FullName);
+                        //symbol 
+                        JsonObject symbol = new JsonObject();
+                        symbol.AddJsonValue("kind", "field");
+                        symbol.AddJsonValue("field", fieldDef.ToString());
+                        jsonObject.AddJsonValue("symbol", symbol);
                     }
                     else if (objectAnonation is Mono.Cecil.MethodDefinition)
                     {
@@ -61,6 +66,11 @@ namespace ManualILSpy.Extention
                         //TODO: review here
                         jsonObject.AddJsonValue("t_index", -1);
                         jsonObject.AddJsonValue("t_info", "");
+
+                        JsonObject symbol = new JsonObject();
+                        symbol.AddJsonValue("kind", "method");
+                        symbol.AddJsonValue("method", methodef.ToString());
+                        jsonObject.AddJsonValue("symbol", symbol);
                     }
                     else if (objectAnonation is ICSharpCode.Decompiler.ILAst.ILVariable)
                     {
@@ -68,6 +78,23 @@ namespace ManualILSpy.Extention
                         int typeIndex = GetTypeIndex(variable.Type.FullName);
                         jsonObject.AddJsonValue("t_index", typeIndex);
                         jsonObject.AddJsonValue("t_info", variable.Type.FullName);
+                  
+
+                        JsonObject symbol = new JsonObject();
+                        if (variable.IsParameter)
+                        {
+                            symbol.AddJsonValue("kind", "par");
+                            symbol.AddJsonValue("par", variable.OriginalParameter.ToString());
+                        }
+                        else
+                        {
+                            symbol.AddJsonValue("kind", "var");
+                            symbol.AddJsonValue("var", variable.OriginalVariable.ToString());
+                        }
+
+
+                        jsonObject.AddJsonValue("symbol", symbol);
+
                     }
                     else {
                         throw new Exception("typeinfo not found!");
@@ -167,3 +194,5 @@ namespace ManualILSpy.Extention
 
 
 }
+
+

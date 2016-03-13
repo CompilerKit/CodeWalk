@@ -182,27 +182,7 @@ namespace ManualILSpy.Extention
             }
         }
 
-        JsonValue GetEmbeddedStatement(Statement embeddedStatement)
-        {
-            JsonObject embedded = new JsonObject();
-            embedded.Comment = "GetEmbeddedStatement";
-            if (embeddedStatement.IsNull)
-            {
-                return null;
-            }
-            BlockStatement block = embeddedStatement as BlockStatement;
-            if (block != null)
-            {
-                //TODO: review here 
-                VisitBlockStatement(block);
-                embedded.AddJsonValue("block-statement", Pop());
-            }
-            else
-            {
-                embedded.AddJsonValue("statement", GenStatement(embeddedStatement));
-            }
-            return embedded;
-        }
+       
 
         JsonValue GetAttributes(IEnumerable<AttributeSection> attributes)
         {
@@ -296,7 +276,7 @@ namespace ManualILSpy.Extention
                 expression.AddJsonNull("arguments");
             }
             Push(expression);
-             
+
         }
 
         public void VisitArrayCreateExpression(ArrayCreateExpression arrayCreateExpression)
@@ -450,7 +430,7 @@ namespace ManualILSpy.Extention
             expression.AddJsonValue("false-expression", GenExpression(conditionalExpression.FalseExpression));
 
             Push(expression);
-           
+
         }
 
         public void VisitDefaultValueExpression(DefaultValueExpression defaultValueExpression)
@@ -589,7 +569,7 @@ namespace ManualILSpy.Extention
             expression.AddJsonValue("expression", GenExpression(namedExpression.Expression));
 
             Push(expression);
-             
+
         }
 
         public void VisitNullReferenceExpression(NullReferenceExpression nullReferenceExpression)
@@ -625,7 +605,7 @@ namespace ManualILSpy.Extention
             AddKeyword(expression, AnonymousTypeCreateExpression.NewKeywordRole);
             expression.AddJsonValue("elements", GetInitializerElements(anonymousTypeCreateExpression.Initializers));
             Push(expression);
-             
+
         }
         public void VisitParenthesizedExpression(ParenthesizedExpression parenthesizedExpression)
         {
@@ -680,7 +660,6 @@ namespace ManualILSpy.Extention
             JsonObject expression = CreateJsonExpression(thisReferenceExpression);
             Push(expression);
         }
-
         public void VisitTypeOfExpression(TypeOfExpression typeOfExpression)
         {
             JsonObject expression = CreateJsonExpression(typeOfExpression);
@@ -695,7 +674,6 @@ namespace ManualILSpy.Extention
         public void VisitUnaryOperatorExpression(UnaryOperatorExpression unaryOperatorExpression)
         {
             JsonObject expression = CreateJsonExpression(unaryOperatorExpression);
-
             UnaryOperatorType opType = unaryOperatorExpression.Operator;
             var opSymbol = UnaryOperatorExpression.GetOperatorRole(opType);
             if (opType == UnaryOperatorType.Await)
@@ -1024,7 +1002,7 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = CreateJsonStatement(doWhileStatement);
             statement.AddJsonValue("condition", GenExpression(doWhileStatement.Condition));
-            statement.AddJsonValue("statement-list", GetEmbeddedStatement(doWhileStatement.EmbeddedStatement));
+            statement.AddJsonValue("statement-list", GenStatement(doWhileStatement.EmbeddedStatement));
             Push(statement);
         }
 
@@ -1050,9 +1028,9 @@ namespace ManualILSpy.Extention
             AddKeyword(statement, FixedStatement.FixedKeywordRole);
             statement.AddJsonValue("type-info", GenTypeInfo(fixedStatement.Type));
             statement.AddJsonValue("variables", GetCommaSeparatedList(fixedStatement.Variables));
-            statement.AddJsonValue("embedded-statement", GetEmbeddedStatement(fixedStatement.EmbeddedStatement));
+            statement.AddJsonValue("embedded-statement", GenStatement(fixedStatement.EmbeddedStatement));
 
-            Push(statement); 
+            Push(statement);
         }
 
         public void VisitForeachStatement(ForeachStatement foreachStatement)
@@ -1063,7 +1041,7 @@ namespace ManualILSpy.Extention
             statement.AddJsonValue("local-variable-type", GenTypeInfo(foreachStatement.VariableType));
             statement.AddJsonValue("local-variable-name", GetIdentifier(foreachStatement.VariableNameToken));
             statement.AddJsonValue("in-expression", GenExpression(foreachStatement.InExpression));
-            statement.AddJsonValue("embedded-statement", GetEmbeddedStatement(foreachStatement.EmbeddedStatement));
+            statement.AddJsonValue("embedded-statement", GenStatement(foreachStatement.EmbeddedStatement));
             Push(statement);
         }
 
@@ -1078,7 +1056,7 @@ namespace ManualILSpy.Extention
             {
                 statement.AddJsonValue("iterators", GetCommaSeparatedList(forStatement.Iterators));
             }
-            statement.AddJsonValue("embedded-statement", GetEmbeddedStatement(forStatement.EmbeddedStatement));
+            statement.AddJsonValue("embedded-statement", GenStatement(forStatement.EmbeddedStatement));
             Push(statement);
         }
 
@@ -1223,7 +1201,7 @@ namespace ManualILSpy.Extention
             AddKeyword(statement, LockStatement.LockKeywordRole);
 
             statement.AddJsonValue("expression", GenExpression(lockStatement.Expression));
-            statement.AddJsonValue("embedded-statement", GetEmbeddedStatement(lockStatement.EmbeddedStatement));
+            statement.AddJsonValue("embedded-statement", GenStatement(lockStatement.EmbeddedStatement));
 
             Push(statement);
 
@@ -1398,9 +1376,9 @@ namespace ManualILSpy.Extention
             AddKeyword(statement, UsingStatement.UsingKeywordRole);
             usingStatement.ResourceAcquisition.AcceptVisitor(this);
             statement.AddJsonValue("resource-acquisition", Pop());
-            statement.AddJsonValue("embeded-statement", GetEmbeddedStatement(usingStatement.EmbeddedStatement));
+            statement.AddJsonValue("embeded-statement", GenStatement(usingStatement.EmbeddedStatement));
 
-            Push(statement); 
+            Push(statement);
         }
 
         public void VisitVariableDeclarationStatement(VariableDeclarationStatement variableDeclarationStatement)
@@ -1420,7 +1398,7 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = CreateJsonStatement(whileStatement);
             statement.AddJsonValue("condition", GenExpression(whileStatement.Condition));
-            statement.AddJsonValue("statement-list", GetEmbeddedStatement(whileStatement.EmbeddedStatement));
+            statement.AddJsonValue("statement-list", GenStatement(whileStatement.EmbeddedStatement));
             Push(statement);
         }
 
@@ -1467,7 +1445,7 @@ namespace ManualILSpy.Extention
             }
             visitAccessor.AddJsonValue("body", GetMethodBody(accessor.Body));
 
-            Push(visitAccessor); 
+            Push(visitAccessor);
         }
 
         public void VisitConstructorDeclaration(ConstructorDeclaration constructorDeclaration)
@@ -1509,7 +1487,7 @@ namespace ManualILSpy.Extention
             }
             initializer.AddJsonValue("arguments", GetCommaSeparatedList(constructorInitializer.Arguments));
 
-            Push(initializer); 
+            Push(initializer);
         }
 
         public void VisitDestructorDeclaration(DestructorDeclaration destructorDeclaration)
@@ -1528,7 +1506,7 @@ namespace ManualILSpy.Extention
             declaration.AddJsonValue("body", GetMethodBody(destructorDeclaration.Body));
 
             Push(declaration);
-          
+
             throw new FirstTimeUseException();
         }
 
@@ -1551,7 +1529,7 @@ namespace ManualILSpy.Extention
 
             AddKeyword(declaration, EventDeclaration.EventKeywordRole);
             declaration.AddJsonValue("variables", GetCommaSeparatedList(eventDeclaration.Variables));
-            Push(declaration); 
+            Push(declaration);
         }
 
         public void VisitCustomEventDeclaration(CustomEventDeclaration customEventDeclaration)
@@ -1613,10 +1591,7 @@ namespace ManualILSpy.Extention
 
                 initializer.AddJsonValue("count-expression", GenExpression(fixedVariableInitializer.CountExpression));
             }
-            else
-            {
-                initializer.AddJsonNull("count-expression");
-            }
+
             Push(initializer);
             throw new FirstTimeUseException();
         }
@@ -1706,7 +1681,7 @@ namespace ManualILSpy.Extention
             declaration.AddJsonValue("type-info-list", GetTypeInfoList(TypeInfoKeys()));
             declaration.AddJsonValue("body", GetMethodBody(operatorDeclaration.Body));
 
-            Push(declaration); 
+            Push(declaration);
         }
 
         public void VisitParameterDeclaration(ParameterDeclaration parameterDeclaration)
@@ -1777,7 +1752,7 @@ namespace ManualILSpy.Extention
             declaration.AddJsonValue("children", children);
             declaration.AddJsonValue("type-info-list", GetTypeInfoList(TypeInfoKeys()));
 
-            Push(declaration); 
+            Push(declaration);
         }
 
         #endregion
@@ -1955,7 +1930,7 @@ namespace ManualILSpy.Extention
             declaration.AddJsonValue("identifier", GetIdentifier(typeParameterDeclaration.NameToken));
 
             Push(declaration);
-             
+
         }
 
         public void VisitConstraint(Constraint constraint)
