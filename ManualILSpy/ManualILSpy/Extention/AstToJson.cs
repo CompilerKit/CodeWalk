@@ -108,7 +108,7 @@ namespace ManualILSpy.Extention
         JsonValue GetTypeInfoList(List<string> typeInfoList)
         {
             JsonArray typeArr = new JsonArray();
-            typeArr.Comment = "GetMethodTypeInfo";
+            typeArr.Comment = "GetTypeInfoList";
             foreach (string value in typeInfoList)
             {
                 typeArr.AddJsonValue(new JsonElement(value));
