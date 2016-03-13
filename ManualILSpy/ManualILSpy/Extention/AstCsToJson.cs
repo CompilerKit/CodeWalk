@@ -1667,14 +1667,14 @@ namespace ManualILSpy.Extention
         {
             ClearTypeInfo();
             JsonObject declaration = CreateJsonEntityDeclaration(operatorDeclaration);
-
-
             if (operatorDeclaration.OperatorType == OperatorType.Explicit)
             {
+                //essential
                 declaration.AddJsonValue("keyword", GetKeyword(OperatorDeclaration.ExplicitRole));
             }
             else if (operatorDeclaration.OperatorType == OperatorType.Implicit)
             {
+                //essential
                 declaration.AddJsonValue("keyword", GetKeyword(OperatorDeclaration.ImplicitRole));
             }
             else
@@ -1953,7 +1953,8 @@ namespace ManualILSpy.Extention
         {
             JsonObject visit = new JsonObject();
             visit.Comment = "VisitConstraint";
-            visit.AddJsonValue("keyword", GetKeyword(Roles.WhereKeyword));
+
+            AddKeyword(visit, Roles.WhereKeyword);
             visit.AddJsonValue("type-parameter", GenTypeInfo(constraint.TypeParameter));
             visit.AddJsonValue("base-types", GetCommaSeparatedList(constraint.BaseTypes));
 
