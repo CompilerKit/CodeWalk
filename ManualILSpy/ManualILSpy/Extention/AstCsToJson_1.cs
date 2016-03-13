@@ -11,7 +11,7 @@ using System.Linq;
 
 namespace ManualILSpy.Extention
 {
-    partial class AstCSharpToJsonVisitor : IAstVisitor
+    partial class AstCsToJsonVisitor : IAstVisitor
     {
         /// <summary>
         /// add type information of the expression to jsonobject

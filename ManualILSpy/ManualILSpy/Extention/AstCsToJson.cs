@@ -11,7 +11,7 @@ using System.Linq;
 
 namespace ManualILSpy.Extention
 {
-    public partial class AstCSharpToJsonVisitor : IAstVisitor
+    public partial class AstCsToJsonVisitor : IAstVisitor
     {
         Stack<JsonValue> jsonValueStack = new Stack<JsonValue>();
         Dictionary<string, int> typeInfo = new Dictionary<string, int>();
@@ -19,7 +19,7 @@ namespace ManualILSpy.Extention
 
         public JsonValue LastValue { get; private set; }
 
-        public AstCSharpToJsonVisitor(ITextOutput output)
+        public AstCsToJsonVisitor(ITextOutput output)
         {
         }
 
