@@ -1,4 +1,5 @@
-﻿using System;
+﻿//MIT, 2016, Brezza27, EngineKit
+using System;
 using System.IO;
 using System.Text;
 using System.Collections.Generic;
@@ -243,7 +244,7 @@ namespace ManualILSpy.Extention
 
         public void WriteComment(string comment)
         {
-            if (comment.Length==0 || comment == null)
+            if (comment.Length == 0 || comment == null)
             {
                 return;
             }
@@ -399,7 +400,7 @@ namespace ManualILSpy.Extention
 
         public override void WriteKeyword(Role role, string keyword)
         {
-            
+
             output.Write('"' + keyword + '"');
         }
 

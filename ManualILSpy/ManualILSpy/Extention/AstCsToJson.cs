@@ -142,6 +142,7 @@ namespace ManualILSpy.Extention
 
         JsonElement GetIdentifier(Identifier identifier)
         {
+            //TODO: review here
             string name = identifier.Name;
             if (name[0] == '<' && name[1] == '>')
             {
@@ -434,7 +435,6 @@ namespace ManualILSpy.Extention
         public void VisitCheckedExpression(CheckedExpression checkedExpression)
         {
             JsonObject expression = CreateJsonExpression(checkedExpression);
-
             AddKeyword(expression, CheckedExpression.CheckedKeywordRole);
             expression.AddJsonValue("expression", GenExpression(checkedExpression.Expression));
             Push(expression);
@@ -1235,7 +1235,7 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = CreateJsonStatement(returnStatement);
 
-            AddKeyword(statement, ReturnStatement.ReturnKeywordRole));
+            AddKeyword(statement, ReturnStatement.ReturnKeywordRole);
             if (!returnStatement.Expression.IsNull)
             {
                 statement.AddJsonValue("expression", GenExpression(returnStatement.Expression));

@@ -155,7 +155,7 @@ namespace ManualILSpy.Extention
         void AddKeyword(JsonObject jsonObject, TokenRole tkrole)
         {
             //we may skip this  ...
-            jsonObject.AddJsonValue("keyword", GetKeyword(tkrole));
+            ///jsonObject.AddJsonValue("keyword", GetKeyword(tkrole));
         }
     }
 
