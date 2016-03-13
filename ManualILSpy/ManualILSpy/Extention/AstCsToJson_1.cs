@@ -155,7 +155,11 @@ namespace ManualILSpy.Extention
             jsonEntityDecl.AddJsonValue("statement-type", CsSpecAstName.GetCsSpecName<T>());
             return jsonEntityDecl;
         }
-
+        void AddKeyword(JsonObject jsonObject, TokenRole tkrole)
+        {
+            //we may skip this  ...
+            jsonObject.AddJsonValue("keyword", GetKeyword(tkrole));
+        }
     }
 
 
