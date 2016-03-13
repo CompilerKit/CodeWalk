@@ -18,9 +18,7 @@
 
 using System;
 using System.IO;
-using System.Threading.Tasks;
-//using System.Windows.Threading;
-//using ICSharpCode.ILSpy.Options;
+using System.Threading.Tasks; 
 using Mono.Cecil;
 
 namespace ICSharpCode.ILSpy

@@ -1,13 +1,10 @@
-﻿using System;
-using System.Diagnostics;
-using System.Collections.Generic;
-using ICSharpCode.Decompiler;
-using ICSharpCode.NRefactory;
-using ICSharpCode.NRefactory.CSharp;
-using ICSharpCode.NRefactory.PatternMatching;
-using ICSharpCode.NRefactory.TypeSystem;
+﻿//MIT, 2016, Brezza27, EngineKit
+
+
+using System; 
+using ICSharpCode.NRefactory.CSharp; 
 using ManualILSpy.Extention.Json;
-using System.Linq;
+ 
 
 namespace ManualILSpy.Extention
 {
