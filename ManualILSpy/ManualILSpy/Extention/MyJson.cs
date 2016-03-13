@@ -49,7 +49,14 @@ namespace ManualILSpy.Extention.Json
                 throw new Exception("This key already contain value");
             }
         }
-
+        public void AddJsonValue(string key, int value)
+        {
+            AddJsonValue(key, new JsonElement(value));
+        }
+        public void AddJsonValue(string key, string value)
+        {
+            AddJsonValue(key, new JsonElement(value));
+        }
         public override void AcceptWriter(ITextOutput writer)
         {
             List<string> keyList = new List<string>(Values.Keys);
