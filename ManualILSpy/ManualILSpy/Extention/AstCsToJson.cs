@@ -11,7 +11,7 @@ using System.Linq;
 
 namespace ManualILSpy.Extention
 {
-    public partial class AstCSharpToJsonVisitor : IAstVisitor
+    public partial class AstCsToJsonVisitor : IAstVisitor
     {
         Stack<JsonValue> jsonValueStack = new Stack<JsonValue>();
         Dictionary<string, int> typeInfo = new Dictionary<string, int>();
@@ -19,7 +19,7 @@ namespace ManualILSpy.Extention
 
         public JsonValue LastValue { get; private set; }
 
-        public AstCSharpToJsonVisitor(ITextOutput output)
+        public AstCsToJsonVisitor(ITextOutput output)
         {
         }
 
@@ -232,8 +232,8 @@ namespace ManualILSpy.Extention
         #region Expressions
         public void VisitAnonymousMethodExpression(AnonymousMethodExpression anonymousMethodExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitAnonymousMethodExpression";
+            JsonObject expression = CreateJsonExpression(anonymousMethodExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("anonymous-method-expression"));
             expression.AddJsonValue("keyword", GetKeyword(AnonymousMethodExpression.AsyncModifierRole));
             expression.AddJsonValue("delegate-keyword", GetKeyword(AnonymousMethodExpression.DelegateKeywordRole));
@@ -248,8 +248,8 @@ namespace ManualILSpy.Extention
 
         public void VisitUndocumentedExpression(UndocumentedExpression undocumentedExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitUndocumentedExpression";
+            JsonObject expression = CreateJsonExpression(undocumentedExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("undocumented-expression"));
             switch (undocumentedExpression.UndocumentedExpressionType)
             {
@@ -276,7 +276,7 @@ namespace ManualILSpy.Extention
             }
             else
             {
-                expression.AddJsonValue("arguments", null);
+                expression.AddJsonNull("arguments");
             }
             Push(expression);
             //throw new Exception("first time testing");//implement already, but not tested
@@ -284,8 +284,8 @@ namespace ManualILSpy.Extention
 
         public void VisitArrayCreateExpression(ArrayCreateExpression arrayCreateExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitArrayCreateExpression";
+            JsonObject expression = CreateJsonExpression(arrayCreateExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("array-create-expression"));
             expression.AddJsonValue("keyword", GetKeyword(ArrayCreateExpression.NewKeywordRole));
             arrayCreateExpression.Type.AcceptVisitor(this);
@@ -316,8 +316,8 @@ namespace ManualILSpy.Extention
 
         public void VisitArrayInitializerExpression(ArrayInitializerExpression arrayInitializerExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitArrayInitializerExpression";
+            JsonObject expression = CreateJsonExpression(arrayInitializerExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("array-initializer-expression"));
             bool bracesAreOptional = arrayInitializerExpression.Elements.Count == 1
                 && IsObjectOrCollectionInitializer(arrayInitializerExpression.Parent)
@@ -377,8 +377,8 @@ namespace ManualILSpy.Extention
 
         public void VisitAsExpression(AsExpression asExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitAsExpression";
+            JsonObject expression = CreateJsonExpression(asExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("as-expression"));
             expression.AddJsonValue("keyword", GetKeyword(AsExpression.AsKeywordRole));
             asExpression.Type.AcceptVisitor(this);
@@ -389,8 +389,8 @@ namespace ManualILSpy.Extention
 
         public void VisitAssignmentExpression(AssignmentExpression assignmentExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitAssignmentExpression";
+            JsonObject expression = CreateJsonExpression(assignmentExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("assignment-expression"));
             assignmentExpression.Left.AcceptVisitor(this);
             expression.AddJsonValue("left-operand", Pop());
@@ -403,8 +403,8 @@ namespace ManualILSpy.Extention
 
         public void VisitBaseReferenceExpression(BaseReferenceExpression baseReferenceExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitBaseReferenceExpression";
+            JsonObject expression = CreateJsonExpression(baseReferenceExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("base-reference-expression"));
             expression.AddJsonValue("keyword", new JsonElement("base"));
 
@@ -414,8 +414,8 @@ namespace ManualILSpy.Extention
 
         public void VisitBinaryOperatorExpression(BinaryOperatorExpression binaryOperatorExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitBinaryOperatorExpression";
+            JsonObject expression = CreateJsonExpression(binaryOperatorExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("binary-operator-expression"));
             binaryOperatorExpression.Left.AcceptVisitor(this);
             expression.AddJsonValue("left-operand", Pop());
@@ -425,24 +425,25 @@ namespace ManualILSpy.Extention
             expression.AddJsonValue("right-operand", Pop());
 
 
-            PushWithTypeInfo(expression, binaryOperatorExpression);
+            Push(expression);
         }
         public void VisitCastExpression(CastExpression castExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitCastExpression";
+            JsonObject expression = CreateJsonExpression(castExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("cast-expression"));
             castExpression.Type.AcceptVisitor(this);
             expression.AddJsonValue("type-info", Pop());
             castExpression.Expression.AcceptVisitor(this);
             expression.AddJsonValue("expression", Pop());
 
-            PushWithTypeInfo(expression, castExpression);
+            Push(expression);
+
         }
         public void VisitCheckedExpression(CheckedExpression checkedExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitCheckedExpression";
+            JsonObject expression = CreateJsonExpression(checkedExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("checked-expression"));
             expression.AddJsonValue("keyword", GetKeyword(CheckedExpression.CheckedKeywordRole));
             checkedExpression.Expression.AcceptVisitor(this);
@@ -454,8 +455,8 @@ namespace ManualILSpy.Extention
 
         public void VisitConditionalExpression(ConditionalExpression conditionalExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitConditionalExpression";
+            JsonObject expression = CreateJsonExpression(conditionalExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("conditional-expression"));
             conditionalExpression.Condition.AcceptVisitor(this);
             expression.AddJsonValue("condition", Pop());
@@ -470,8 +471,8 @@ namespace ManualILSpy.Extention
 
         public void VisitDefaultValueExpression(DefaultValueExpression defaultValueExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitDefaultValueExpression";
+            JsonObject expression = CreateJsonExpression(defaultValueExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("default-value-expression"));
             expression.AddJsonValue("keyword", GetKeyword(DefaultValueExpression.DefaultKeywordRole));
             defaultValueExpression.Type.AcceptVisitor(this);
@@ -483,8 +484,8 @@ namespace ManualILSpy.Extention
 
         public void VisitDirectionExpression(DirectionExpression directionExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitDirectionExpression";
+            JsonObject expression = CreateJsonExpression(directionExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("direction-expression"));
             switch (directionExpression.FieldDirection)
             {
@@ -510,8 +511,8 @@ namespace ManualILSpy.Extention
 
         public void VisitIndexerExpression(IndexerExpression indexerExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitIndexerExpression";
+            JsonObject expression = CreateJsonExpression(indexerExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("indexer-expression"));
             indexerExpression.Target.AcceptVisitor(this);
             expression.AddJsonValue("target", Pop());
@@ -521,8 +522,8 @@ namespace ManualILSpy.Extention
 
         public void VisitInvocationExpression(InvocationExpression invocationExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitInvocationExpression";
+            JsonObject expression = CreateJsonExpression(invocationExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("invocation"));
             invocationExpression.Target.AcceptVisitor(this);
             expression.AddJsonValue("target", Pop());
@@ -532,8 +533,8 @@ namespace ManualILSpy.Extention
 
         public void VisitIsExpression(IsExpression isExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitIsExpression";
+            JsonObject expression = CreateJsonExpression(isExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("is-expression"));
             expression.AddJsonValue("keyword", GetKeyword(IsExpression.IsKeywordRole));
             isExpression.Type.AcceptVisitor(this);
@@ -546,8 +547,8 @@ namespace ManualILSpy.Extention
 
         public void VisitLambdaExpression(LambdaExpression lambdaExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitLambdaExpression";
+            JsonObject expression = CreateJsonExpression(lambdaExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("lambda-expression"));
             if (lambdaExpression.IsAsync)
             {
@@ -580,8 +581,8 @@ namespace ManualILSpy.Extention
 
         public void VisitMemberReferenceExpression(MemberReferenceExpression memberReferenceExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitMemberReferenceExpression";
+            JsonObject expression = CreateJsonExpression(memberReferenceExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("member-reference"));
             memberReferenceExpression.Target.AcceptVisitor(this);
             expression.AddJsonValue("target", Pop());
@@ -592,8 +593,8 @@ namespace ManualILSpy.Extention
 
         public void VisitNamedArgumentExpression(NamedArgumentExpression namedArgumentExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitNamedArgumentExpression";
+            JsonObject expression = CreateJsonExpression(namedArgumentExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("named-argument-expression"));
             expression.AddJsonValue("identifier", GetIdentifier(namedArgumentExpression.NameToken));
             namedArgumentExpression.Expression.AcceptVisitor(this);
@@ -605,8 +606,8 @@ namespace ManualILSpy.Extention
 
         public void VisitNamedExpression(NamedExpression namedExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitNamedExpression";
+            JsonObject expression = CreateJsonExpression(namedExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("named-expression"));
             expression.AddJsonValue("identifier", GetIdentifier(namedExpression.NameToken));
             namedExpression.Expression.AcceptVisitor(this);
@@ -618,8 +619,8 @@ namespace ManualILSpy.Extention
 
         public void VisitNullReferenceExpression(NullReferenceExpression nullReferenceExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitNullReferenceExpression";
+            JsonObject expression = CreateJsonExpression(nullReferenceExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("null-reference"));
             expression.AddJsonValue("keyword", new JsonElement("null"));
             Push(expression);
@@ -627,8 +628,8 @@ namespace ManualILSpy.Extention
 
         public void VisitObjectCreateExpression(ObjectCreateExpression objectCreateExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitObjectCreateExpression";
+            JsonObject expression = CreateJsonExpression(objectCreateExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("ObjectCreate"));
             expression.AddJsonValue("keyword", GetKeyword(ObjectCreateExpression.NewKeywordRole));
             objectCreateExpression.Type.AcceptVisitor(this);
@@ -649,8 +650,8 @@ namespace ManualILSpy.Extention
 
         public void VisitAnonymousTypeCreateExpression(AnonymousTypeCreateExpression anonymousTypeCreateExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitAnonymousTypeCreateExpression";
+            JsonObject expression = CreateJsonExpression(anonymousTypeCreateExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("anonymous-type-create-expression"));
             expression.AddJsonValue("keyword", GetKeyword(AnonymousTypeCreateExpression.NewKeywordRole));
             expression.AddJsonValue("elements", GetInitializerElements(anonymousTypeCreateExpression.Initializers));
@@ -660,8 +661,8 @@ namespace ManualILSpy.Extention
 
         public void VisitParenthesizedExpression(ParenthesizedExpression parenthesizedExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitParenthesizedExpression";
+            JsonObject expression = CreateJsonExpression(parenthesizedExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("parenthesized-expression"));
             parenthesizedExpression.Expression.AcceptVisitor(this);
             expression.AddJsonValue("expression", Pop());
@@ -672,8 +673,8 @@ namespace ManualILSpy.Extention
 
         public void VisitPointerReferenceExpression(PointerReferenceExpression pointerReferenceExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitPointerReferenceExpression";
+            JsonObject expression = CreateJsonExpression(pointerReferenceExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("pointer-reference-expression"));
             pointerReferenceExpression.Target.AcceptVisitor(this);
             expression.AddJsonValue("target", Pop());
@@ -688,8 +689,8 @@ namespace ManualILSpy.Extention
         #region VisitPrimitiveExpression
         public void VisitPrimitiveExpression(PrimitiveExpression primitiveExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitPrimitiveExpression";
+            JsonObject expression = CreateJsonExpression(primitiveExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("primitive-expression"));
             expression.AddJsonValue("value", new JsonElement(primitiveExpression.Value.ToString()));
             expression.AddJsonValue("unsafe-literal-value", new JsonElement(primitiveExpression.UnsafeLiteralValue));
@@ -699,8 +700,8 @@ namespace ManualILSpy.Extention
 
         public void VisitSizeOfExpression(SizeOfExpression sizeOfExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitSizeOfExpression";
+            JsonObject expression = CreateJsonExpression(sizeOfExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("sizeof-expression"));
             expression.AddJsonValue("keyword", GetKeyword(SizeOfExpression.SizeofKeywordRole));
             sizeOfExpression.Type.AcceptVisitor(this);
@@ -712,8 +713,8 @@ namespace ManualILSpy.Extention
 
         public void VisitStackAllocExpression(StackAllocExpression stackAllocExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitStackAllocExpression";
+            JsonObject expression = CreateJsonExpression(stackAllocExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("stack-alloc-expression"));
             expression.AddJsonValue("keyword", GetKeyword(StackAllocExpression.StackallocKeywordRole));
             stackAllocExpression.Type.AcceptVisitor(this);
@@ -726,20 +727,18 @@ namespace ManualILSpy.Extention
 
         public void VisitThisReferenceExpression(ThisReferenceExpression thisReferenceExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitThisReferenceExpression";
+            JsonObject expression = CreateJsonExpression(thisReferenceExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("this-reference-expression"));
             expression.AddJsonValue("keyword", new JsonElement("this"));
-
-            AddTypeInformation(expression, thisReferenceExpression);
-
+             
             Push(expression);
         }
 
         public void VisitTypeOfExpression(TypeOfExpression typeOfExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitTypeOfExpression";
+            JsonObject expression = CreateJsonExpression(typeOfExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("typeof-expression"));
             expression.AddJsonValue("keyword", GetKeyword(TypeOfExpression.TypeofKeywordRole));
             typeOfExpression.Type.AcceptVisitor(this);
@@ -755,8 +754,8 @@ namespace ManualILSpy.Extention
 
         public void VisitUnaryOperatorExpression(UnaryOperatorExpression unaryOperatorExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitUnaryOperatorExpression";
+            JsonObject expression = CreateJsonExpression(unaryOperatorExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("unary-operator-expression"));
             UnaryOperatorType opType = unaryOperatorExpression.Operator;
             var opSymbol = UnaryOperatorExpression.GetOperatorRole(opType);
@@ -779,8 +778,8 @@ namespace ManualILSpy.Extention
 
         public void VisitUncheckedExpression(UncheckedExpression uncheckedExpression)
         {
-            JsonObject expression = new JsonObject();
-            expression.Comment = "VisitUncheckedExpression";
+            JsonObject expression = CreateJsonExpression(uncheckedExpression);
+
             expression.AddJsonValue("expression-type", new JsonElement("unchecked-expression"));
             expression.AddJsonValue("keyword", GetKeyword(UncheckedExpression.UncheckedKeywordRole));
             uncheckedExpression.Expression.AcceptVisitor(this);
@@ -1430,7 +1429,7 @@ namespace ManualILSpy.Extention
             }
             else
             {
-                statement.AddJsonValue("expression", null);
+                statement.AddJsonNull("expression");
             }
             Push(statement);
         }
@@ -1777,7 +1776,7 @@ namespace ManualILSpy.Extention
             }
             else
             {
-                initializer.AddJsonValue("count-expression", null);
+                initializer.AddJsonNull("count-expression");
             }
             Push(initializer);
             //implement already, but not tested
@@ -1972,7 +1971,7 @@ namespace ManualILSpy.Extention
             }
             else
             {
-                variable.AddJsonValue("initializer", null);
+                variable.AddJsonNull("initializer");
             }
             Push(variable);
         }
@@ -2107,7 +2106,7 @@ namespace ManualILSpy.Extention
             }
             else
             {
-                visit.AddJsonValue("argument", null);
+                visit.AddJsonNull("argument");
             }
 
             Push(visit);

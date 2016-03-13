@@ -57,6 +57,10 @@ namespace ManualILSpy.Extention.Json
         {
             AddJsonValue(key, new JsonElement(value));
         }
+        public void AddJsonNull(string key)
+        {
+            AddJsonValue(key, new JsonElement(null));
+        }
         public override void AcceptWriter(ITextOutput writer)
         {
             List<string> keyList = new List<string>(Values.Keys);

@@ -51,14 +51,14 @@ namespace ICSharpCode.ILSpy
         {
             writer = new JsonTokenWriter(new StringBuilderTextOutput());
             //visitor = new ManualILSpy.Extention.JsonCSharpVisitor(writer);
-            visitor = new AstCSharpToJsonVisitor(new StringBuilderTextOutput());
+            visitor = new AstCsToJsonVisitor(new StringBuilderTextOutput());
         }
 
         public CSharpLanguage(ITextOutput output)
         {
             writer = new JsonTokenWriter(output);
             //visitor = new ManualILSpy.Extention.JsonCSharpVisitor(writer);
-            visitor = new AstCSharpToJsonVisitor(output);
+            visitor = new AstCsToJsonVisitor(output);
         }
 
         public CSharpLanguage(IAstVisitor visitor, ITextOutput output)
@@ -270,7 +270,7 @@ namespace ICSharpCode.ILSpy
         void GenerateAstJson(AstBuilder astBuilder, ITextOutput output)
         {
             astBuilder.SyntaxTree.AcceptVisitor(visitor);
-            AstCSharpToJsonVisitor visit = visitor as AstCSharpToJsonVisitor;
+            AstCsToJsonVisitor visit = visitor as AstCsToJsonVisitor;
             if (visit != null)
             {
                 result = visit.LastValue;
