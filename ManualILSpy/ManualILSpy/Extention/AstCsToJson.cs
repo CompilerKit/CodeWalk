@@ -287,8 +287,7 @@ namespace ManualILSpy.Extention
             JsonObject expression = CreateJsonExpression(arrayCreateExpression);
 
             expression.AddJsonValue("keyword", GetKeyword(ArrayCreateExpression.NewKeywordRole));
-            arrayCreateExpression.Type.AcceptVisitor(this);
-            expression.AddJsonValue("array-type", Pop());
+            expression.AddJsonValue("array-type", GenTypeInfo(arrayCreateExpression.Type));
             if (arrayCreateExpression.Arguments.Count > 0)
             {
                 expression.AddJsonValue("arguments", GetCommaSeparatedList(arrayCreateExpression.Arguments));
@@ -377,8 +376,7 @@ namespace ManualILSpy.Extention
             JsonObject expression = CreateJsonExpression(asExpression);
 
             expression.AddJsonValue("keyword", GetKeyword(AsExpression.AsKeywordRole));
-            asExpression.Type.AcceptVisitor(this);
-            expression.AddJsonValue("type-info", Pop());
+            expression.AddJsonValue("type-info", GenTypeInfo(asExpression.Type));
 
             Push(expression);
         }
@@ -418,10 +416,8 @@ namespace ManualILSpy.Extention
         public void VisitCastExpression(CastExpression castExpression)
         {
             JsonObject expression = CreateJsonExpression(castExpression);
-            castExpression.Type.AcceptVisitor(this);
-            expression.AddJsonValue("type-info", Pop());
+            expression.AddJsonValue("type-info", GenTypeInfo(castExpression.Type));
             expression.AddJsonValue("expression", GenExpression(castExpression.Expression));
-
             Push(expression);
 
         }
@@ -454,11 +450,10 @@ namespace ManualILSpy.Extention
             JsonObject expression = CreateJsonExpression(defaultValueExpression);
 
             expression.AddJsonValue("keyword", GetKeyword(DefaultValueExpression.DefaultKeywordRole));
-            defaultValueExpression.Type.AcceptVisitor(this);
-            expression.AddJsonValue("type-info", Pop());
+            expression.AddJsonValue("type-info", GenTypeInfo(defaultValueExpression.Type));
 
             Push(expression);
-            //throw new Exception("first time testing");//implement already, but not tested
+
         }
 
         public void VisitDirectionExpression(DirectionExpression directionExpression)
@@ -519,9 +514,7 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = CreateJsonExpression(isExpression);
             expression.AddJsonValue("keyword", GetKeyword(IsExpression.IsKeywordRole));
-            isExpression.Type.AcceptVisitor(this);
-            expression.AddJsonValue("type-info", Pop());
-
+            expression.AddJsonValue("type-info", GenTypeInfo(isExpression.Type));
             expression.AddJsonValue("expression", GenExpression(isExpression.Expression));
 
             Push(expression);
@@ -563,8 +556,7 @@ namespace ManualILSpy.Extention
         public void VisitMemberReferenceExpression(MemberReferenceExpression memberReferenceExpression)
         {
             JsonObject expression = CreateJsonExpression(memberReferenceExpression);
-            memberReferenceExpression.Target.AcceptVisitor(this);
-            expression.AddJsonValue("target", Pop());
+            expression.AddJsonValue("target", GenExpression(memberReferenceExpression.Target));
             expression.AddJsonValue("identifier-name", GetIdentifier(memberReferenceExpression.MemberNameToken));
 
             Push(expression);
@@ -602,8 +594,7 @@ namespace ManualILSpy.Extention
             JsonObject expression = CreateJsonExpression(objectCreateExpression);
 
             expression.AddJsonValue("keyword", GetKeyword(ObjectCreateExpression.NewKeywordRole));
-            objectCreateExpression.Type.AcceptVisitor(this);
-            expression.AddJsonValue("type-info", Pop());
+            expression.AddJsonValue("type-info", GenTypeInfo(objectCreateExpression.Type));
 
             bool useParenthesis = objectCreateExpression.Arguments.Any() || objectCreateExpression.Initializer.IsNull;
             if (!objectCreateExpression.LParToken.IsNull)
@@ -677,8 +668,7 @@ namespace ManualILSpy.Extention
         {
             JsonObject expression = CreateJsonExpression(stackAllocExpression);
             expression.AddJsonValue("keyword", GetKeyword(StackAllocExpression.StackallocKeywordRole));
-            stackAllocExpression.Type.AcceptVisitor(this);
-            expression.AddJsonValue("type-info", Pop());
+            expression.AddJsonValue("type-info", GenTypeInfo(stackAllocExpression.Type));
             expression.AddJsonValue("count-expression", GetCommaSeparatedList(new[] { stackAllocExpression.CountExpression }));
 
             Push(expression);
@@ -1047,9 +1037,8 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitDoWhileStatement";
-            statement.AddJsonValue("statement-type", new JsonElement("do-while-statement"));
-            doWhileStatement.Condition.AcceptVisitor(this);
-            statement.AddJsonValue("condition", Pop());
+            statement.AddJsonValue("statement-type", new JsonElement("do-while-statement")); 
+            statement.AddJsonValue("condition", GenExpression(doWhileStatement.Condition));
             statement.AddJsonValue("statement-list", GetEmbeddedStatement(doWhileStatement.EmbeddedStatement));
             Push(statement);
         }
@@ -1074,9 +1063,8 @@ namespace ManualILSpy.Extention
             JsonObject statement = new JsonObject();
             statement.Comment = "VisitFixedStatement";
             statement.AddJsonValue("statement-type", new JsonElement("fixed-statement"));
-            statement.AddJsonValue("keyword", GetKeyword(FixedStatement.FixedKeywordRole));
-            fixedStatement.Type.AcceptVisitor(this);
-            statement.AddJsonValue("type-info", Pop());
+            statement.AddJsonValue("keyword", GetKeyword(FixedStatement.FixedKeywordRole)); 
+            statement.AddJsonValue("type-info",GenTypeInfo(fixedStatement.Type));
             statement.AddJsonValue("variables", GetCommaSeparatedList(fixedStatement.Variables));
             statement.AddJsonValue("embedded-statement", GetEmbeddedStatement(fixedStatement.EmbeddedStatement));
 
@@ -1412,8 +1400,8 @@ namespace ManualILSpy.Extention
             visitCatch.AddJsonValue("catch-keyword", GetKeyword(CatchClause.CatchKeywordRole));
             if (!catchClause.Type.IsNull)
             {
-                catchClause.Type.AcceptVisitor(this);
-                visitCatch.AddJsonValue("type-info", Pop());
+            
+                visitCatch.AddJsonValue("type-info", GenTypeInfo(catchClause.Type));
                 if (!string.IsNullOrEmpty(catchClause.VariableName))
                 {
                     visitCatch.AddJsonValue("identifier", GetIdentifier(catchClause.VariableNameToken));
@@ -1475,8 +1463,7 @@ namespace ManualILSpy.Extention
             statement.AddJsonValue("statement-type", new JsonElement("variable-declaration"));
             JsonValue modifier = GetModifiers(variableDeclarationStatement.GetChildrenByRole(VariableDeclarationStatement.ModifierRole));
             statement.AddJsonValue("modifier", modifier);
-            variableDeclarationStatement.Type.AcceptVisitor(this);
-            statement.AddJsonValue("declaration-type-info", Pop());
+            statement.AddJsonValue("declaration-type-info", GenTypeInfo(variableDeclarationStatement.Type));
             statement.AddJsonValue("variables-list", GetCommaSeparatedList(variableDeclarationStatement.Variables));
             Push(statement);
         }
@@ -1519,10 +1506,8 @@ namespace ManualILSpy.Extention
         #region TypeMembers
         public void VisitAccessor(Accessor accessor)
         {
-            JsonObject visitAccessor = new JsonObject();
-            visitAccessor.Comment = "VisitAccessor";
-            visitAccessor.AddJsonValue("attributes", GetAttributes(accessor.Attributes));
-            visitAccessor.AddJsonValue("modifier", GetModifiers(accessor.ModifierTokens));
+            JsonObject visitAccessor = CreateJsonEntityDeclaration(accessor);
+
             if (accessor.Role == PropertyDeclaration.GetterRole)
             {
                 visitAccessor.AddJsonValue("keyword", new JsonElement("get"));
@@ -1549,8 +1534,8 @@ namespace ManualILSpy.Extention
         public void VisitConstructorDeclaration(ConstructorDeclaration constructorDeclaration)
         {
             ClearTypeInfo();
-            JsonObject construct = new JsonObject();
-            construct.Comment = "VisitConstructorDeclaration";
+            JsonObject construct = CreateJsonEntityDeclaration(constructorDeclaration);
+
             TypeDeclaration type = constructorDeclaration.Parent as TypeDeclaration;
             if (type != null && type.Name != constructorDeclaration.Name)
             {
@@ -1560,7 +1545,7 @@ namespace ManualILSpy.Extention
             {
                 construct.AddJsonValue("name", new JsonElement(constructorDeclaration.Name));
             }
-            construct.AddJsonValue("modifier", GetModifiers(constructorDeclaration.ModifierTokens));
+
             construct.AddJsonValue("parameters", GetCommaSeparatedList(constructorDeclaration.Parameters));
             if (!constructorDeclaration.Initializer.IsNull)
             {
@@ -1592,10 +1577,8 @@ namespace ManualILSpy.Extention
 
         public void VisitDestructorDeclaration(DestructorDeclaration destructorDeclaration)
         {
-            JsonObject declaration = new JsonObject();
-            declaration.Comment = "VisitDestructorDeclaration";
-            declaration.AddJsonValue("attributes", GetAttributes(destructorDeclaration.Attributes));
-            declaration.AddJsonValue("modifier", GetModifiers(destructorDeclaration.ModifierTokens));
+            JsonObject declaration = CreateJsonEntityDeclaration(destructorDeclaration);
+
             declaration.AddJsonValue("tilde-role", GetKeyword(DestructorDeclaration.TildeRole));
             TypeDeclaration type = destructorDeclaration.Parent as TypeDeclaration;
             if (type != null && type.Name != destructorDeclaration.Name)
@@ -1615,10 +1598,7 @@ namespace ManualILSpy.Extention
 
         public void VisitEnumMemberDeclaration(EnumMemberDeclaration enumMemberDeclaration)
         {
-            JsonObject declaration = new JsonObject();
-            declaration.Comment = "VisitEnumMemberDeclaration";
-            declaration.AddJsonValue("attributes", GetAttributes(enumMemberDeclaration.Attributes));
-            declaration.AddJsonValue("modifier", GetModifiers(enumMemberDeclaration.ModifierTokens));
+            JsonObject declaration = CreateJsonEntityDeclaration(enumMemberDeclaration);
             declaration.AddJsonValue("identifier", GetIdentifier(enumMemberDeclaration.NameToken));
             if (!enumMemberDeclaration.Initializer.IsNull)
             {
@@ -1631,13 +1611,8 @@ namespace ManualILSpy.Extention
 
         public void VisitEventDeclaration(EventDeclaration eventDeclaration)
         {
-            JsonObject declaration = new JsonObject();
-            declaration.Comment = "VisitEventDeclaration";
-            declaration.AddJsonValue("attributes", GetAttributes(eventDeclaration.Attributes));
-            declaration.AddJsonValue("modifier", GetModifiers(eventDeclaration.ModifierTokens));
+            JsonObject declaration = CreateJsonEntityDeclaration(eventDeclaration);
             declaration.AddJsonValue("keyword", GetKeyword(EventDeclaration.EventKeywordRole));
-            eventDeclaration.ReturnType.AcceptVisitor(this);
-            declaration.AddJsonValue("return-type", Pop());
             declaration.AddJsonValue("variables", GetCommaSeparatedList(eventDeclaration.Variables));
 
             Push(declaration);
@@ -1647,13 +1622,8 @@ namespace ManualILSpy.Extention
 
         public void VisitCustomEventDeclaration(CustomEventDeclaration customEventDeclaration)
         {
-            JsonObject declaration = new JsonObject();
-            declaration.Comment = "VisitCustomEventDeclaration";
-            declaration.AddJsonValue("attributes", GetAttributes(customEventDeclaration.Attributes));
-            declaration.AddJsonValue("modifier", GetModifiers(customEventDeclaration.ModifierTokens));
+            JsonObject declaration = CreateJsonEntityDeclaration(customEventDeclaration);
             declaration.AddJsonValue("keyword", GetKeyword(EventDeclaration.EventKeywordRole));
-            customEventDeclaration.ReturnType.AcceptVisitor(this);
-            declaration.AddJsonValue("return-type", Pop());
             declaration.AddJsonValue("private-implementation-type", GetPrivateImplementationType(customEventDeclaration.PrivateImplementationType));
             declaration.AddJsonValue("identifier", GetIdentifier(customEventDeclaration.NameToken));
             JsonArray children = new JsonArray();
@@ -1682,26 +1652,16 @@ namespace ManualILSpy.Extention
 
         public void VisitFieldDeclaration(FieldDeclaration fieldDeclaration)
         {
-            JsonObject declaration = new JsonObject();
-            declaration.Comment = "VisitFieldDeclaration";
-            declaration.AddJsonValue("attributes", GetAttributes(fieldDeclaration.Attributes));
-            declaration.AddJsonValue("modifier", GetModifiers(fieldDeclaration.ModifierTokens));
-            fieldDeclaration.ReturnType.AcceptVisitor(this);
-            declaration.AddJsonValue("return-type", Pop());
+            JsonObject declaration = CreateJsonEntityDeclaration(fieldDeclaration);
             declaration.AddJsonValue("variables", GetCommaSeparatedList(fieldDeclaration.Variables));
-
             Push(declaration);
         }
 
         public void VisitFixedFieldDeclaration(FixedFieldDeclaration fixedFieldDeclaration)
         {
-            JsonObject declaration = new JsonObject();
-            declaration.Comment = "VisitFixedFieldDeclaration";
-            declaration.AddJsonValue("attributes", GetAttributes(fixedFieldDeclaration.Attributes));
-            declaration.AddJsonValue("modifier", GetModifiers(fixedFieldDeclaration.ModifierTokens));
+            JsonObject declaration = CreateJsonEntityDeclaration(fixedFieldDeclaration);
+
             declaration.AddJsonValue("keyword", GetKeyword(FixedFieldDeclaration.FixedKeywordRole));
-            fixedFieldDeclaration.ReturnType.AcceptVisitor(this);
-            declaration.AddJsonValue("return-type", Pop());
             declaration.AddJsonValue("variables", GetCommaSeparatedList(fixedFieldDeclaration.Variables));
 
             Push(declaration);
@@ -1731,12 +1691,8 @@ namespace ManualILSpy.Extention
         public void VisitIndexerDeclaration(IndexerDeclaration indexerDeclaration)
         {
             ClearTypeInfo();
-            JsonObject declaration = new JsonObject();
-            declaration.Comment = "VisitIndexerDeclaration";
-            declaration.AddJsonValue("attributes", GetAttributes(indexerDeclaration.Attributes));
-            declaration.AddJsonValue("modifier", GetModifiers(indexerDeclaration.ModifierTokens));
-            indexerDeclaration.ReturnType.AcceptVisitor(this);
-            declaration.AddJsonValue("return-type", Pop());
+            JsonObject declaration = CreateJsonEntityDeclaration(indexerDeclaration);
+
             declaration.AddJsonValue("private-implementation-type", GetPrivateImplementationType(indexerDeclaration.PrivateImplementationType));
             declaration.AddJsonValue("keyword", GetKeyword(IndexerDeclaration.ThisKeywordRole));
             declaration.AddJsonValue("parameters", GetCommaSeparatedList(indexerDeclaration.Parameters));
@@ -1767,14 +1723,9 @@ namespace ManualILSpy.Extention
         public void VisitMethodDeclaration(MethodDeclaration methodDeclaration)
         {
             ClearTypeInfo();
-            JsonObject method = new JsonObject();
-            method.Comment = "VisitMethodDeclaration";
+            JsonObject method = CreateJsonEntityDeclaration(methodDeclaration);
+
             method.AddJsonValue("name", new JsonElement(methodDeclaration.Name));
-            //write modifier
-            method.AddJsonValue("modifier", GetModifiers(methodDeclaration.ModifierTokens));
-            //write return type
-            methodDeclaration.ReturnType.AcceptVisitor(this);
-            method.AddJsonValue("return-type", Pop());
             //write parameters
             //ParameterDeclaration param = new ParameterDeclaration("test", ParameterModifier.None);
             //PrimitiveType type = new PrimitiveType("string");
@@ -1792,10 +1743,9 @@ namespace ManualILSpy.Extention
         public void VisitOperatorDeclaration(OperatorDeclaration operatorDeclaration)
         {
             ClearTypeInfo();
-            JsonObject declaration = new JsonObject();
-            declaration.Comment = "VisitOperatorDeclaration";
-            declaration.AddJsonValue("attributes", GetAttributes(operatorDeclaration.Attributes));
-            declaration.AddJsonValue("modifier", GetModifiers(operatorDeclaration.ModifierTokens));
+            JsonObject declaration = CreateJsonEntityDeclaration(operatorDeclaration);
+
+
             if (operatorDeclaration.OperatorType == OperatorType.Explicit)
             {
                 declaration.AddJsonValue("keyword", GetKeyword(OperatorDeclaration.ExplicitRole));
@@ -1806,15 +1756,15 @@ namespace ManualILSpy.Extention
             }
             else
             {
-                operatorDeclaration.ReturnType.AcceptVisitor(this);
-                declaration.AddJsonValue("return-type", Pop());
+                //operatorDeclaration.ReturnType.AcceptVisitor(this);
+                //declaration.AddJsonValue("return-type", Pop());
             }
             declaration.AddJsonValue("operator-keyword", GetKeyword(OperatorDeclaration.OperatorKeywordRole));
             if (operatorDeclaration.OperatorType == OperatorType.Explicit
                 || operatorDeclaration.OperatorType == OperatorType.Implicit)
             {
-                operatorDeclaration.ReturnType.AcceptVisitor(this);
-                declaration.AddJsonValue("return-type", Pop());
+                //operatorDeclaration.ReturnType.AcceptVisitor(this);
+                //declaration.AddJsonValue("return-type", Pop());
             }
             else
             {
@@ -1854,8 +1804,7 @@ namespace ManualILSpy.Extention
                     break;
             }
             parameter.AddJsonValue("modifier", keyword);
-            parameterDeclaration.Type.AcceptVisitor(this);
-            parameter.AddJsonValue("type-info", Pop());
+            parameter.AddJsonValue("type-info", GenTypeInfo(parameterDeclaration.Type));
             parameter.AddJsonValue("name", parameterDeclaration.Name);
             if (parameterDeclaration.DefaultExpression.IsNull)
             {
@@ -1867,12 +1816,8 @@ namespace ManualILSpy.Extention
         public void VisitPropertyDeclaration(PropertyDeclaration propertyDeclaration)
         {
             ClearTypeInfo();
-            JsonObject declaration = new JsonObject();
-            declaration.Comment = "VisitPropertyDeclaration";
-            declaration.AddJsonValue("attributes", GetAttributes(propertyDeclaration.Attributes));
-            declaration.AddJsonValue("modifier", GetModifiers(propertyDeclaration.ModifierTokens));
-            propertyDeclaration.ReturnType.AcceptVisitor(this);
-            declaration.AddJsonValue("return-type", Pop());
+            JsonObject declaration = CreateJsonEntityDeclaration(propertyDeclaration);
+
             declaration.AddJsonValue("private-implementation-type", GetPrivateImplementationType(propertyDeclaration.PrivateImplementationType));
             declaration.AddJsonValue("identifier", GetIdentifier(propertyDeclaration.NameToken));
             JsonArray children = new JsonArray();
@@ -1910,7 +1855,6 @@ namespace ManualILSpy.Extention
             variable.AddJsonValue("variable-name", GetIdentifier(variableInitializer.NameToken));
             if (!variableInitializer.Initializer.IsNull)
             {
-
                 variable.AddJsonValue("initializer", GenExpression(variableInitializer.Initializer));
             }
             else
@@ -1956,8 +1900,7 @@ namespace ManualILSpy.Extention
         {
             JsonObject memtype = new JsonObject();
             memtype.Comment = "VisitMemberType";
-            memberType.Target.AcceptVisitor(this);
-            memtype.AddJsonValue("type-info", Pop());
+            memtype.AddJsonValue("type-info", GenTypeInfo(memberType.Target));
             memtype.AddJsonValue("member-name", GetIdentifier(memberType.MemberNameToken));
             Push(memtype);
         }
@@ -2088,8 +2031,7 @@ namespace ManualILSpy.Extention
             JsonObject visit = new JsonObject();
             visit.Comment = "VisitConstraint";
             visit.AddJsonValue("keyword", GetKeyword(Roles.WhereKeyword));
-            constraint.TypeParameter.AcceptVisitor(this);
-            visit.AddJsonValue("type-parameter", Pop());
+            visit.AddJsonValue("type-parameter", GenTypeInfo(constraint.TypeParameter));
             visit.AddJsonValue("base-types", GetCommaSeparatedList(constraint.BaseTypes));
 
             Push(visit);

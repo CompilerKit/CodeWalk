@@ -113,6 +113,34 @@ namespace ManualILSpy.Extention
             expression.AcceptVisitor(this);
             return Pop();
         }
+        JsonValue GenTypeInfo(AstType astType)
+        {
+            astType.AcceptVisitor(this);
+            return Pop();
+        }
+        JsonObject CreateJsonEntityDeclaration<T>(T entityDecl)
+            where T : EntityDeclaration
+        {
+            JsonObject jsonEntityDecl = new JsonObject();
+            AddVisitComment<T>(jsonEntityDecl);
+            AddAttributes(jsonEntityDecl, entityDecl);
+            AddModifiers(jsonEntityDecl, entityDecl);
+            AddReturnType(jsonEntityDecl, entityDecl);
+            return jsonEntityDecl;
+        }
+
+        void AddReturnType(JsonObject jsonObject, EntityDeclaration entityDecl)
+        {
+            jsonObject.AddJsonValue("return-type", GenTypeInfo(entityDecl.ReturnType));
+        }
+        void AddModifiers(JsonObject jsonObject, EntityDeclaration entityDecl)
+        {
+            jsonObject.AddJsonValue("modifiers", GetModifiers(entityDecl.ModifierTokens));
+        }
+        void AddAttributes(JsonObject jsonObject, EntityDeclaration entityDecl)
+        {
+            jsonObject.AddJsonValue("attributes", GetAttributes(entityDecl.Attributes));
+        }
     }
 
 
