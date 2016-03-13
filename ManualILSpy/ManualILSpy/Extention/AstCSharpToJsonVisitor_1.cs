@@ -23,15 +23,55 @@ namespace ManualILSpy.Extention
             var expressionType = expression.Annotation<ICSharpCode.Decompiler.Ast.TypeInformation>();
             if (expressionType != null)
             {
-                int typeIndex = GetTypeIndex(expressionType.ExpectedType.FullName);
-                jsonObject.AddJsonValue("typeinfo", new JsonElement(typeIndex));
+                if (expressionType.ExpectedType != null)
+                {
+                    int typeIndex = GetTypeIndex(expressionType.ExpectedType.FullName);
+                    jsonObject.AddJsonValue("typeinfo", typeIndex);
+                }
+                else if (expressionType.InferredType != null)
+                {
+                    int typeIndex = GetTypeIndex(expressionType.InferredType.FullName);
+                    jsonObject.AddJsonValue("typeinfo", typeIndex);
+                }
+                else
+                {
+                    throw new NotSupportedException();
+                }
             }
             else
             {
-                throw new Exception("typeinfo not found!");
+                object objectAnonation = expression.Annotation<object>();
+                if (objectAnonation != null)
+                {
+                    Type typeOfObject = objectAnonation.GetType();
+                    if (objectAnonation is Mono.Cecil.FieldDefinition)
+                    {
+                        //refer to field
+                        Mono.Cecil.FieldDefinition fieldDef = (Mono.Cecil.FieldDefinition)objectAnonation;
+                        //write field type info
+                        int typeIndex = GetTypeIndex(fieldDef.FieldType.FullName);
+                        jsonObject.AddJsonValue("typeinfo", typeIndex);
+                    }
+                    else if (objectAnonation is Mono.Cecil.MethodDefinition)
+                    {
+                        Mono.Cecil.MethodDefinition methodef = (Mono.Cecil.MethodDefinition)objectAnonation;
+                        //write field type info
+                        int typeIndex = GetTypeIndex(methodef.ReturnType.FullName);
+                        jsonObject.AddJsonValue("typeinfo", typeIndex);
+
+                    }
+                    else {
+                        throw new Exception("typeinfo not found!");
+                    }
+                }
+                else
+                {
+                    //return void ?
+                    jsonObject.AddJsonValue("typeinfo", GetTypeIndex("System.Void"));
+                }
             }
         }
-        
+
         void AddVisitComment<T>(JsonObject jsonObject)
         {
             jsonObject.Comment = "Visit" + typeof(T).Name;
@@ -43,7 +83,7 @@ namespace ManualILSpy.Extention
             //1. add visit comment
             AddVisitComment<T>(jsonObject);
             //2. add type info
-            AddTypeInformation(jsonObject, expression); 
+            AddTypeInformation(jsonObject, expression);
             return jsonObject;
         }
     }
