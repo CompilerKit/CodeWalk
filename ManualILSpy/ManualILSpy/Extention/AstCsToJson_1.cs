@@ -61,6 +61,13 @@ namespace ManualILSpy.Extention
                         //TODO: review here
                         jsonObject.AddJsonValue("typeinfo", -1);
                     }
+                    else if (objectAnonation is ICSharpCode.Decompiler.ILAst.ILVariable)
+                    {
+                        ICSharpCode.Decompiler.ILAst.ILVariable variable = (ICSharpCode.Decompiler.ILAst.ILVariable)objectAnonation;
+                        int typeIndex = GetTypeIndex(variable.Type.FullName);
+                        jsonObject.AddJsonValue("typeinfo", typeIndex);
+
+                    }
                     else {
                         throw new Exception("typeinfo not found!");
                     }
@@ -77,7 +84,14 @@ namespace ManualILSpy.Extention
 
         void AddVisitComment<T>(JsonObject jsonObject)
         {
-            jsonObject.Comment = "Visit" + typeof(T).Name + " " + (visitCount++);
+
+            int vcount = System.Threading.Interlocked.Increment(ref visitCount);
+            jsonObject.Comment = "Visit" + typeof(T).Name + " " + (vcount);
+#if DEBUG
+            if (vcount == 16)
+            {
+            }
+#endif
         }
         JsonObject CreateJsonExpression<T>(T expression)
             where T : Expression

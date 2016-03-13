@@ -32,6 +32,7 @@ namespace ManualILSpy.Extention
             AddName<ConditionalExpression>("conditional-expression");
             AddName<DefaultValueExpression>("default-value-expression");
             AddName<DirectionExpression>("direction-expression");
+            AddName<IdentifierExpression>("identifier-expression");
             AddName<IndexerExpression>("indexer-expression");
             AddName<InvocationExpression>("invocation");
             AddName<IsExpression>("is-expression");

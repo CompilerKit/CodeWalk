@@ -493,7 +493,19 @@ namespace ManualILSpy.Extention
 
         public void VisitIdentifierExpression(IdentifierExpression identifierExpression)
         {
-            Push(GetIdentifier(identifierExpression.IdentifierToken));
+            JsonValue getIdentifier = GetIdentifier(identifierExpression.IdentifierToken);
+            if (isLambda)
+            {
+                //?
+                //TODO: review here
+                Push(getIdentifier);
+            }
+            else
+            {
+                JsonObject jsonIdenExpr = CreateJsonExpression(identifierExpression);
+                jsonIdenExpr.AddJsonValue("name", getIdentifier);
+                Push(jsonIdenExpr);
+            }
         }
 
         public void VisitIndexerExpression(IndexerExpression indexerExpression)
