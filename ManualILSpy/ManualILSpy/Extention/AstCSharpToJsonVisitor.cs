@@ -423,9 +423,10 @@ namespace ManualILSpy.Extention
             expression.AddJsonValues("operator", new JsonElement(opt));
             binaryOperatorExpression.Right.AcceptVisitor(this);
             expression.AddJsonValues("right-operand", Pop());
-            Push(expression);
-        }
 
+
+            PushWithTypeInfo(expression, binaryOperatorExpression);
+        }
         public void VisitCastExpression(CastExpression castExpression)
         {
             JsonObject expression = new JsonObject();
@@ -436,9 +437,8 @@ namespace ManualILSpy.Extention
             castExpression.Expression.AcceptVisitor(this);
             expression.AddJsonValues("expression", Pop());
 
-            Push(expression);
+            PushWithTypeInfo(expression, castExpression);
         }
-
         public void VisitCheckedExpression(CheckedExpression checkedExpression)
         {
             JsonObject expression = new JsonObject();
@@ -730,7 +730,7 @@ namespace ManualILSpy.Extention
             expression.Comment = "VisitThisReferenceExpression";
             expression.AddJsonValues("expression-type", new JsonElement("this-reference-expression"));
             expression.AddJsonValues("keyword", new JsonElement("this"));
-             
+
             AddTypeInformation(expression, thisReferenceExpression);
 
             Push(expression);
