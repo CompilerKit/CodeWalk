@@ -586,7 +586,7 @@ namespace ManualILSpy.Extention
             memberReferenceExpression.Target.AcceptVisitor(this);
             expression.AddJsonValues("target", Pop());
             expression.AddJsonValues("identifier-name", GetIdentifier(memberReferenceExpression.MemberNameToken));
-            
+
             Push(expression);
         }
 
@@ -730,6 +730,11 @@ namespace ManualILSpy.Extention
             expression.Comment = "VisitThisReferenceExpression";
             expression.AddJsonValues("expression-type", new JsonElement("this-reference-expression"));
             expression.AddJsonValues("keyword", new JsonElement("this"));
+
+            //get type of this expression
+            var expressionType = thisReferenceExpression.Annotation<ICSharpCode.Decompiler.Ast.TypeInformation>();
+            int typeIndex = GetTypeIndex(expressionType.ExpectedType.FullName);
+            expression.AddJsonValues("type-info", new JsonElement(typeIndex));
             Push(expression);
         }
 
@@ -1008,7 +1013,7 @@ namespace ManualILSpy.Extention
         {
             ClearTypeInfo();
             JsonObject declaration = new JsonObject();
-            declaration.Comment = "VisitUsingDeclaration"; 
+            declaration.Comment = "VisitUsingDeclaration";
             declaration.AddJsonValues("keyword", GetKeyword(UsingDeclaration.UsingKeywordRole));
             usingDeclaration.Import.AcceptVisitor(this);
             declaration.AddJsonValues("import", Pop());
@@ -1020,7 +1025,7 @@ namespace ManualILSpy.Extention
         {
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitExternAliasDeclaration";
-            
+
             declaration.AddJsonValues("extern-keyword", GetKeyword(Roles.ExternKeyword));
             declaration.AddJsonValues("alias-keyword", GetKeyword(Roles.AliasKeyword));
             declaration.AddJsonValues("identifier", GetIdentifier(externAliasDeclaration.NameToken));
@@ -1639,7 +1644,7 @@ namespace ManualILSpy.Extention
 
             Push(initializer);
             //implement already, but not tested
-           // throw new Exception("first time testing");
+            // throw new Exception("first time testing");
         }
 
         public void VisitDestructorDeclaration(DestructorDeclaration destructorDeclaration)
