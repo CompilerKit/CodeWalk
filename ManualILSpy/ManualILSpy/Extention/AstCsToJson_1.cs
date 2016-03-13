@@ -107,6 +107,12 @@ namespace ManualILSpy.Extention
             return jsonObject;
         }
 
+
+        JsonValue GenExpression(Expression expression)
+        {
+            expression.AcceptVisitor(this);
+            return Pop();
+        }
     }
 
 
