@@ -52,6 +52,35 @@ namespace ManualILSpy.Extention
             AddName<TypeOfExpression>("typeof-expression");
             AddName<UnaryOperatorExpression>("unary-operator-expression");
             AddName<UncheckedExpression>("unchecked-expression");
+            //------------------------------------------------------------------------
+
+            //statements
+            AddName<CheckedStatement>("checked-statement");
+            AddName<ContinueStatement>("continue-statement");
+            AddName<BreakStatement>("break-statement");
+            AddName<BlockStatement>("block-statement");
+            AddName<DoWhileStatement>("do-while-statement");
+            AddName<EmptyStatement>("empty-statement");
+            AddName<FixedStatement>("fixed-statement");
+            AddName<ForeachStatement>("foreach-statement");
+            AddName<ForStatement>("for-statement");
+            AddName<GotoCaseStatement>("goto-case-statement");
+            AddName<GotoDefaultStatement>("goto-default-statement");
+            AddName<GotoStatement>("goto-statement");
+            AddName<IfElseStatement>("if-else-statement");
+            AddName<LabelStatement>("label-statement");
+            AddName<LockStatement>("lock-statement");
+            AddName<ReturnStatement>("lock-statement");
+            AddName<SwitchStatement>("switch-statement");
+            AddName<ThrowStatement>("throw-statement");
+            AddName<TryCatchStatement>("try-catch-statement");
+            AddName<UncheckedStatement>("unchecked-statement");
+            AddName<UnsafeStatement>("unsafe-statement");
+            AddName<UsingStatement>("using-statement");
+            AddName<VariableDeclarationStatement>("variable-declaration");
+            AddName<WhileStatement>("while-statement");
+            AddName<YieldBreakStatement>("yield-break-statement");
+            AddName<YieldReturnStatement>("yield-return-statement");
 
         }
         static void AddName<T>(string csSpecName)

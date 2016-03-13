@@ -146,6 +146,16 @@ namespace ManualILSpy.Extention
         {
             jsonObject.AddJsonValue("attributes", GetAttributes(entityDecl.Attributes));
         }
+
+        JsonObject CreateJsonStatement<T>(T statement)
+            where T : Statement
+        {
+            JsonObject jsonEntityDecl = new JsonObject();
+            AddVisitComment<T>(jsonEntityDecl);
+            jsonEntityDecl.AddJsonValue("statement-type",CsSpecAstName.GetCsSpecName<T>())
+            return jsonEntityDecl;
+        }
+
     }
 
 
