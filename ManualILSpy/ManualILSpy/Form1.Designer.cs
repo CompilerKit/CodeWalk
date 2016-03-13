@@ -172,7 +172,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(457, 345);
+            this.ClientSize = new System.Drawing.Size(586, 346);
             this.Controls.Add(this.release_path_btn);
             this.Controls.Add(this.debug_path_btn);
             this.Controls.Add(this.release_path_txt);
@@ -183,7 +183,7 @@
             this.Controls.Add(this.browse_btn);
             this.Controls.Add(this.textBox1);
             this.Controls.Add(this.testReadWriteJsonBtn);
-            this.MaximumSize = new System.Drawing.Size(473, 384);
+            this.MaximumSize = new System.Drawing.Size(800, 384);
             this.MinimumSize = new System.Drawing.Size(473, 384);
             this.Name = "Form1";
             this.Text = "Form1";

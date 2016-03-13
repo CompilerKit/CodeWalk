@@ -399,6 +399,7 @@ namespace ManualILSpy.Extention
 
         public override void WriteKeyword(Role role, string keyword)
         {
+            
             output.Write('"' + keyword + '"');
         }
 

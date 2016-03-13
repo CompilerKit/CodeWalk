@@ -20,12 +20,12 @@ namespace ManualILSpy.Extention.Json
     public abstract class JsonValue
     {
         protected JsonValueType type;
-#if DEBUG
-        public string Comment;
-#endif
+
         public JsonValueType ValueType { get { return type; } }
         public abstract void AcceptWriter(ITextOutput writer);
         public abstract void AcceptVisitor(IJsonVisitor visitor);
+
+        public string Comment; //this is an extension
     }
 
     public class JsonObject : JsonValue
@@ -137,7 +137,7 @@ namespace ManualILSpy.Extention.Json
                 return null;
             }
             string str = "[";
-            foreach(var value in ValueList)
+            foreach (var value in ValueList)
             {
                 str += value.ToString();
             }
@@ -375,14 +375,20 @@ namespace ManualILSpy.Extention.Json
             lastIsNewLine = false;
         }
 
-        void WriteComment(string comment)
+        bool WriteComment(string comment)
         {
             if (comment != null)
             {
                 WriteLine();
-                writer.Write("/*" + comment + "*/");
+                writer.Write("\"!comment\":\"");
+                writer.Write(comment);
+                writer.Write('"');
+
+                //writer.Write("/*" + comment + "*/");
                 lastIsNewLine = false;
+                return true;
             }
+            return false;
         }
 
         void WriteLine()
@@ -403,13 +409,21 @@ namespace ManualILSpy.Extention.Json
                 VisitNull();
                 return;
             }
-            if (Debug)
-            {
-                WriteComment(jsonArr.Comment);
-            }
+
             OpenBrace(BraceStyle.Array);
             bool isFirst = true;
-            foreach(JsonValue value in jsonArr.ValueList)
+            if (Debug)
+            {
+                //comment member of
+                if (jsonArr.Comment != null)
+                {
+                    writer.Write('{');
+                    isFirst = (WriteComment(jsonArr.Comment) != true);
+                    writer.Write('}');
+                }
+            }
+
+            foreach (JsonValue value in jsonArr.ValueList)
             {
                 if (isFirst)
                 {
@@ -462,16 +476,17 @@ namespace ManualILSpy.Extention.Json
                 VisitNull();
                 return;
             }
+
+            OpenBrace(BraceStyle.Object);
+            bool isFirst = true;
             if (Debug)
             {
-                WriteComment(jsonObj.Comment);
+                isFirst = (WriteComment(jsonObj.Comment) != true);
             }
-            OpenBrace(BraceStyle.Object);
-            WriteLine();
+
             List<string> keys = new List<string>(jsonObj.Values.Keys);
             JsonValue value;
-            bool isFirst = true;
-            foreach(string key in keys)
+            foreach (string key in keys)
             {
                 if (isFirst)
                 {
@@ -483,7 +498,7 @@ namespace ManualILSpy.Extention.Json
                     Write(',');
                     WriteLine();
                 }
-                if(jsonObj.Values.TryGetValue(key,out value))
+                if (jsonObj.Values.TryGetValue(key, out value))
                 {
                     Write('"' + key + '"' + " : ");
                     if (value != null)
@@ -540,7 +555,7 @@ namespace ManualILSpy.Extention.Json
                 index++;
                 return;
             }
-            else if(index > length)//eat after last character
+            else if (index > length)//eat after last character
             {
                 throw new Exception("Out of length.");
             }
@@ -582,7 +597,7 @@ namespace ManualILSpy.Extention.Json
             {
                 case '{': return JsonValueType.Object;
                 case '[': return JsonValueType.Array;
-                case '"': 
+                case '"':
                 default: return JsonValueType.String;//try to read element
             }
         }
@@ -681,7 +696,7 @@ namespace ManualILSpy.Extention.Json
                     element = TryCatchNumber(GetStringUtilSpaceOrComma());
                     break;
             }
-            if(element.ValueType== JsonValueType.Error)
+            if (element.ValueType == JsonValueType.Error)
             {
                 throw new Exception("Something wrong");
             }
