@@ -583,9 +583,10 @@ namespace ManualILSpy.Extention
             JsonObject expression = new JsonObject();
             expression.Comment = "VisitMemberReferenceExpression";
             expression.AddJsonValues("expression-type", new JsonElement("member-reference"));
-            expression.AddJsonValues("identifier-name", GetIdentifier(memberReferenceExpression.MemberNameToken));
             memberReferenceExpression.Target.AcceptVisitor(this);
-            expression.AddJsonValues("type-info", Pop());
+            expression.AddJsonValues("target", Pop());
+            expression.AddJsonValues("identifier-name", GetIdentifier(memberReferenceExpression.MemberNameToken));
+            
             Push(expression);
         }
 
@@ -872,6 +873,7 @@ namespace ManualILSpy.Extention
         {
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitDelegateDeclaration";
+
             declaration.AddJsonValues("attributes", GetAttributes(delegateDeclaration.Attributes));
             declaration.AddJsonValues("modifier", GetModifiers(delegateDeclaration.ModifierTokens));
             declaration.AddJsonValues("keyword", GetKeyword(Roles.DelegateKeyword));
@@ -880,6 +882,7 @@ namespace ManualILSpy.Extention
             declaration.AddJsonValues("identifier", GetIdentifier(delegateDeclaration.NameToken));
             declaration.AddJsonValues("type-parameters", GetTypeParameters(delegateDeclaration.TypeParameters));
             declaration.AddJsonValues("parameters", GetCommaSeparatedList(delegateDeclaration.Parameters));
+
             JsonArray contraintList = new JsonArray();
             foreach (Constraint constraint in delegateDeclaration.Constraints)
             {
@@ -1005,8 +1008,8 @@ namespace ManualILSpy.Extention
         {
             ClearTypeInfo();
             JsonObject declaration = new JsonObject();
-            declaration.Comment = "VisitUsingDeclaration";
-            declaration.AddJsonValues("keyword", GetKeyword(UsingAliasDeclaration.UsingKeywordRole));
+            declaration.Comment = "VisitUsingDeclaration"; 
+            declaration.AddJsonValues("keyword", GetKeyword(UsingDeclaration.UsingKeywordRole));
             usingDeclaration.Import.AcceptVisitor(this);
             declaration.AddJsonValues("import", Pop());
             declaration.AddJsonValues("import-info-list", GetTypeInfoList(TypeInfoKeys()));
@@ -1017,6 +1020,7 @@ namespace ManualILSpy.Extention
         {
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitExternAliasDeclaration";
+            
             declaration.AddJsonValues("extern-keyword", GetKeyword(Roles.ExternKeyword));
             declaration.AddJsonValues("alias-keyword", GetKeyword(Roles.AliasKeyword));
             declaration.AddJsonValues("identifier", GetIdentifier(externAliasDeclaration.NameToken));

@@ -242,7 +242,6 @@ namespace ICSharpCode.ILSpy
             codeDomBuilder.AddType(type);
             RunTransformsAndGenerateCode(codeDomBuilder, output, options);
         }
-
         void RunTransformsAndGenerateCode(AstBuilder astBuilder, ITextOutput output, DecompilationOptions options, IAstTransform additionalTransform = null)
         {
             astBuilder.RunTransformations(transformAbortCondition);
