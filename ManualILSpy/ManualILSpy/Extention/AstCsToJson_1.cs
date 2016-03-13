@@ -1,10 +1,10 @@
 ﻿//MIT, 2016, Brezza27, EngineKit
 
 
-using System; 
-using ICSharpCode.NRefactory.CSharp; 
+using System;
+using ICSharpCode.NRefactory.CSharp;
 using ManualILSpy.Extention.Json;
- 
+
 
 namespace ManualILSpy.Extention
 {
@@ -23,12 +23,14 @@ namespace ManualILSpy.Extention
                 if (expressionType.ExpectedType != null)
                 {
                     int typeIndex = GetTypeIndex(expressionType.ExpectedType.FullName);
-                    jsonObject.AddJsonValue("typeinfo", typeIndex);
+                    jsonObject.AddJsonValue("t_index", typeIndex);
+                    jsonObject.AddJsonValue("t_info", expressionType.ExpectedType.FullName);
                 }
                 else if (expressionType.InferredType != null)
                 {
                     int typeIndex = GetTypeIndex(expressionType.InferredType.FullName);
-                    jsonObject.AddJsonValue("typeinfo", typeIndex);
+                    jsonObject.AddJsonValue("t_index", typeIndex);
+                    jsonObject.AddJsonValue("t_info", expressionType.InferredType.FullName);
                 }
                 else
                 {
@@ -47,7 +49,8 @@ namespace ManualILSpy.Extention
                         Mono.Cecil.FieldDefinition fieldDef = (Mono.Cecil.FieldDefinition)objectAnonation;
                         //write field type info
                         int typeIndex = GetTypeIndex(fieldDef.FieldType.FullName);
-                        jsonObject.AddJsonValue("typeinfo", typeIndex);
+                        jsonObject.AddJsonValue("t_index", typeIndex);
+                        jsonObject.AddJsonValue("t_info", fieldDef.FieldType.FullName);
                     }
                     else if (objectAnonation is Mono.Cecil.MethodDefinition)
                     {
@@ -56,14 +59,15 @@ namespace ManualILSpy.Extention
                         Mono.Cecil.MethodDefinition methodef = (Mono.Cecil.MethodDefinition)objectAnonation;
                         //write field type info
                         //TODO: review here
-                        jsonObject.AddJsonValue("typeinfo", -1);
+                        jsonObject.AddJsonValue("t_index", -1);
+                        jsonObject.AddJsonValue("t_info", "");
                     }
                     else if (objectAnonation is ICSharpCode.Decompiler.ILAst.ILVariable)
                     {
                         ICSharpCode.Decompiler.ILAst.ILVariable variable = (ICSharpCode.Decompiler.ILAst.ILVariable)objectAnonation;
                         int typeIndex = GetTypeIndex(variable.Type.FullName);
-                        jsonObject.AddJsonValue("typeinfo", typeIndex);
-
+                        jsonObject.AddJsonValue("t_index", typeIndex);
+                        jsonObject.AddJsonValue("t_info", variable.Type.FullName);
                     }
                     else {
                         throw new Exception("typeinfo not found!");
@@ -72,7 +76,8 @@ namespace ManualILSpy.Extention
                 else
                 {
                     //return void ?
-                    jsonObject.AddJsonValue("typeinfo", GetTypeIndex("System.Void"));
+                    jsonObject.AddJsonValue("t_index", GetTypeIndex("System.Void"));
+                    jsonObject.AddJsonValue("t_info", "System.Void");
                 }
             }
         }
@@ -81,14 +86,9 @@ namespace ManualILSpy.Extention
 
         void AddVisitComment<T>(JsonObject jsonObject)
         {
-
             int vcount = System.Threading.Interlocked.Increment(ref visitCount);
             jsonObject.Comment = "Visit" + typeof(T).Name + " " + (vcount);
-#if DEBUG
-            if (vcount == 16)
-            {
-            }
-#endif
+            //jsonObject.Comment = (vcount).ToString();
         }
         JsonObject CreateJsonExpression<T>(T expression)
             where T : Expression
@@ -141,7 +141,12 @@ namespace ManualILSpy.Extention
         }
         void AddAttributes(JsonObject jsonObject, EntityDeclaration entityDecl)
         {
-            jsonObject.AddJsonValue("attributes", GetAttributes(entityDecl.Attributes));
+            if (entityDecl.Attributes.Count > 0)
+            {
+                //no attrs
+                jsonObject.AddJsonValue("attributes", GetAttributes(entityDecl.Attributes));
+            }
+
         }
 
         JsonObject CreateJsonStatement<T>(T statement)
