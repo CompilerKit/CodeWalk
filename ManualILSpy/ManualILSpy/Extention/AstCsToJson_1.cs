@@ -61,6 +61,13 @@ namespace ManualILSpy.Extention
                         //TODO: review here
                         jsonObject.AddJsonValue("typeinfo", -1);
                     }
+                    else if (objectAnonation is ICSharpCode.Decompiler.ILAst.ILVariable)
+                    {
+                        ICSharpCode.Decompiler.ILAst.ILVariable variable = (ICSharpCode.Decompiler.ILAst.ILVariable)objectAnonation;
+                        int typeIndex = GetTypeIndex(variable.Type.FullName);
+                        jsonObject.AddJsonValue("typeinfo", typeIndex);
+
+                    }
                     else {
                         throw new Exception("typeinfo not found!");
                     }
@@ -73,9 +80,18 @@ namespace ManualILSpy.Extention
             }
         }
 
+        static int visitCount;
+
         void AddVisitComment<T>(JsonObject jsonObject)
         {
-            jsonObject.Comment = "Visit" + typeof(T).Name;
+
+            int vcount = System.Threading.Interlocked.Increment(ref visitCount);
+            jsonObject.Comment = "Visit" + typeof(T).Name + " " + (vcount);
+#if DEBUG
+            if (vcount == 16)
+            {
+            }
+#endif
         }
         JsonObject CreateJsonExpression<T>(T expression)
             where T : Expression
@@ -83,9 +99,55 @@ namespace ManualILSpy.Extention
             JsonObject jsonObject = new JsonObject();
             //1. add visit comment
             AddVisitComment<T>(jsonObject);
-            //2. add type info
+            //2. cs spec expression type
+            jsonObject.AddJsonValue("expression-type", CsSpecAstName.GetCsSpecName<T>());
+            //3. add type info of the expression
             AddTypeInformation(jsonObject, expression);
+
             return jsonObject;
         }
+
+
+        JsonValue GenExpression(Expression expression)
+        {
+            expression.AcceptVisitor(this);
+            return Pop();
+        }
+        JsonValue GenTypeInfo(AstType astType)
+        {
+            astType.AcceptVisitor(this);
+            return Pop();
+        }
+        JsonValue GenStatement(Statement stmt)
+        {
+            stmt.AcceptVisitor(this);
+            return Pop();
+        }
+        JsonObject CreateJsonEntityDeclaration<T>(T entityDecl)
+            where T : EntityDeclaration
+        {
+            JsonObject jsonEntityDecl = new JsonObject();
+            AddVisitComment<T>(jsonEntityDecl);
+            AddAttributes(jsonEntityDecl, entityDecl);
+            AddModifiers(jsonEntityDecl, entityDecl);
+            AddReturnType(jsonEntityDecl, entityDecl);
+            return jsonEntityDecl;
+        }
+
+        void AddReturnType(JsonObject jsonObject, EntityDeclaration entityDecl)
+        {
+            jsonObject.AddJsonValue("return-type", GenTypeInfo(entityDecl.ReturnType));
+        }
+        void AddModifiers(JsonObject jsonObject, EntityDeclaration entityDecl)
+        {
+            jsonObject.AddJsonValue("modifiers", GetModifiers(entityDecl.ModifierTokens));
+        }
+        void AddAttributes(JsonObject jsonObject, EntityDeclaration entityDecl)
+        {
+            jsonObject.AddJsonValue("attributes", GetAttributes(entityDecl.Attributes));
+        }
     }
+
+
+
 }
