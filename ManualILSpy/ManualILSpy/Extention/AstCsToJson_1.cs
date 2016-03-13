@@ -72,9 +72,12 @@ namespace ManualILSpy.Extention
                 }
             }
         }
+
+        static int visitCount;
+
         void AddVisitComment<T>(JsonObject jsonObject)
         {
-            jsonObject.Comment = "Visit" + typeof(T).Name;
+            jsonObject.Comment = "Visit" + typeof(T).Name + " " + (visitCount++);
         }
         JsonObject CreateJsonExpression<T>(T expression)
             where T : Expression
