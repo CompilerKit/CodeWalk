@@ -67,8 +67,8 @@ namespace ManualILSpy
             scan_btn.Enabled = !string.IsNullOrEmpty(textBox1.Text);
         }
 
-        Dictionary<string, TypeDefinition> nodeTypeDef = new Dictionary<string, TypeDefinition>();
-        Dictionary<string, TreeNode> nodeTreeNode = new Dictionary<string, TreeNode>();
+        Dictionary<string, TypeDefinition> nodeTypeDefs = new Dictionary<string, TypeDefinition>();
+        Dictionary<string, TreeNode> nodeTreeNodes = new Dictionary<string, TreeNode>();
 
         sealed class MyAssemblyResolver : IAssemblyResolver
         {
@@ -102,8 +102,10 @@ namespace ManualILSpy
 
         private void Scan_Click(object sender, EventArgs e)
         {
-            nodeTypeDef.Clear();
-            nodeTreeNode.Clear();
+            nodeTypeDefs.Clear();
+            nodeTreeNodes.Clear();
+            treeView1.Nodes.Clear();
+
 
             DefaultAssemblyResolver asmResolver = new DefaultAssemblyResolver();
             ReaderParameters readPars = new ReaderParameters(ReadingMode.Deferred);
@@ -118,7 +120,7 @@ namespace ManualILSpy
             TreeNode node = new TreeNode();
             foreach (TypeDefinition type in types)
             {
-                if (nodeTreeNode.TryGetValue(type.Namespace, out node))
+                if (nodeTreeNodes.TryGetValue(type.Namespace, out node))
                 {
                     node.Nodes.Add(type.Name);
                 }
@@ -127,13 +129,13 @@ namespace ManualILSpy
                     node = new TreeNode(type.Namespace);
                     node.Nodes.Add(type.Name);
                 }
-                nodeTreeNode[type.Namespace] = node;
-                nodeTypeDef.Add(type.FullName, type);
+                nodeTreeNodes[type.Namespace] = node;
+                nodeTypeDefs.Add(type.FullName, type);
             }
-            List<string> keys = new List<string>(nodeTreeNode.Keys);
+            List<string> keys = new List<string>(nodeTreeNodes.Keys);
             foreach (string key in keys)
             {
-                if (nodeTreeNode.TryGetValue(key, out node))
+                if (nodeTreeNodes.TryGetValue(key, out node))
                     treeView1.Nodes.Add(node);
             }
             decompile_panel.Enabled = true;
@@ -145,7 +147,7 @@ namespace ManualILSpy
             TreeNode node = new TreeNode(condition);
             foreach (TypeDefinition type in types)
             {
-                if (nodeTypeDef.TryGetValue(condition, out def))
+                if (nodeTypeDefs.TryGetValue(condition, out def))
                 {
                     break;
                 }
@@ -153,7 +155,7 @@ namespace ManualILSpy
                 {
                     treeView1.Nodes.Add(type.FullName);
                     node.Nodes.Add(type.FullName);
-                    nodeTypeDef.Add(type.FullName, type);
+                    nodeTypeDefs.Add(type.FullName, type);
                 }
             }
             return node;
@@ -200,20 +202,23 @@ namespace ManualILSpy
                 MessageBox.Show("Please select node.");
                 return;
             }
+
+
             TypeDefinition type;
             string json = "null";
-            if (nodeTypeDef.TryGetValue(selected, out type))
+            if (nodeTypeDefs.TryGetValue(selected, out type))
             {
                 json = GetJson(type, debug);
             }
             string resultPath = debug ? _debugPath
                                       : _releasePath;
 
-            resultPath = "d:\\WImageTest\\test_output1";
+            resultPath = "d:\\WImageTest\\test_output\\" + type.FullName + ".txt";
 
             File.WriteAllText(resultPath, json);
             MessageBox.Show("Success!!");
-            System.Diagnostics.Process.Start(resultPath);
+            //if you want to start 
+            //System.Diagnostics.Process.Start(resultPath);
         }
 
         private string FindSelectedNode(TreeNodeCollection collection)
