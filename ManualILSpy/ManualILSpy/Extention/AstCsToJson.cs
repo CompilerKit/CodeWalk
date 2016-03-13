@@ -1464,6 +1464,7 @@ namespace ManualILSpy.Extention
             }
 
             construct.AddJsonValue("parameters", GetCommaSeparatedList(constructorDeclaration.Parameters));
+
             if (!constructorDeclaration.Initializer.IsNull)
             {
                 constructorDeclaration.Initializer.AcceptVisitor(this);
