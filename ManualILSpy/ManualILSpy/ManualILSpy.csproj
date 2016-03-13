@@ -46,6 +46,7 @@
     <Compile Include="Extention\AstCsToJson_1.cs" />
     <Compile Include="Extention\AstCsToJson_Expression.cs" />
     <Compile Include="Extention\CsSpecAstName.cs" />
+    <Compile Include="Extention\FirstTimeUseException.cs" />
     <Compile Include="Extention\MyJson.cs" />
     <Compile Include="Extention\TextOutput.cs" />
     <Compile Include="ILSpy\AddXmlDocTransform.cs" />
