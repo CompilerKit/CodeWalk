@@ -182,7 +182,7 @@ namespace ManualILSpy.Extention
             }
         }
 
-       
+
 
         JsonValue GetAttributes(IEnumerable<AttributeSection> attributes)
         {
@@ -1065,7 +1065,7 @@ namespace ManualILSpy.Extention
             JsonObject statement = CreateJsonStatement(gotoCaseStatement);
 
             AddKeyword(statement, GotoCaseStatement.GotoKeywordRole);
-            statement.AddJsonValue("case-keyword", GetKeyword(GotoCaseStatement.CaseKeywordRole));
+            AddKeyword(statement, "case-keyword", GotoCaseStatement.CaseKeywordRole);
             statement.AddJsonValue("label-expression", GenExpression(gotoCaseStatement.LabelExpression));
             Push(statement);
             //implement already, but not tested
@@ -1076,7 +1076,7 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = CreateJsonStatement(gotoDefaultStatement);
             AddKeyword(statement, GotoDefaultStatement.GotoKeywordRole);
-            statement.AddJsonValue("default-keyword", GetKeyword(GotoDefaultStatement.DefaultKeywordRole));
+            AddKeyword(statement, "default-keyword", GotoDefaultStatement.DefaultKeywordRole);
             Push(statement);
             throw new FirstTimeUseException();
 
@@ -1311,7 +1311,8 @@ namespace ManualILSpy.Extention
         public void VisitTryCatchStatement(TryCatchStatement tryCatchStatement)
         {
             JsonObject statement = CreateJsonStatement(tryCatchStatement);
-            statement.AddJsonValue("try-keyword", GetKeyword(TryCatchStatement.TryKeywordRole));
+            AddKeyword(statement, "try-keyword", TryCatchStatement.TryKeywordRole);
+
             statement.AddJsonValue("try-block", GenStatement(tryCatchStatement.TryBlock));
             JsonArray catchClauseList = new JsonArray();
             foreach (var catchClause in tryCatchStatement.CatchClauses)
@@ -1322,7 +1323,7 @@ namespace ManualILSpy.Extention
             statement.AddJsonValue("catch-clause", catchClauseList);
             if (!tryCatchStatement.FinallyBlock.IsNull)
             {
-                statement.AddJsonValue("final-keyword", GetKeyword(TryCatchStatement.FinallyKeywordRole));
+                AddKeyword(statement, "final-keyword", TryCatchStatement.FinallyKeywordRole);
                 statement.AddJsonValue("final-block", GenStatement(tryCatchStatement.FinallyBlock));
             }
             Push(statement);
@@ -1332,7 +1333,9 @@ namespace ManualILSpy.Extention
         {
             JsonObject visitCatch = new JsonObject();
             visitCatch.Comment = "VisitCatchClause";
-            visitCatch.AddJsonValue("catch-keyword", GetKeyword(CatchClause.CatchKeywordRole));
+
+            AddKeyword(visitCatch, "catch-keyword", CatchClause.CatchKeywordRole);
+
             if (!catchClause.Type.IsNull)
             {
                 visitCatch.AddJsonValue("type-info", GenTypeInfo(catchClause.Type));

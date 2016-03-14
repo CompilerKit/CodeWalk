@@ -78,7 +78,7 @@ namespace ManualILSpy.Extention
                         int typeIndex = GetTypeIndex(variable.Type.FullName);
                         jsonObject.AddJsonValue("t_index", typeIndex);
                         jsonObject.AddJsonValue("t_info", variable.Type.FullName);
-                  
+
 
                         JsonObject symbol = new JsonObject();
                         if (variable.IsParameter)
@@ -188,6 +188,12 @@ namespace ManualILSpy.Extention
         {
             //we may skip this  ...
             ///jsonObject.AddJsonValue("keyword", GetKeyword(tkrole));
+        }
+        void AddKeyword(JsonObject jsonObject, string keyName, TokenRole tkrole)
+        {
+            //we may skip this  ...
+            ///jsonObject.AddJsonValue("keyword", GetKeyword(tkrole));
+            ///visitCatch.AddJsonValue(keyName, GetKeyword(CatchClause.CatchKeywordRole));
         }
     }
 
