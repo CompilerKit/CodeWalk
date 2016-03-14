@@ -3,6 +3,7 @@
 
 using System;
 using ICSharpCode.NRefactory.CSharp;
+using System.Collections.Generic;
 using ManualILSpy.Extention.Json;
 
 
@@ -11,6 +12,151 @@ namespace ManualILSpy.Extention
     partial class AstCsToJsonVisitor : IAstVisitor
     {
 
+        Dictionary<object, SemanticSymbol> memberReferences = new Dictionary<object, SemanticSymbol>();
+        Dictionary<object, SemanticSymbol> localSymbolReferenceTable = new Dictionary<object, SemanticSymbol>();
+
+        SemanticSymbol GetMemberSymbolReference(Mono.Cecil.FieldDefinition fieldDef)
+        {
+            SemanticSymbol fieldSymbol;
+            if (!memberReferences.TryGetValue(fieldDef, out fieldSymbol))
+            {
+
+                int id = memberReferences.Count;
+                fieldSymbol = new SemanticSymbol(id);
+                fieldSymbol.Kind = SemanticSymbolKind.Field;
+                fieldSymbol.OriginalSymbol = fieldDef;
+                fieldSymbol.FullSymbolName = fieldDef.FullName;
+                fieldSymbol.FullTypeName = fieldDef.FieldType.FullName;
+                fieldSymbol.TypeNameIndex = RegisterType(fieldDef.FieldType.FullName);
+                memberReferences.Add(id, fieldSymbol);
+                //--------------------------------------------
+            }
+            return fieldSymbol;
+        }
+        SemanticSymbol GetMemberSymbolReference(Mono.Cecil.MethodDefinition methodDef)
+        {
+            SemanticSymbol methodSymbol;
+            if (!memberReferences.TryGetValue(methodDef, out methodSymbol))
+            {
+                int id = memberReferences.Count;
+                methodSymbol = new SemanticSymbol(id);
+                methodSymbol.Kind = SemanticSymbolKind.Method;
+                methodSymbol.OriginalSymbol = methodDef;
+                methodSymbol.FullSymbolName = methodDef.FullName;
+                methodSymbol.FullTypeName = methodDef.ReturnType.FullName;
+                methodSymbol.TypeNameIndex = RegisterType(methodDef.ReturnType.FullName);
+                memberReferences.Add(id, methodSymbol);
+                //--------------------------------------------
+            }
+            return methodSymbol;
+        }
+        SemanticSymbol GetMemberSymbolReference(Mono.Cecil.MethodReference methodDef)
+        {
+            SemanticSymbol methodSymbol;
+            if (!memberReferences.TryGetValue(methodDef, out methodSymbol))
+            {
+                int id = memberReferences.Count;
+                methodSymbol = new SemanticSymbol(id);
+                methodSymbol.Kind = SemanticSymbolKind.Method;
+                methodSymbol.OriginalSymbol = methodDef;
+                methodSymbol.FullSymbolName = methodDef.FullName;
+                methodSymbol.FullTypeName = methodDef.ReturnType.FullName;
+                methodSymbol.TypeNameIndex = RegisterType(methodDef.ReturnType.FullName);
+                memberReferences.Add(id, methodSymbol);
+                //--------------------------------------------
+            }
+            return methodSymbol;
+        }
+        SemanticSymbol GetMemberSymbolReference(Mono.Cecil.PropertyReference propertyRef)
+        {
+            SemanticSymbol propertySymbol;
+            if (!memberReferences.TryGetValue(propertyRef, out propertySymbol))
+            {
+                int id = memberReferences.Count;
+                propertySymbol = new SemanticSymbol(id);
+                propertySymbol.Kind = SemanticSymbolKind.Property;
+                propertySymbol.OriginalSymbol = propertyRef;
+
+                propertySymbol.FullSymbolName = propertyRef.ToString();
+                propertySymbol.FullTypeName = propertyRef.PropertyType.FullName;
+                propertySymbol.TypeNameIndex = RegisterType(propertyRef.PropertyType.FullName);
+
+                memberReferences.Add(id, propertySymbol);
+            }
+            return propertySymbol;
+        }
+
+        SemanticSymbol GetLocalVarReference(ICSharpCode.Decompiler.ILAst.ILVariable variable)
+        {
+            SemanticSymbol localSymbol;
+            if (!localSymbolReferenceTable.TryGetValue(variable, out localSymbol))
+            {
+                int id = localSymbolReferenceTable.Count;
+                localSymbol = new SemanticSymbol(id);
+                //registerto type member symbol table
+                int typeIndex = RegisterType(variable.Type.FullName);
+                localSymbol.TypeNameIndex = typeIndex;
+                localSymbol.FullTypeName = variable.Type.FullName;
+                localSymbol.OriginalSymbol = variable;
+                if (variable.IsParameter)
+                {
+                    localSymbol.Kind = SemanticSymbolKind.MethodParameter;
+                }
+                else
+                {
+                    localSymbol.Kind = SemanticSymbolKind.LocalVar;
+                }
+
+                localSymbolReferenceTable.Add(variable, localSymbol);
+            }
+            return localSymbol;
+        }
+        /// <summary>
+        /// clear symbol table for type member
+        /// </summary>
+        void ClearLocalSymbolReferenecs()
+        {
+            localSymbolReferenceTable.Clear();
+        }
+        JsonArray GetLocalSymbolReferences()
+        {
+            JsonArray jsonArray = new JsonArray();
+            foreach (SemanticSymbol s in localSymbolReferenceTable.Values)
+            {
+                //info about 
+                switch (s.Kind)
+                {
+                    case SemanticSymbolKind.LocalVar:
+                        {
+
+                            ICSharpCode.Decompiler.ILAst.ILVariable localvar = (ICSharpCode.Decompiler.ILAst.ILVariable)s.OriginalSymbol;
+                            JsonObject localVarSymbol = new JsonObject();
+                            localVarSymbol.AddJsonValue("kind", "local");
+                            localVarSymbol.AddJsonValue("name", localvar.Name);
+                            localVarSymbol.AddJsonValue("original", localvar.OriginalVariable.ToString());
+                            jsonArray.AddJsonValue(localVarSymbol);
+                        }
+                         
+                        break;
+                    case SemanticSymbolKind.MethodParameter:
+                        {
+                            ICSharpCode.Decompiler.ILAst.ILVariable par = (ICSharpCode.Decompiler.ILAst.ILVariable)s.OriginalSymbol;
+
+                            JsonObject localVarSymbol = new JsonObject();
+                            localVarSymbol.AddJsonValue("kind", "par");
+                            localVarSymbol.AddJsonValue("name", par.Name);
+                            localVarSymbol.AddJsonValue("original", par.OriginalParameter.ToString());
+                            jsonArray.AddJsonValue(localVarSymbol);
+                        }
+                        break;
+                    default:
+                        throw new NotSupportedException();
+                }
+
+
+            }
+            return jsonArray;
+        }
         JsonObject GenSemanticSymbol(System.Collections.Generic.IEnumerable<object> anotations)
         {
             JsonObject semanticSymbol = new JsonObject();
@@ -30,15 +176,12 @@ namespace ManualILSpy.Extention
                         throw new NotSupportedException();
                     }
                     foundSymbol = true;
-
-                    Mono.Cecil.FieldDefinition fieldDef = (Mono.Cecil.FieldDefinition)ano;
-                    //write field type info
-                    int typeIndex = GetTypeIndex(fieldDef.FieldType.FullName);
-                    semanticSymbol.AddJsonValue("t_index", typeIndex);
-                    semanticSymbol.AddJsonValue("t_info", fieldDef.FieldType.FullName);
-                    //symbol  
+                    SemanticSymbol fieldSymbol = GetMemberSymbolReference((Mono.Cecil.FieldDefinition)ano);
+                    //write field type info 
+                    semanticSymbol.AddJsonValue("t_index", fieldSymbol.TypeNameIndex);
+                    semanticSymbol.AddJsonValue("t_info", fieldSymbol.FullTypeName);
                     semanticSymbol.AddJsonValue("kind", "field");
-                    semanticSymbol.AddJsonValue("field", fieldDef.ToString());
+                    semanticSymbol.AddJsonValue("ref_index", fieldSymbol.Index);
                 }
                 else if (ano is Mono.Cecil.MethodDefinition)
                 {
@@ -48,38 +191,13 @@ namespace ManualILSpy.Extention
                     }
                     foundSymbol = true;
 
-                    Mono.Cecil.MethodDefinition methodef = (Mono.Cecil.MethodDefinition)ano;
+                    SemanticSymbol methodSymbol = GetMemberSymbolReference((Mono.Cecil.MethodDefinition)ano);
                     //write field type info
                     //TODO: review here
                     semanticSymbol.AddJsonValue("t_index", -1);
                     semanticSymbol.AddJsonValue("t_info", "");
-
                     semanticSymbol.AddJsonValue("kind", "method");
-                    semanticSymbol.AddJsonValue("method", methodef.ToString());
-
-                }
-                else if (ano is ICSharpCode.Decompiler.ILAst.ILVariable)
-                {
-                    if (foundSymbol)
-                    {   //double symbols?
-                        throw new NotSupportedException();
-                    }
-                    foundSymbol = true;
-
-                    ICSharpCode.Decompiler.ILAst.ILVariable variable = (ICSharpCode.Decompiler.ILAst.ILVariable)ano;
-                    int typeIndex = GetTypeIndex(variable.Type.FullName);
-                    semanticSymbol.AddJsonValue("t_index", typeIndex);
-                    semanticSymbol.AddJsonValue("t_info", variable.Type.FullName);
-                    if (variable.IsParameter)
-                    {
-                        semanticSymbol.AddJsonValue("kind", "par");
-                        semanticSymbol.AddJsonValue("par", variable.OriginalParameter.ToString());
-                    }
-                    else
-                    {
-                        semanticSymbol.AddJsonValue("kind", "var");
-                        semanticSymbol.AddJsonValue("var", variable.OriginalVariable.ToString());
-                    }
+                    semanticSymbol.AddJsonValue("method", methodSymbol.Index);
 
                 }
                 else if (ano is Mono.Cecil.MethodReference)
@@ -94,11 +212,36 @@ namespace ManualILSpy.Extention
 
 #if DEBUG
                     Type t2 = elementMethod.GetType();
-#endif  
+#endif
+                    SemanticSymbol methodSymbol = GetMemberSymbolReference((Mono.Cecil.MethodReference)ano);
+                    //write field type info
+                    //TODO: review here
                     semanticSymbol.AddJsonValue("t_index", -1);
                     semanticSymbol.AddJsonValue("t_info", "");
-                    semanticSymbol.AddJsonValue("kind", "methodref");
-                    semanticSymbol.AddJsonValue("method", metRef.ToString());
+                    semanticSymbol.AddJsonValue("kind", "method");
+                    semanticSymbol.AddJsonValue("method", methodSymbol.Index);
+                }
+                else if (ano is ICSharpCode.Decompiler.ILAst.ILVariable)
+                {
+                    if (foundSymbol)
+                    {   //double symbols?
+                        throw new NotSupportedException();
+                    }
+                    foundSymbol = true;
+                    //registerto type member symbol table 
+                    SemanticSymbol varSymbol = GetLocalVarReference((ICSharpCode.Decompiler.ILAst.ILVariable)ano);
+                    semanticSymbol.AddJsonValue("t_index", varSymbol.TypeNameIndex);
+                    semanticSymbol.AddJsonValue("t_info", varSymbol.FullSymbolName);
+                    if (varSymbol.Kind == SemanticSymbolKind.MethodParameter)
+                    {
+                        semanticSymbol.AddJsonValue("kind", "par");
+                        semanticSymbol.AddJsonValue("par", varSymbol.Index);
+                    }
+                    else
+                    {
+                        semanticSymbol.AddJsonValue("kind", "localvar");
+                        semanticSymbol.AddJsonValue("var", varSymbol.Index);
+                    }
                 }
                 else if (ano is Mono.Cecil.PropertyDefinition)
                 {
@@ -116,6 +259,8 @@ namespace ManualILSpy.Extention
                     //semanticSymbol.AddJsonValue("kind", "propertydef");
                     //semanticSymbol.AddJsonValue("property", propdef.FullName);
 
+
+
                 }
                 else if (ano is Mono.Cecil.IMemberDefinition)
                 {
@@ -125,8 +270,6 @@ namespace ManualILSpy.Extention
                 {
                     decompiler_astTypeInfo = (ICSharpCode.Decompiler.Ast.TypeInformation)ano;
                 }
-
-
             }
             //========
             //second chance ***
@@ -136,7 +279,7 @@ namespace ManualILSpy.Extention
                 {
                     foundSymbol = true;
 
-                    int typeIndex = GetTypeIndex(decompiler_astTypeInfo.ExpectedType.FullName);
+                    int typeIndex = RegisterType(decompiler_astTypeInfo.ExpectedType.FullName);
                     semanticSymbol.AddJsonValue("t_index", typeIndex);
                     semanticSymbol.AddJsonValue("t_info", decompiler_astTypeInfo.ExpectedType.FullName);
                     semanticSymbol.AddJsonValue("kind", "expected_type");
@@ -145,7 +288,7 @@ namespace ManualILSpy.Extention
                 {
                     foundSymbol = true;
 
-                    int typeIndex = GetTypeIndex(decompiler_astTypeInfo.InferredType.FullName);
+                    int typeIndex = RegisterType(decompiler_astTypeInfo.InferredType.FullName);
                     semanticSymbol.AddJsonValue("t_index", typeIndex);
                     semanticSymbol.AddJsonValue("t_info", decompiler_astTypeInfo.InferredType.FullName);
                     semanticSymbol.AddJsonValue("kind", "inferred_type");
@@ -160,14 +303,11 @@ namespace ManualILSpy.Extention
             if (!foundSymbol)
             {
                 //may be void ?
-                int typeIndex = GetTypeIndex("System.Void");
+                int typeIndex = RegisterType("System.Void");
                 semanticSymbol.AddJsonValue("t_index", typeIndex);
                 semanticSymbol.AddJsonValue("t_info", "System.Void");
                 semanticSymbol.AddJsonValue("kind", "inferred_type_void");
-
             }
-
-
             return semanticSymbol;
         }
         /// <summary>

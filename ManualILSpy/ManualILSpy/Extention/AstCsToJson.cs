@@ -34,7 +34,9 @@ namespace ManualILSpy.Extention
     public partial class AstCsToJsonVisitor : IAstVisitor
     {
         Stack<JsonValue> jsonValueStack = new Stack<JsonValue>();
-        Dictionary<string, int> typeInfo = new Dictionary<string, int>();
+        Dictionary<string, int> typeReferences = new Dictionary<string, int>();
+
+
         bool isLambda = false;
 
         public JsonValue LastValue { get; private set; }
@@ -55,23 +57,19 @@ namespace ManualILSpy.Extention
         #endregion
 
         #region Type info
-        void ClearTypeInfo()
+        void CreateGlobalSymbolTable()
         {
-            typeInfo.Clear();
+            typeReferences.Clear();
+            memberReferences.Clear();
         }
-
-        List<string> TypeInfoKeys()
-        {
-            return new List<string>(typeInfo.Keys);
-        }
-
-        int GetTypeIndex(string type)
+      
+        int RegisterType(string type)
         {
             int index = 0;
-            if (!typeInfo.TryGetValue(type, out index))
+            if (!typeReferences.TryGetValue(type, out index))
             {
-                index = typeInfo.Count;
-                typeInfo.Add(type, index);
+                index = typeReferences.Count;
+                typeReferences.Add(type, index);
             }
             return index;
         }
@@ -252,17 +250,17 @@ namespace ManualILSpy.Extention
             {
                 case UndocumentedExpressionType.ArgList:
                 case UndocumentedExpressionType.ArgListAccess:
-                    GetTypeInfo(UndocumentedExpression.ArglistKeywordRole.Token);
-                    expression.AddJsonValue("type-info", GetTypeInfo(UndocumentedExpression.ArglistKeywordRole.Token));
+                    GetTypeIndex(UndocumentedExpression.ArglistKeywordRole.Token);
+                    expression.AddJsonValue("type-info", GetTypeIndex(UndocumentedExpression.ArglistKeywordRole.Token));
                     break;
                 case UndocumentedExpressionType.MakeRef:
-                    expression.AddJsonValue("type-info", GetTypeInfo(UndocumentedExpression.MakerefKeywordRole.Token));
+                    expression.AddJsonValue("type-info", GetTypeIndex(UndocumentedExpression.MakerefKeywordRole.Token));
                     break;
                 case UndocumentedExpressionType.RefType:
-                    expression.AddJsonValue("type-info", GetTypeInfo(UndocumentedExpression.ReftypeKeywordRole.Token));
+                    expression.AddJsonValue("type-info", GetTypeIndex(UndocumentedExpression.ReftypeKeywordRole.Token));
                     break;
                 case UndocumentedExpressionType.RefValue:
-                    expression.AddJsonValue("type-info", GetTypeInfo(UndocumentedExpression.RefvalueKeywordRole.Token));
+                    expression.AddJsonValue("type-info", GetTypeIndex(UndocumentedExpression.RefvalueKeywordRole.Token));
                     break;
                 default:
                     throw new Exception("unknowed type");
@@ -575,7 +573,6 @@ namespace ManualILSpy.Extention
         public void VisitNullReferenceExpression(NullReferenceExpression nullReferenceExpression)
         {
             JsonObject expression = CreateJsonExpression(nullReferenceExpression);
-            expression.AddJsonValue("keyword", new JsonElement("null"));
             Push(expression);
         }
 
@@ -819,7 +816,7 @@ namespace ManualILSpy.Extention
 
         public void VisitNamespaceDeclaration(NamespaceDeclaration namespaceDeclaration)
         {
-            ClearTypeInfo();
+
 
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitNamespaceDeclaration";
@@ -870,7 +867,7 @@ namespace ManualILSpy.Extention
                     break;
             }
             JsonElement identifier = GetIdentifier(typeDeclaration.NameToken);
-         
+
 
 
             bool thisTypeIsLamda = false;
@@ -925,7 +922,7 @@ namespace ManualILSpy.Extention
 
         public void VisitUsingDeclaration(UsingDeclaration usingDeclaration)
         {
-            ClearTypeInfo();
+
 
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitUsingDeclaration";
@@ -1453,7 +1450,7 @@ namespace ManualILSpy.Extention
 
         public void VisitConstructorDeclaration(ConstructorDeclaration constructorDeclaration)
         {
-            ClearTypeInfo();
+            ClearLocalSymbolReferenecs();
             JsonObject construct = CreateJsonEntityDeclaration(constructorDeclaration);
 
             TypeDeclaration type = constructorDeclaration.Parent as TypeDeclaration;
@@ -1474,6 +1471,8 @@ namespace ManualILSpy.Extention
                 construct.AddJsonValue("initializer", Pop());
             }
             construct.AddJsonValue("body", GetMethodBody(constructorDeclaration.Body));
+            construct.AddJsonValue("local_symbols", GetLocalSymbolReferences());
+
             Push(construct);
         }
 
@@ -1602,7 +1601,7 @@ namespace ManualILSpy.Extention
 
         public void VisitIndexerDeclaration(IndexerDeclaration indexerDeclaration)
         {
-            ClearTypeInfo();
+            ClearLocalSymbolReferenecs();
             JsonObject declaration = CreateJsonEntityDeclaration(indexerDeclaration);
             declaration.AddJsonValue("private-implementation-type", GetPrivateImplementationType(indexerDeclaration.PrivateImplementationType));
 
@@ -1626,16 +1625,16 @@ namespace ManualILSpy.Extention
                 children = null;
             }
             declaration.AddJsonValue("children", children);
-            declaration.AddJsonValue("type-info-list", GetTypeInfoList(TypeInfoKeys()));
+
+            declaration.AddJsonValue("local_symbols", GetLocalSymbolReferences());
             Push(declaration);
-            throw new FirstTimeUseException();
+             
         }
 
         public void VisitMethodDeclaration(MethodDeclaration methodDeclaration)
         {
-            ClearTypeInfo();
+            ClearLocalSymbolReferenecs();
             JsonObject method = CreateJsonEntityDeclaration(methodDeclaration);
-
             method.AddJsonValue("name", new JsonElement(methodDeclaration.Name));
             //write parameters
             //ParameterDeclaration param = new ParameterDeclaration("test", ParameterModifier.None);
@@ -1645,15 +1644,14 @@ namespace ManualILSpy.Extention
             method.AddJsonValue("parameters", GetCommaSeparatedList(methodDeclaration.Parameters));
             //write body
             method.AddJsonValue("body", GetMethodBody(methodDeclaration.Body));
-            //write method type info
-            method.AddJsonValue("type-info-list", GetTypeInfoList(TypeInfoKeys()));
-
+            //write method type info 
+            method.AddJsonValue("local_symbols", GetLocalSymbolReferences());
             Push(method);
         }
 
         public void VisitOperatorDeclaration(OperatorDeclaration operatorDeclaration)
         {
-            ClearTypeInfo();
+            ClearLocalSymbolReferenecs();
             JsonObject declaration = CreateJsonEntityDeclaration(operatorDeclaration);
             if (operatorDeclaration.OperatorType == OperatorType.Explicit)
             {
@@ -1682,9 +1680,8 @@ namespace ManualILSpy.Extention
                 declaration.AddJsonValue("operator-type", new JsonElement(OperatorDeclaration.GetToken(operatorDeclaration.OperatorType)));
             }
             declaration.AddJsonValue("parameters", GetCommaSeparatedList(operatorDeclaration.Parameters));
-            declaration.AddJsonValue("type-info-list", GetTypeInfoList(TypeInfoKeys()));
             declaration.AddJsonValue("body", GetMethodBody(operatorDeclaration.Body));
-
+            declaration.AddJsonValue("local_symbols", GetLocalSymbolReferences());
             Push(declaration);
         }
 
@@ -1726,12 +1723,13 @@ namespace ManualILSpy.Extention
             {
                 parameter.AddJsonValue("default-expression", GenExpression(parameterDeclaration.DefaultExpression));
             }
+
             Push(parameter);
         }
 
         public void VisitPropertyDeclaration(PropertyDeclaration propertyDeclaration)
         {
-            ClearTypeInfo();
+            ClearLocalSymbolReferenecs();
             JsonObject declaration = CreateJsonEntityDeclaration(propertyDeclaration);
             declaration.AddJsonValue("private-implementation-type", GetPrivateImplementationType(propertyDeclaration.PrivateImplementationType));
             declaration.AddJsonValue("identifier", GetIdentifier(propertyDeclaration.NameToken));
@@ -1754,8 +1752,7 @@ namespace ManualILSpy.Extention
                 children = null;
             }
             declaration.AddJsonValue("children", children);
-            declaration.AddJsonValue("type-info-list", GetTypeInfoList(TypeInfoKeys()));
-
+            declaration.AddJsonValue("local_symbols", GetLocalSymbolReferences());
             Push(declaration);
         }
 
@@ -1777,15 +1774,13 @@ namespace ManualILSpy.Extention
             }
             Push(variable);
         }
-
         public void VisitSimpleType(SimpleType simpleType)
         {
-            Push(GetTypeInfo(simpleType.IdentifierToken.Name));
+            Push(GetTypeIndex(simpleType.IdentifierToken.Name));
         }
-
-        JsonElement GetTypeInfo(string typeKeyword)
+        JsonElement GetTypeIndex(string typeKeyword)
         {
-            int index = GetTypeIndex(typeKeyword);
+            int index = RegisterType(typeKeyword);
             return new JsonElement(index);
         }
 
@@ -1794,12 +1789,29 @@ namespace ManualILSpy.Extention
             JsonArray arr = new JsonArray();
             arr.Comment = "VisitSyntaxTree";
             int counter = 0;
+            CreateGlobalSymbolTable();
+
             foreach (AstNode node in syntaxTree.Children)
             {
                 node.AcceptVisitor(this);
                 arr.AddJsonValue(Pop());
                 counter++;
             }
+
+
+            //-----------
+            //type reference table
+            JsonObject symbolInformations = new JsonObject();
+            JsonArray typerefs = new JsonArray();
+            symbolInformations.AddJsonValue("typerefs", typerefs);
+            foreach (string k in this.typeReferences.Keys)
+            {
+                //type reference
+                typerefs.AddJsonValue(new JsonElement(k));
+            }
+            arr.AddJsonValue(symbolInformations);
+            //-----------
+
             if (counter == 1)
             {
                 LastValue = arr.ValueList[0];
@@ -1842,7 +1854,7 @@ namespace ManualILSpy.Extention
 
         public void VisitPrimitiveType(PrimitiveType primitiveType)
         {
-            Push(GetTypeInfo(primitiveType.Keyword));
+            Push(GetTypeIndex(primitiveType.Keyword));
         }
 
         public void VisitComment(Comment comment)
