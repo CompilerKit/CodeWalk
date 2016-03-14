@@ -15,7 +15,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mono.Cecil.Pdb", "Mono.Ceci
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ICSharpCode.Decompiler", "ICSharpCode.Decompiler\ICSharpCode.Decompiler.csproj", "{875D2732-2CC5-4349-838D-B099357568E6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ICSharpCode.Decompiler.Tests", "ICSharpCode.Decompiler\Tests\ICSharpCode.Decompiler.Tests.csproj", "{FEC0DA52-C4A6-4710-BE36-B484A20C5E22}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ICSharpCode.Decompiler.Tests", "ICSharpCode.Decompiler.Tests\ICSharpCode.Decompiler.Tests.csproj", "{FEC0DA52-C4A6-4710-BE36-B484A20C5E22}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
