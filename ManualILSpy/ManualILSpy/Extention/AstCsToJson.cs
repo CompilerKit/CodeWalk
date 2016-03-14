@@ -792,7 +792,7 @@ namespace ManualILSpy.Extention
             declaration.Comment = "VisitDelegateDeclaration";
             AddAttributes(declaration, delegateDeclaration);
             AddModifiers(declaration, delegateDeclaration);
-            AddReturnType(declaration, delegateDeclaration); 
+            AddReturnType(declaration, delegateDeclaration);
             AddKeyword(declaration, Roles.DelegateKeyword);
             declaration.AddJsonValue("identifier", GetIdentifier(delegateDeclaration.NameToken));
             declaration.AddJsonValue("type-parameters", GetTypeParameters(delegateDeclaration.TypeParameters));
@@ -823,10 +823,9 @@ namespace ManualILSpy.Extention
 
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitNamespaceDeclaration";
-
             AddKeyword(declaration, Roles.NamespaceKeyword);
-            declaration.AddJsonValue("namespace-name", GenTypeInfo(namespaceDeclaration.NamespaceName));
-            declaration.AddJsonValue("namespace-info-list", GetTypeInfoList(TypeInfoKeys()));
+            declaration.AddJsonValue("namespace-name", GenerateNamespaceString(namespaceDeclaration.NamespaceName));
+
             JsonArray memberList = new JsonArray();
             foreach (var member in namespaceDeclaration.Members)
             {
@@ -852,8 +851,6 @@ namespace ManualILSpy.Extention
         {
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitTypeDeclaration";
-
-
             AddAttributes(declaration, typeDeclaration);
             AddModifiers(declaration, typeDeclaration);
 
@@ -872,8 +869,10 @@ namespace ManualILSpy.Extention
                     declaration.AddJsonValue("keyword", GetKeyword(Roles.ClassKeyword));
                     break;
             }
-
             JsonElement identifier = GetIdentifier(typeDeclaration.NameToken);
+         
+
+
             bool thisTypeIsLamda = false;
             if (isLambda)
             {
@@ -927,14 +926,18 @@ namespace ManualILSpy.Extention
         public void VisitUsingDeclaration(UsingDeclaration usingDeclaration)
         {
             ClearTypeInfo();
+
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitUsingDeclaration";
             AddKeyword(declaration, UsingDeclaration.UsingKeywordRole);
-            declaration.AddJsonValue("import", GenTypeInfo(usingDeclaration.Import));
-            declaration.AddJsonValue("import-info-list", GetTypeInfoList(TypeInfoKeys()));
+            declaration.AddJsonValue("import", GenerateNamespaceString(usingDeclaration.Import));
+
             Push(declaration);
         }
-
+        string GenerateNamespaceString(AstType astType)
+        {
+            return astType.ToString();
+        }
         public void VisitExternAliasDeclaration(ExternAliasDeclaration externAliasDeclaration)
         {
             JsonObject declaration = new JsonObject();
@@ -1997,3 +2000,4 @@ namespace ManualILSpy.Extention
 
     }
 }
+
