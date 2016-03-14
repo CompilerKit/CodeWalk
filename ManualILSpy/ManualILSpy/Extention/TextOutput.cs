@@ -1,4 +1,5 @@
-﻿using System;
+﻿//MIT, 2016, Brezza27, EngineKit
+using System;
 using System.IO;
 using System.Text;
 using System.Collections.Generic;
@@ -8,67 +9,7 @@ using ICSharpCode.NRefactory.CSharp;
 
 namespace ManualILSpy.Extention
 {
-    public class ManualTextOutput : ITextOutput
-    {
-        int indent = 0;
-        public TextLocation Location
-        {
-            get
-            {
-                return new TextLocation(0, 0);
-            }
-        }
-
-        public void AddDebugSymbols(MethodDebugSymbols methodDebugSymbols)
-        {
-            //throw new NotImplementedException();
-        }
-
-        public void Indent()
-        {
-            indent++;
-        }
-
-        public void MarkFoldEnd()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void MarkFoldStart(string collapsedText = "...", bool defaultCollapsed = false)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Unindent()
-        {
-            indent--;
-        }
-
-        public void Write(string text)
-        {
-            Console.Write(text);
-        }
-
-        public void Write(char ch)
-        {
-            Console.Write(ch);
-        }
-
-        public void WriteDefinition(string text, object definition, bool isLocal = true)
-        {
-            Console.Write(text);
-        }
-
-        public void WriteLine()
-        {
-            Console.WriteLine();
-        }
-
-        public void WriteReference(string text, object reference, bool isLocal = false)
-        {
-            Console.Write(text);
-        }
-    }
+   
 
     public class StringBuilderTextOutput : ITextOutput
     {
@@ -142,16 +83,7 @@ namespace ManualILSpy.Extention
         }
     }
 
-    public class UTF8TextWriter : TextWriter
-    {
-        public override Encoding Encoding
-        {
-            get
-            {
-                return Encoding.UTF8;
-            }
-        }
-    }
+   
 
     public class JsonTokenWriter
     {
@@ -243,7 +175,7 @@ namespace ManualILSpy.Extention
 
         public void WriteComment(string comment)
         {
-            if (comment.Length==0 || comment == null)
+            if (comment.Length == 0 || comment == null)
             {
                 return;
             }
@@ -335,96 +267,7 @@ namespace ManualILSpy.Extention
         //}
     }
 
-    public class AstJsonWriter : TokenWriter
-    {
-        ITextOutput output;
-        public AstJsonWriter(ITextOutput output)
-        {
-            this.output = output;
-        }
-
-        #region Start and End Node
-
-        public override void EndNode(AstNode node)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void StartNode(AstNode node)
-        {
-            throw new NotImplementedException();
-        }
-
-        #endregion
-
-        #region Indent
-
-        public override void Indent()
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void Unindent()
-        {
-            throw new NotImplementedException();
-        }
-
-        #endregion
-
-        #region Line and Space
-
-        public override void NewLine()
-        {
-            output.WriteLine();
-        }
-
-        public override void Space()
-        {
-            output.Write(' ');
-        }
-
-        #endregion
-
-        #region Write Anything
-
-        public override void WriteComment(CommentType commentType, string content)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void WriteIdentifier(Identifier identifier)
-        {
-            output.Write('"' + identifier.Name + '"');
-        }
-
-        public override void WriteKeyword(Role role, string keyword)
-        {
-            
-            output.Write('"' + keyword + '"');
-        }
-
-        public override void WritePreProcessorDirective(PreProcessorDirectiveType type, string argument)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void WritePrimitiveType(string type)
-        {
-            output.Write(type);
-        }
-
-        public override void WritePrimitiveValue(object value, string literalValue = null)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void WriteToken(Role role, string token)
-        {
-            output.Write(token);
-        }
-        #endregion
-
-    }
+   
 
     public static class MyDebugWriter
     {

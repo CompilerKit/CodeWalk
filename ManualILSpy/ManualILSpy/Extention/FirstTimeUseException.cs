@@ -1,4 +1,4 @@
-﻿//MIT 2016,  Brezza27 , EngineKit, 
+﻿//MIT, 2016, Brezza27, EngineKit
 using System;
 namespace ManualILSpy.Extention
 {

@@ -1,4 +1,5 @@
-﻿using System;
+﻿//MIT, 2016, Brezza27
+using System;
 using System.Text;
 using System.Collections.Generic;
 using ICSharpCode.Decompiler;
