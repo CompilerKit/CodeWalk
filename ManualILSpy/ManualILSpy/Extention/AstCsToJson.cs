@@ -792,9 +792,7 @@ namespace ManualILSpy.Extention
             declaration.Comment = "VisitDelegateDeclaration";
             AddAttributes(declaration, delegateDeclaration);
             AddModifiers(declaration, delegateDeclaration);
-            AddReturnType(declaration, delegateDeclaration);
-
-
+            AddReturnType(declaration, delegateDeclaration); 
             AddKeyword(declaration, Roles.DelegateKeyword);
             declaration.AddJsonValue("identifier", GetIdentifier(delegateDeclaration.NameToken));
             declaration.AddJsonValue("type-parameters", GetTypeParameters(delegateDeclaration.TypeParameters));
@@ -931,7 +929,7 @@ namespace ManualILSpy.Extention
             ClearTypeInfo();
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitUsingDeclaration";
-            declaration.AddJsonValue("keyword", GetKeyword(UsingDeclaration.UsingKeywordRole));
+            AddKeyword(declaration, UsingDeclaration.UsingKeywordRole);
             declaration.AddJsonValue("import", GenTypeInfo(usingDeclaration.Import));
             declaration.AddJsonValue("import-info-list", GetTypeInfoList(TypeInfoKeys()));
             Push(declaration);
@@ -941,9 +939,8 @@ namespace ManualILSpy.Extention
         {
             JsonObject declaration = new JsonObject();
             declaration.Comment = "VisitExternAliasDeclaration";
-
-            declaration.AddJsonValue("extern-keyword", GetKeyword(Roles.ExternKeyword));
-            declaration.AddJsonValue("alias-keyword", GetKeyword(Roles.AliasKeyword));
+            AddKeyword(declaration, "extern-keyword", Roles.ExternKeyword);
+            AddKeyword(declaration, "alias-keyword", Roles.AliasKeyword);
             declaration.AddJsonValue("identifier", GetIdentifier(externAliasDeclaration.NameToken));
 
             Push(declaration);
@@ -1388,7 +1385,7 @@ namespace ManualILSpy.Extention
         {
             JsonObject statement = CreateJsonStatement(variableDeclarationStatement);
             JsonValue modifier = GetModifiers(variableDeclarationStatement.GetChildrenByRole(VariableDeclarationStatement.ModifierRole));
-            if (modifier != null)
+            if (modifier != null && modifier.ValueType != JsonValueType.Null)
             {
                 statement.AddJsonValue("modifier", modifier);
             }
@@ -1733,9 +1730,9 @@ namespace ManualILSpy.Extention
         {
             ClearTypeInfo();
             JsonObject declaration = CreateJsonEntityDeclaration(propertyDeclaration);
-
             declaration.AddJsonValue("private-implementation-type", GetPrivateImplementationType(propertyDeclaration.PrivateImplementationType));
             declaration.AddJsonValue("identifier", GetIdentifier(propertyDeclaration.NameToken));
+
             JsonArray children = new JsonArray();
             foreach (AstNode node in propertyDeclaration.Children)
             {
