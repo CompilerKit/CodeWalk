@@ -43,8 +43,18 @@ namespace ManualILSpy.Extention
                 methodSymbol.Kind = SemanticSymbolKind.Method;
                 methodSymbol.OriginalSymbol = methodDef;
                 methodSymbol.FullSymbolName = methodDef.FullName;
-                methodSymbol.FullTypeName = methodDef.ReturnType.FullName;
-                methodSymbol.TypeNameIndex = RegisterType(methodDef.ReturnType.FullName);
+                switch (methodDef.Name)
+                {
+                    case ".ctor":
+                        methodSymbol.FullTypeName = methodDef.DeclaringType.FullName;
+                        methodSymbol.TypeNameIndex = RegisterType(methodDef.DeclaringType.FullName);
+                        break;
+                    case ".cctor":
+                    default:
+                        methodSymbol.FullTypeName = methodDef.ReturnType.FullName;
+                        methodSymbol.TypeNameIndex = RegisterType(methodDef.ReturnType.FullName);
+                        break;
+                }
                 memberReferences.Add(id, methodSymbol);
                 //--------------------------------------------
             }
@@ -60,8 +70,23 @@ namespace ManualILSpy.Extention
                 methodSymbol.Kind = SemanticSymbolKind.Method;
                 methodSymbol.OriginalSymbol = methodDef;
                 methodSymbol.FullSymbolName = methodDef.FullName;
-                methodSymbol.FullTypeName = methodDef.ReturnType.FullName;
-                methodSymbol.TypeNameIndex = RegisterType(methodDef.ReturnType.FullName);
+
+                switch (methodDef.Name)
+                {
+                    case ".ctor":
+                        methodSymbol.FullTypeName = methodDef.DeclaringType.FullName;
+                        methodSymbol.TypeNameIndex = RegisterType(methodDef.DeclaringType.FullName);
+                        break;
+                    case ".cctor":
+                    default:
+                        methodSymbol.FullTypeName = methodDef.ReturnType.FullName;
+                        methodSymbol.TypeNameIndex = RegisterType(methodDef.ReturnType.FullName);
+                        break;
+                }
+
+
+
+
                 memberReferences.Add(id, methodSymbol);
                 //--------------------------------------------
             }
@@ -136,7 +161,7 @@ namespace ManualILSpy.Extention
                             localVarSymbol.AddJsonValue("original", localvar.OriginalVariable.ToString());
                             jsonArray.AddJsonValue(localVarSymbol);
                         }
-                         
+
                         break;
                     case SemanticSymbolKind.MethodParameter:
                         {
@@ -207,19 +232,27 @@ namespace ManualILSpy.Extention
                         throw new NotSupportedException();
                     }
                     foundSymbol = true;
-                    Mono.Cecil.MethodReference metRef = (Mono.Cecil.MethodReference)ano;
-                    var elementMethod = metRef.GetElementMethod();
 
-#if DEBUG
-                    Type t2 = elementMethod.GetType();
-#endif
+                    Mono.Cecil.MethodReference metRef = (Mono.Cecil.MethodReference)ano;
+
                     SemanticSymbol methodSymbol = GetMemberSymbolReference((Mono.Cecil.MethodReference)ano);
-                    //write field type info
-                    //TODO: review here
-                    semanticSymbol.AddJsonValue("t_index", -1);
-                    semanticSymbol.AddJsonValue("t_info", "");
-                    semanticSymbol.AddJsonValue("kind", "method");
-                    semanticSymbol.AddJsonValue("method", methodSymbol.Index);
+                    semanticSymbol.AddJsonValue("t_index", methodSymbol.TypeNameIndex);//return type of method
+                    semanticSymbol.AddJsonValue("t_info", methodSymbol.FullTypeName);//return type of method 
+                    switch (metRef.Name)
+                    {
+                        case ".ctor":
+                            semanticSymbol.AddJsonValue("kind", ".ctor");
+                            semanticSymbol.AddJsonValue(".ctor", methodSymbol.Index);
+                            break;
+                        case ".cctor":
+                            semanticSymbol.AddJsonValue("kind", ".cctor");
+                            semanticSymbol.AddJsonValue(".cctor", methodSymbol.Index);
+                            break;
+                        default:
+                            semanticSymbol.AddJsonValue("kind", "method");
+                            semanticSymbol.AddJsonValue("method", methodSymbol.Index);
+                            break;
+                    }
                 }
                 else if (ano is ICSharpCode.Decompiler.ILAst.ILVariable)
                 {
@@ -325,8 +358,12 @@ namespace ManualILSpy.Extention
 
         void AddVisitComment<T>(JsonObject jsonObject)
         {
+
             int vcount = System.Threading.Interlocked.Increment(ref visitCount);
             jsonObject.Comment = "Visit" + typeof(T).Name + " " + (vcount);
+            if (vcount == 226)
+            {
+            }
             //jsonObject.Comment = (vcount).ToString();
         }
         JsonObject CreateJsonExpression<T>(T expression)
