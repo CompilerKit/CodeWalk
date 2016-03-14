@@ -678,17 +678,17 @@ namespace ManualILSpy.Extention
             var opSymbol = UnaryOperatorExpression.GetOperatorRole(opType);
             if (opType == UnaryOperatorType.Await)
             {
-                expression.AddJsonValue("symbol", GetKeyword(opSymbol));
+                expression.AddJsonValue("operator", GetKeyword(opSymbol));
             }
             else if (!(opType == UnaryOperatorType.PostIncrement || opType == UnaryOperatorType.PostDecrement))
             {
-                expression.AddJsonValue("symbol", GetKeyword(opSymbol));
+                expression.AddJsonValue("operator", GetKeyword(opSymbol));
             }
 
             expression.AddJsonValue("expression", GenExpression(unaryOperatorExpression.Expression));
             if (opType == UnaryOperatorType.PostIncrement || opType == UnaryOperatorType.PostDecrement)
             {
-                expression.AddJsonValue("symbol", GetKeyword(opSymbol));
+                expression.AddJsonValue("operator", GetKeyword(opSymbol));
             }
             Push(expression);
         }

@@ -10,6 +10,166 @@ namespace ManualILSpy.Extention
 {
     partial class AstCsToJsonVisitor : IAstVisitor
     {
+
+        JsonObject GenSemanticSymbol(System.Collections.Generic.IEnumerable<object> anotations)
+        {
+            JsonObject semanticSymbol = new JsonObject();
+            bool foundSymbol = false;
+            ICSharpCode.Decompiler.Ast.TypeInformation decompiler_astTypeInfo = null;
+
+            foreach (object ano in anotations)
+            {
+                //what is this object
+#if DEBUG
+                Type typeOfObject = ano.GetType();
+#endif
+                if (ano is Mono.Cecil.FieldDefinition)
+                {
+                    if (foundSymbol)
+                    {   //double symbols?
+                        throw new NotSupportedException();
+                    }
+                    foundSymbol = true;
+
+                    Mono.Cecil.FieldDefinition fieldDef = (Mono.Cecil.FieldDefinition)ano;
+                    //write field type info
+                    int typeIndex = GetTypeIndex(fieldDef.FieldType.FullName);
+                    semanticSymbol.AddJsonValue("t_index", typeIndex);
+                    semanticSymbol.AddJsonValue("t_info", fieldDef.FieldType.FullName);
+                    //symbol  
+                    semanticSymbol.AddJsonValue("kind", "field");
+                    semanticSymbol.AddJsonValue("field", fieldDef.ToString());
+                }
+                else if (ano is Mono.Cecil.MethodDefinition)
+                {
+                    if (foundSymbol)
+                    {   //double symbols?
+                        throw new NotSupportedException();
+                    }
+                    foundSymbol = true;
+
+                    Mono.Cecil.MethodDefinition methodef = (Mono.Cecil.MethodDefinition)ano;
+                    //write field type info
+                    //TODO: review here
+                    semanticSymbol.AddJsonValue("t_index", -1);
+                    semanticSymbol.AddJsonValue("t_info", "");
+
+                    semanticSymbol.AddJsonValue("kind", "method");
+                    semanticSymbol.AddJsonValue("method", methodef.ToString());
+
+                }
+                else if (ano is ICSharpCode.Decompiler.ILAst.ILVariable)
+                {
+                    if (foundSymbol)
+                    {   //double symbols?
+                        throw new NotSupportedException();
+                    }
+                    foundSymbol = true;
+
+                    ICSharpCode.Decompiler.ILAst.ILVariable variable = (ICSharpCode.Decompiler.ILAst.ILVariable)ano;
+                    int typeIndex = GetTypeIndex(variable.Type.FullName);
+                    semanticSymbol.AddJsonValue("t_index", typeIndex);
+                    semanticSymbol.AddJsonValue("t_info", variable.Type.FullName);
+                    if (variable.IsParameter)
+                    {
+                        semanticSymbol.AddJsonValue("kind", "par");
+                        semanticSymbol.AddJsonValue("par", variable.OriginalParameter.ToString());
+                    }
+                    else
+                    {
+                        semanticSymbol.AddJsonValue("kind", "var");
+                        semanticSymbol.AddJsonValue("var", variable.OriginalVariable.ToString());
+                    }
+
+                }
+                else if (ano is Mono.Cecil.MethodReference)
+                {
+                    if (foundSymbol)
+                    {   //double symbols?
+                        throw new NotSupportedException();
+                    }
+                    foundSymbol = true;
+                    Mono.Cecil.MethodReference metRef = (Mono.Cecil.MethodReference)ano;
+                    var elementMethod = metRef.GetElementMethod();
+
+#if DEBUG
+                    Type t2 = elementMethod.GetType();
+#endif  
+                    semanticSymbol.AddJsonValue("t_index", -1);
+                    semanticSymbol.AddJsonValue("t_info", "");
+                    semanticSymbol.AddJsonValue("kind", "methodref");
+                    semanticSymbol.AddJsonValue("method", metRef.ToString());
+                }
+                else if (ano is Mono.Cecil.PropertyDefinition)
+                {
+                    //just skip *** 
+                    //if (foundSymbol)
+                    //{   //double symbols?
+                    //    throw new NotSupportedException();
+                    //}
+                    //foundSymbol = true;
+
+                    //Mono.Cecil.PropertyDefinition propdef = (Mono.Cecil.PropertyDefinition)ano;
+                    //int typeIndex = GetTypeIndex(propdef.PropertyType.FullName);
+                    //semanticSymbol.AddJsonValue("t_index", typeIndex);
+                    //semanticSymbol.AddJsonValue("t_info", propdef.PropertyType.FullName);
+                    //semanticSymbol.AddJsonValue("kind", "propertydef");
+                    //semanticSymbol.AddJsonValue("property", propdef.FullName);
+
+                }
+                else if (ano is Mono.Cecil.IMemberDefinition)
+                {
+                    throw new NotSupportedException();
+                }
+                else if (ano is ICSharpCode.Decompiler.Ast.TypeInformation)
+                {
+                    decompiler_astTypeInfo = (ICSharpCode.Decompiler.Ast.TypeInformation)ano;
+                }
+
+
+            }
+            //========
+            //second chance ***
+            if (!foundSymbol && decompiler_astTypeInfo != null)
+            {
+                if (decompiler_astTypeInfo.ExpectedType != null)
+                {
+                    foundSymbol = true;
+
+                    int typeIndex = GetTypeIndex(decompiler_astTypeInfo.ExpectedType.FullName);
+                    semanticSymbol.AddJsonValue("t_index", typeIndex);
+                    semanticSymbol.AddJsonValue("t_info", decompiler_astTypeInfo.ExpectedType.FullName);
+                    semanticSymbol.AddJsonValue("kind", "expected_type");
+                }
+                else if (decompiler_astTypeInfo.InferredType != null)
+                {
+                    foundSymbol = true;
+
+                    int typeIndex = GetTypeIndex(decompiler_astTypeInfo.InferredType.FullName);
+                    semanticSymbol.AddJsonValue("t_index", typeIndex);
+                    semanticSymbol.AddJsonValue("t_info", decompiler_astTypeInfo.InferredType.FullName);
+                    semanticSymbol.AddJsonValue("kind", "inferred_type");
+                }
+                else
+                {
+                    throw new NotSupportedException();
+                }
+
+            }
+
+            if (!foundSymbol)
+            {
+                //may be void ?
+                int typeIndex = GetTypeIndex("System.Void");
+                semanticSymbol.AddJsonValue("t_index", typeIndex);
+                semanticSymbol.AddJsonValue("t_info", "System.Void");
+                semanticSymbol.AddJsonValue("kind", "inferred_type_void");
+
+            }
+
+
+            return semanticSymbol;
+        }
         /// <summary>
         /// add type information of the expression to jsonobject
         /// </summary>
@@ -17,96 +177,8 @@ namespace ManualILSpy.Extention
         /// <param name="jsonObject"></param>
         void AddTypeInformation(JsonObject jsonObject, Expression expression)
         {
-            var expressionType = expression.Annotation<ICSharpCode.Decompiler.Ast.TypeInformation>();
-            if (expressionType != null)
-            {
-                if (expressionType.ExpectedType != null)
-                {
-                    int typeIndex = GetTypeIndex(expressionType.ExpectedType.FullName);
-                    jsonObject.AddJsonValue("t_index", typeIndex);
-                    jsonObject.AddJsonValue("t_info", expressionType.ExpectedType.FullName);
-                }
-                else if (expressionType.InferredType != null)
-                {
-                    int typeIndex = GetTypeIndex(expressionType.InferredType.FullName);
-                    jsonObject.AddJsonValue("t_index", typeIndex);
-                    jsonObject.AddJsonValue("t_info", expressionType.InferredType.FullName);
-                }
-                else
-                {
-                    throw new NotSupportedException();
-                }
-            }
-            else
-            {
-                object objectAnonation = expression.Annotation<object>();
-                if (objectAnonation != null)
-                {
-                    Type typeOfObject = objectAnonation.GetType();
-                    if (objectAnonation is Mono.Cecil.FieldDefinition)
-                    {
-                        //refer to field
-                        Mono.Cecil.FieldDefinition fieldDef = (Mono.Cecil.FieldDefinition)objectAnonation;
-                        //write field type info
-                        int typeIndex = GetTypeIndex(fieldDef.FieldType.FullName);
-                        jsonObject.AddJsonValue("t_index", typeIndex);
-                        jsonObject.AddJsonValue("t_info", fieldDef.FieldType.FullName);
-                        //symbol 
-                        JsonObject symbol = new JsonObject();
-                        symbol.AddJsonValue("kind", "field");
-                        symbol.AddJsonValue("field", fieldDef.ToString());
-                        jsonObject.AddJsonValue("symbol", symbol);
-                    }
-                    else if (objectAnonation is Mono.Cecil.MethodDefinition)
-                    {
-                        //get deletegate type of this method?
-                        //TODO: review here
-                        Mono.Cecil.MethodDefinition methodef = (Mono.Cecil.MethodDefinition)objectAnonation;
-                        //write field type info
-                        //TODO: review here
-                        jsonObject.AddJsonValue("t_index", -1);
-                        jsonObject.AddJsonValue("t_info", "");
-
-                        JsonObject symbol = new JsonObject();
-                        symbol.AddJsonValue("kind", "method");
-                        symbol.AddJsonValue("method", methodef.ToString());
-                        jsonObject.AddJsonValue("symbol", symbol);
-                    }
-                    else if (objectAnonation is ICSharpCode.Decompiler.ILAst.ILVariable)
-                    {
-                        ICSharpCode.Decompiler.ILAst.ILVariable variable = (ICSharpCode.Decompiler.ILAst.ILVariable)objectAnonation;
-                        int typeIndex = GetTypeIndex(variable.Type.FullName);
-                        jsonObject.AddJsonValue("t_index", typeIndex);
-                        jsonObject.AddJsonValue("t_info", variable.Type.FullName);
-
-
-                        JsonObject symbol = new JsonObject();
-                        if (variable.IsParameter)
-                        {
-                            symbol.AddJsonValue("kind", "par");
-                            symbol.AddJsonValue("par", variable.OriginalParameter.ToString());
-                        }
-                        else
-                        {
-                            symbol.AddJsonValue("kind", "var");
-                            symbol.AddJsonValue("var", variable.OriginalVariable.ToString());
-                        }
-
-
-                        jsonObject.AddJsonValue("symbol", symbol);
-
-                    }
-                    else {
-                        throw new Exception("typeinfo not found!");
-                    }
-                }
-                else
-                {
-                    //return void ?
-                    jsonObject.AddJsonValue("t_index", GetTypeIndex("System.Void"));
-                    jsonObject.AddJsonValue("t_info", "System.Void");
-                }
-            }
+            //record symbols here
+            jsonObject.AddJsonValue("symbol", GenSemanticSymbol(expression.Annotations));
         }
 
         static int visitCount;
@@ -118,7 +190,7 @@ namespace ManualILSpy.Extention
             //jsonObject.Comment = (vcount).ToString();
         }
         JsonObject CreateJsonExpression<T>(T expression)
-            where T : Expression
+        where T : Expression
         {
             JsonObject jsonObject = new JsonObject();
             //1. add visit comment
@@ -148,7 +220,7 @@ namespace ManualILSpy.Extention
             return Pop();
         }
         JsonObject CreateJsonEntityDeclaration<T>(T entityDecl)
-            where T : EntityDeclaration
+        where T : EntityDeclaration
         {
             JsonObject jsonEntityDecl = new JsonObject();
             AddVisitComment<T>(jsonEntityDecl);
@@ -159,6 +231,8 @@ namespace ManualILSpy.Extention
         }
 
         void AddReturnType(JsonObject jsonObject, EntityDeclaration entityDecl)
+
+
         {
             jsonObject.AddJsonValue("return-type", GenTypeInfo(entityDecl.ReturnType));
         }
@@ -185,6 +259,8 @@ namespace ManualILSpy.Extention
             return jsonEntityDecl;
         }
         void AddKeyword(JsonObject jsonObject, TokenRole tkrole)
+
+
         {
             //we may skip this  ...
             ///jsonObject.AddJsonValue("keyword", GetKeyword(tkrole));
