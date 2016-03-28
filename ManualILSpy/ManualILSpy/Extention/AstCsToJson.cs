@@ -415,7 +415,7 @@ namespace ManualILSpy.Extention
             expression.AddJsonValue("expression", GenExpression(checkedExpression.Expression));
             Push(expression);
 
-            throw new FirstTimeUseException();
+            //throw new FirstTimeUseException();
 
         }
 
