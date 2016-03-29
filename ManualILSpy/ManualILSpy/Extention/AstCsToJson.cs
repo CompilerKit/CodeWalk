@@ -136,6 +136,7 @@ namespace ManualILSpy.Extention
             }
             return typeArr;
         }
+        bool isSuspectLambda = false;
         int countLamda = 0;
         JsonElement GetIdentifier(Identifier identifier)
         {
@@ -143,6 +144,7 @@ namespace ManualILSpy.Extention
             string name = identifier.Name;
             if (name[0] == '<' && name[1] == '>')
             {
+                isSuspectLambda = true;
                 countLamda++;
                 if (countLamda == 4)
                 {
@@ -1098,6 +1100,7 @@ namespace ManualILSpy.Extention
             statement.AddJsonValue("condition", GenExpression(ifElseStatement.Condition));
             statement.AddJsonValue("true-statement", GenStatement(ifElseStatement.TrueStatement));
             statement.AddJsonValue("false-statement", GenStatement(ifElseStatement.FalseStatement));
+            if (isSuspectLambda)
             {
 
             }
