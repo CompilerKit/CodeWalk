@@ -38,7 +38,7 @@
             this.decompile_btn = new System.Windows.Forms.Button();
             this.decompile_panel = new System.Windows.Forms.Panel();
             this.decompile_all_btn = new System.Windows.Forms.Button();
-            this.listView1 = new System.Windows.Forms.ListView();
+            this.typesListView = new System.Windows.Forms.ListView();
             this.lbSuccessCounter = new System.Windows.Forms.Label();
             this.errorLogBtn = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
@@ -46,6 +46,7 @@
             this.lbErrorCounter = new System.Windows.Forms.Label();
             this.pauseBtn = new System.Windows.Forms.Button();
             this.stopBtn = new System.Windows.Forms.Button();
+            this.decompileErrorBtn = new System.Windows.Forms.Button();
             this.decompile_panel.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -58,7 +59,7 @@
             this.testReadWriteJsonBtn.TabIndex = 4;
             this.testReadWriteJsonBtn.Text = "Test read and write json";
             this.testReadWriteJsonBtn.UseVisualStyleBackColor = true;
-            this.testReadWriteJsonBtn.Click += new System.EventHandler(this.TestReadWriteJsonBtn_Click);
+            this.testReadWriteJsonBtn.Click += new System.EventHandler(this.testReadWriteJsonBtn_Click);
             // 
             // browsePathTb
             // 
@@ -66,7 +67,7 @@
             this.browsePathTb.Name = "browsePathTb";
             this.browsePathTb.Size = new System.Drawing.Size(297, 20);
             this.browsePathTb.TabIndex = 5;
-            this.browsePathTb.TextChanged += new System.EventHandler(this.textBox1_TextChanged);
+            this.browsePathTb.TextChanged += new System.EventHandler(this.browsePathTb_TextChanged);
             // 
             // browse_btn
             // 
@@ -76,7 +77,7 @@
             this.browse_btn.TabIndex = 6;
             this.browse_btn.Text = "Browse";
             this.browse_btn.UseVisualStyleBackColor = true;
-            this.browse_btn.Click += new System.EventHandler(this.Browse_btn_Click);
+            this.browse_btn.Click += new System.EventHandler(this.browse_btn_Click);
             // 
             // treeView1
             // 
@@ -93,7 +94,7 @@
             this.scan_btn.TabIndex = 8;
             this.scan_btn.Text = "Scan";
             this.scan_btn.UseVisualStyleBackColor = true;
-            this.scan_btn.Click += new System.EventHandler(this.Scan_Click);
+            this.scan_btn.Click += new System.EventHandler(this.scan_Click);
             // 
             // enable_rbtn
             // 
@@ -125,7 +126,7 @@
             this.decompile_btn.TabIndex = 11;
             this.decompile_btn.Text = "Decompile Selected";
             this.decompile_btn.UseVisualStyleBackColor = true;
-            this.decompile_btn.Click += new System.EventHandler(this.decompile_btn_Click);
+            this.decompile_btn.Click += new System.EventHandler(this.decompileSelected_btn_Click);
             // 
             // decompile_panel
             // 
@@ -146,15 +147,15 @@
             this.decompile_all_btn.TabIndex = 12;
             this.decompile_all_btn.Text = "Decompile All";
             this.decompile_all_btn.UseVisualStyleBackColor = true;
-            this.decompile_all_btn.Click += new System.EventHandler(this.decompile_all_btn_Click);
+            this.decompile_all_btn.Click += new System.EventHandler(this.decompileAll_btn_Click);
             // 
-            // listView1
+            // typesListView
             // 
-            this.listView1.Location = new System.Drawing.Point(459, 77);
-            this.listView1.Name = "listView1";
-            this.listView1.Size = new System.Drawing.Size(300, 230);
-            this.listView1.TabIndex = 20;
-            this.listView1.UseCompatibleStateImageBehavior = false;
+            this.typesListView.Location = new System.Drawing.Point(459, 77);
+            this.typesListView.Name = "typesListView";
+            this.typesListView.Size = new System.Drawing.Size(300, 230);
+            this.typesListView.TabIndex = 20;
+            this.typesListView.UseCompatibleStateImageBehavior = false;
             // 
             // lbSuccessCounter
             // 
@@ -222,11 +223,22 @@
             this.stopBtn.UseVisualStyleBackColor = true;
             this.stopBtn.Click += new System.EventHandler(this.stopBtn_Click);
             // 
+            // decompileErrorBtn
+            // 
+            this.decompileErrorBtn.Location = new System.Drawing.Point(324, 213);
+            this.decompileErrorBtn.Name = "decompileErrorBtn";
+            this.decompileErrorBtn.Size = new System.Drawing.Size(124, 23);
+            this.decompileErrorBtn.TabIndex = 28;
+            this.decompileErrorBtn.Text = "Decompile ErrorTypes";
+            this.decompileErrorBtn.UseVisualStyleBackColor = true;
+            this.decompileErrorBtn.Click += new System.EventHandler(this.decompileError_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(768, 345);
+            this.Controls.Add(this.decompileErrorBtn);
             this.Controls.Add(this.stopBtn);
             this.Controls.Add(this.pauseBtn);
             this.Controls.Add(this.lbErrorCounter);
@@ -234,7 +246,7 @@
             this.Controls.Add(this.label1);
             this.Controls.Add(this.errorLogBtn);
             this.Controls.Add(this.lbSuccessCounter);
-            this.Controls.Add(this.listView1);
+            this.Controls.Add(this.typesListView);
             this.Controls.Add(this.decompile_panel);
             this.Controls.Add(this.scan_btn);
             this.Controls.Add(this.treeView1);
@@ -263,7 +275,7 @@
         private System.Windows.Forms.Button decompile_btn;
         private System.Windows.Forms.Panel decompile_panel;
         private System.Windows.Forms.Button decompile_all_btn;
-        private System.Windows.Forms.ListView listView1;
+        private System.Windows.Forms.ListView typesListView;
         private System.Windows.Forms.Label lbSuccessCounter;
         private System.Windows.Forms.Button errorLogBtn;
         private System.Windows.Forms.Label label1;
@@ -271,6 +283,7 @@
         private System.Windows.Forms.Label lbErrorCounter;
         private System.Windows.Forms.Button pauseBtn;
         private System.Windows.Forms.Button stopBtn;
+        private System.Windows.Forms.Button decompileErrorBtn;
     }
 }
 
