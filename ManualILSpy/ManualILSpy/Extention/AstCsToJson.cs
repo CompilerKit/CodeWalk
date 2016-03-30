@@ -136,14 +136,20 @@ namespace ManualILSpy.Extention
             }
             return typeArr;
         }
-
+        bool isSuspectLambda = false;
+        int countLamda = 0;
         JsonElement GetIdentifier(Identifier identifier)
         {
             //TODO: review here
             string name = identifier.Name;
             if (name[0] == '<' && name[1] == '>')
             {
-                isLambda = true;
+                isSuspectLambda = true;
+                countLamda++;
+                if (countLamda == 4)
+                {
+
+                }
             }
             return new JsonElement(name);
         }
@@ -415,7 +421,7 @@ namespace ManualILSpy.Extention
             expression.AddJsonValue("expression", GenExpression(checkedExpression.Expression));
             Push(expression);
 
-            throw new FirstTimeUseException();
+            //throw new FirstTimeUseException();
 
         }
 
@@ -867,8 +873,10 @@ namespace ManualILSpy.Extention
                     break;
             }
             JsonElement identifier = GetIdentifier(typeDeclaration.NameToken);
-
-
+            if (identifier.ElementValue[0] == '<' && identifier.ElementValue[0] == '>')
+            {
+                isLambda = true;
+            }
 
             bool thisTypeIsLamda = false;
             if (isLambda)
@@ -983,7 +991,7 @@ namespace ManualILSpy.Extention
             statement.AddJsonValue("body", GenStatement(checkedStatement.Body));
             Push(statement);
             //implement already, but not tested
-            throw new FirstTimeUseException();
+            //throw new FirstTimeUseException();
         }
 
         public void VisitContinueStatement(ContinueStatement continueStatement)
@@ -1092,7 +1100,10 @@ namespace ManualILSpy.Extention
             statement.AddJsonValue("condition", GenExpression(ifElseStatement.Condition));
             statement.AddJsonValue("true-statement", GenStatement(ifElseStatement.TrueStatement));
             statement.AddJsonValue("false-statement", GenStatement(ifElseStatement.FalseStatement));
+            if (isSuspectLambda)
+            {
 
+            }
             if (isLambda)
             {
                 //TODO: review here

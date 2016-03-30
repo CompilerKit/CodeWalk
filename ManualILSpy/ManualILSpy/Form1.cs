@@ -5,7 +5,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 using System.Windows.Forms;
 using System.IO;
 using Mono.Cecil;
@@ -13,63 +13,289 @@ using ICSharpCode.ILSpy;
 using ICSharpCode.Decompiler;
 using ManualILSpy.Extention;
 using ManualILSpy.Extention.Json;
+using System.Threading.Tasks;
 
 namespace ManualILSpy
 {
     public partial class Form1 : Form
     {
-        string _path;
-        string _debugPath;
-        string _releasePath;
-        string _initPathFile;
+        string _browsePath;
+        const string DEFAULT_SAVEPATH = "d:\\WImageTest\\test_output\\";
+        private string _lastSaveOutputPath = DEFAULT_SAVEPATH;
         OpenFileDialog _browseExeOrDll;
         OpenFileDialog _browseOutput;
+        const string _errorLogFile = "ErrorLog.txt";
+        const string _errorListFile = "ErrorListFile.txt";
+        char[] _specialChar = new char[] { '<', '>' };
+
+        delegate void DecompileTypeAny(bool debug);
 
         public Form1()
         {
             InitializeComponent();
+            SetUpComponent();
+        }
+
+        string _lastBrowseDir;
+        private string BrowsePath(OpenFileDialog openFileDialog)
+        {
+            string path = null;
+            DialogResult result = openFileDialog.ShowDialog();
+            if (result == DialogResult.OK)
+            {
+                openFileDialog.Multiselect = false;
+                if (_lastBrowseDir != null)
+                {
+                    openFileDialog.InitialDirectory = _lastBrowseDir;
+                }
+                path = openFileDialog.FileName;
+                _lastBrowseDir = path;
+            }
+            else if (result != DialogResult.Cancel)
+            {
+                MessageBox.Show("Can't Open OpenFileDialog");
+            }
+            return path;
+        }
+
+        #region Control Conponents
+        private void SetUpComponent()
+        {
             scan_btn.Enabled = false;
             decompile_panel.Enabled = false;
             enable_rbtn.Checked = true;
+
+            browsePathTb.ReadOnly = true;
+            browsePathTb.BackColor = System.Drawing.SystemColors.Window;
 
             _browseExeOrDll = new OpenFileDialog();
             _browseExeOrDll.Filter = "Execution File|*.exe|Dynamic-link library(dll) file|*.dll";
             _browseOutput = new OpenFileDialog();
             _browseOutput.Filter = "Text Files)|*.txt|Json Files|*.json";
 
-            _initPathFile = @".\default_path.txt";
-            ReadDefaultPath();
+            browse_btn.TabIndex = 1;
+            scan_btn.TabIndex = 2;
+            decompile_btn.TabIndex = 3;
+            decompile_all_btn.TabIndex = 4;
 
-            debug_path_txt.Text = _debugPath;
-            release_path_txt.Text = _releasePath;
+            typesListView.View = View.Details;
+            typesListView.GridLines = true;
+            typesListView.FullRowSelect = true;
+
+            typesListView.Columns.Add("Fullname", 200);
+            typesListView.Columns.Add("Status", 100);
+
+            typesListView.MouseDoubleClick += typesListView_DoubleClick;
+            errorLogBtn.Enabled = false;
+
+            EnableControlDecompileBtn(false);
         }
 
-        private void ReadDefaultPath()
+        private void EnableDecompileBtn(bool enable)
         {
-            if (File.Exists(_initPathFile))
+            browse_btn.Enabled = enable;
+            scan_btn.Enabled = enable;
+            decompile_panel.Enabled = enable;
+            testReadWriteJsonBtn.Enabled = enable;
+            decompileErrorBtn.Enabled = enable;
+        }
+
+        private void EnableControlDecompileBtn(bool enable)
+        {
+            pauseBtn.Enabled = false;
+            stopBtn.Enabled = enable;
+        }
+        #endregion
+
+        #region Decompile
+        private void DecompileSelectedType(bool debug)
+        {
+            string selected = FindSelectedNode(treeView1.Nodes);
+            if (selected == null)
             {
-                var text = File.ReadAllLines(_initPathFile);
-                _debugPath = text[0];
-                _releasePath = text[1];
+                MessageBox.Show("Please select node.");
+                return;
+            }
+
+            TypeDefinition type;
+            string json = "null";
+            if (nodeTypeDefs.TryGetValue(selected, out type))
+            {
+                json = GetJson(type, debug);
+            }
+            string dllFileName = Path.GetFileName(_browsePath);
+            if (type != null)
+            {
+                try
+                {
+                    string resultPath = DEFAULT_SAVEPATH + dllFileName + "\\" + (debug ? "Debug\\" : "Release\\");
+                    _lastSaveOutputPath = resultPath;
+                    File.WriteAllText(resultPath + "\\" + type.FullName.Trim(_specialChar) + ".txt", json);
+
+                    ListViewItem item = new ListViewItem(new string[] { type.FullName, "Success!!" });
+                    typesListView.Items.Add(item);
+
+                    MessageBox.Show(type.FullName + " Decompile Success!!");
+                }
+                catch(Exception e)
+                {
+                    MessageBox.Show("Error : " + e.Message);
+                    File.WriteAllText(_lastSaveOutputPath + "..\\" + _errorLogFile, type.FullName + " - [ " + e.Message + " ]");
+                    File.WriteAllText(_lastSaveOutputPath + "..\\" + _errorListFile, type.FullName);
+                }
+                
+            }
+            else
+            {
+                MessageBox.Show("Not Writable Json");
+            }
+            
+        }
+
+        private void DecompileAll(bool debug)
+        {
+            EnableDecompileBtn(false);
+            EnableControlDecompileBtn(true);
+            var allTypes = nodeTypeDefs.Values.ToArray();
+            string dllFileName = Path.GetFileName(_browsePath);
+            string json;
+
+            string resultPath = DEFAULT_SAVEPATH + dllFileName + "\\" + (debug ? "Debug\\" : "Release\\");
+            Directory.CreateDirectory(resultPath);
+            StringBuilder unwritable = new StringBuilder();
+            _lastSaveOutputPath = resultPath;
+
+            string[] arr = new string[2];
+            ListViewItem item;
+
+            int typeCount = allTypes.Count();
+            lbCountAll.Text = dllFileName + " have " + typeCount + " types.";
+
+            int successCount = 0;
+            int errorCount = 0;
+
+            List<string> errorList = new List<string>();
+            foreach (TypeDefinition type in allTypes)
+            {
+                if (type != null)
+                {
+                    arr[0] = type.FullName;
+                    try
+                    {
+                        json = GetJson(type, debug);
+                        File.WriteAllText(resultPath + type.FullName.Trim(_specialChar) + ".txt", json);
+                        arr[1] = "Success!!";
+                        successCount++;
+                    }
+                    catch(ManualILSpy.Extention.FirstTimeUseException e)
+                    {
+                        //json = GetJson(type, debug);
+                        unwritable.Append(type.FullName + " - [ " + e.Message + " ]\n");
+                        arr[1] = e.Message;
+                        errorCount++;
+                        //isStop = true;
+
+                        errorList.Add(type.FullName);
+                    }
+                    catch(Exception e)
+                    {
+                        unwritable.Append(type.FullName + " - [ " + e.Message + " ]\n");
+                        arr[1] = e.Message;
+                        errorCount++;
+
+                        errorList.Add(type.FullName);
+                    }
+
+                    item = new ListViewItem(arr);
+                    typesListView.Items.Add(item);
+                    lbSuccessCounter.Text = "Success " + successCount + " / " + typeCount + " types";
+                    lbErrorCounter.Text = "Error " + errorCount + " / " + typeCount + " types";
+                }
+                Application.DoEvents();
+                if (isStop)
+                    break;
+            }
+            File.WriteAllText(_lastSaveOutputPath + "..\\" + _errorLogFile, unwritable.ToString());
+            File.WriteAllLines(_lastSaveOutputPath + "..\\" + _errorListFile, errorList.ToArray());
+            MessageBox.Show("Decompile Success " + successCount + " files.\nDecompile Error " + errorCount + " files.");
+            errorLogBtn.Enabled = true;
+            EnableDecompileBtn(true);
+            EnableControlDecompileBtn(false);
+            isPause = false;
+            isStop = false;
+        }
+
+        private void DecompileAllErrorTypes(bool debug)
+        {
+            try
+            {
+                string[] errorList = File.ReadAllLines(_lastSaveOutputPath + "..\\" + _errorListFile);
+                TypeDefinition typeDef;
+                string jsonOutput = "";
+                foreach (string typeName in errorList)
+                {
+                    if (nodeTypeDefs.TryGetValue(typeName, out typeDef))
+                    {
+                        jsonOutput = GetJson(typeDef, debug);
+                        File.WriteAllText(_lastSaveOutputPath + typeDef.FullName.Trim(_specialChar) + ".txt", jsonOutput);
+                    }
+                }
+                MessageBox.Show("End Process");
+            }
+            catch (FileNotFoundException e)
+            {
+                MessageBox.Show("Please Decompile First.\n" + "Error : " + e.Message);
+            }
+            //catch(Exception e)
+            //{
+            //    MessageBox.Show("Error : " + e.Message);
+            //}
+            
+        }
+
+        private void DecompileAny(DecompileTypeAny decompileMethod)
+        {
+            if (enable_rbtn.Checked)
+            {
+                decompileMethod(true);
+            }
+            else if (disable_rbtn.Checked)
+            {
+                decompileMethod(false);
+            }
+            else
+            {
+                MessageBox.Show("Please choose comment setting");
             }
         }
 
-        private void WriteNewPath()
+        private void DecompileMethod(Language language, MethodDefinition method, ITextOutput output, DecompilationOptions options)
         {
-            string[] paths = new string[] { _debugPath, _releasePath };
-            File.WriteAllLines(_initPathFile, paths);
+            language.DecompileMethod(method, output, options);
         }
 
-        private void Browse_btn_Click(object sender, EventArgs e)
+        private void DecompileField(Language language, FieldDefinition field, ITextOutput output, DecompilationOptions options)
         {
-            _path = BrowsePath(_browseExeOrDll);
-            textBox1.Text = _path;
-            scan_btn.Enabled = !string.IsNullOrEmpty(textBox1.Text);
+            language.DecompileField(field, output, options);
         }
 
-        Dictionary<string, TypeDefinition> nodeTypeDefs = new Dictionary<string, TypeDefinition>();
-        Dictionary<string, TreeNode> nodeTreeNodes = new Dictionary<string, TreeNode>();
+        private void DecomplieType(Language language, TypeDefinition type, ITextOutput output, DecompilationOptions options)
+        {
+            language.DecompileType(type, output, options);
+        }
 
+        private void DecompileProperty(Language language, PropertyDefinition property, ITextOutput output, DecompilationOptions options)
+        {
+            language.DecompileProperty(property, output, options);
+        }
+
+        private void DecompileNameSpace(Language language, string nameSpace, IEnumerable<TypeDefinition> types, ITextOutput output, DecompilationOptions options)
+        {
+            language.DecompileNamespace(nameSpace, types, output, options);
+        }
+        #endregion
+
+        #region Node and AssemblyResolver
         sealed class MyAssemblyResolver : IAssemblyResolver
         {
             readonly LoadedAssembly parent;
@@ -100,141 +326,23 @@ namespace ManualILSpy
             }
         }
 
-        private void Scan_Click(object sender, EventArgs e)
+        public DecompilerSettings LoadDecompilerSettings()
         {
-            nodeTypeDefs.Clear();
-            nodeTreeNodes.Clear();
-            treeView1.Nodes.Clear();
-
-
-            DefaultAssemblyResolver asmResolver = new DefaultAssemblyResolver();
-            ReaderParameters readPars = new ReaderParameters(ReadingMode.Deferred);
-            readPars.AssemblyResolver = asmResolver;
-            //temp
-            asmResolver.AddSearchDirectory(Path.GetDirectoryName(_path));
-
-
-            AssemblyDefinition assem = AssemblyDefinition.ReadAssembly(_path, readPars);
-            var types = assem.MainModule.Types;
-            var nameSpace = assem.MainModule.Types;
-            TreeNode node = new TreeNode();
-            foreach (TypeDefinition type in types)
-            {
-                if (nodeTreeNodes.TryGetValue(type.Namespace, out node))
-                {
-                    node.Nodes.Add(type.Name);
-                }
-                else
-                {
-                    node = new TreeNode(type.Namespace);
-                    node.Nodes.Add(type.Name);
-                }
-                nodeTreeNodes[type.Namespace] = node;
-                nodeTypeDefs.Add(type.FullName, type);
-            }
-            List<string> keys = new List<string>(nodeTreeNodes.Keys);
-            foreach (string key in keys)
-            {
-                if (nodeTreeNodes.TryGetValue(key, out node))
-                    treeView1.Nodes.Add(node);
-            }
-            decompile_panel.Enabled = true;
+            //XElement e = settings["DecompilerSettings"];
+            DecompilerSettings s = new DecompilerSettings();
+            s.AnonymousMethods = true;//(bool?)e.Attribute("anonymousMethods") ?? s.AnonymousMethods;
+            s.YieldReturn = true; //(bool?)e.Attribute("yieldReturn") ?? s.YieldReturn;
+            s.AsyncAwait = true; //(bool?)e.Attribute("asyncAwait") ?? s.AsyncAwait;
+            s.QueryExpressions = true; //(bool?)e.Attribute("queryExpressions") ?? s.QueryExpressions;
+            s.ExpressionTrees = true; //(bool?)e.Attribute("expressionTrees") ?? s.ExpressionTrees;
+            s.UseDebugSymbols = true; //(bool?)e.Attribute("useDebugSymbols") ?? s.UseDebugSymbols;
+            s.ShowXmlDocumentation = true;//(bool?)e.Attribute("xmlDoc") ?? s.ShowXmlDocumentation;
+            s.FoldBraces = false;//(bool?)e.Attribute("foldBraces") ?? s.FoldBraces;
+            return s;
         }
 
-        private TreeNode GetTreeNodeByCondition(IEnumerable<TypeDefinition> types, string condition)
-        {
-            TypeDefinition def;
-            TreeNode node = new TreeNode(condition);
-            foreach (TypeDefinition type in types)
-            {
-                if (nodeTypeDefs.TryGetValue(condition, out def))
-                {
-                    break;
-                }
-                if (condition == type.Namespace)
-                {
-                    treeView1.Nodes.Add(type.FullName);
-                    node.Nodes.Add(type.FullName);
-                    nodeTypeDefs.Add(type.FullName, type);
-                }
-            }
-            return node;
-        }
-
-        private void decompile_btn_Click(object sender, EventArgs e)
-        {
-            if (enable_rbtn.Checked)
-            {
-                Decompile(true);
-            }
-            else if (disable_rbtn.Checked)
-            {
-                Decompile(false);
-            }
-            else
-            {
-                MessageBox.Show("Please choose comment setting");
-            }
-        }
-
-        private void TestReadWriteJsonBtn_Click(object sender, EventArgs e)
-        {
-            string inputPath = @"D:\[]Documents\testAstJsonRelease.json";
-            string outputPath = @"D:\[]Documents\testWriteJson.json";
-
-            string jsonString = File.ReadAllText(inputPath);
-            JsonReader reader = new JsonReader(jsonString);
-            JsonValue value = reader.Read();
-
-            StringBuilderTextOutput output = new StringBuilderTextOutput();
-            JsonWriterVisitor writer = new JsonWriterVisitor(output);
-            value.AcceptVisitor(writer);
-
-            string jsonOut = writer.ToString();
-            File.WriteAllText(outputPath, jsonOut);
-        }
-
-        private void Decompile(bool debug)
-        {
-            string selected = FindSelectedNode(treeView1.Nodes);
-            if (selected == null)
-            {
-                MessageBox.Show("Please select node.");
-                return;
-            }
-
-
-            TypeDefinition type;
-            string json = "null";
-            if (nodeTypeDefs.TryGetValue(selected, out type))
-            {
-                json = GetJson(type, debug);
-            }
-            string resultPath = debug ? _debugPath
-                                      : _releasePath;
-
-            resultPath = "d:\\WImageTest\\test_output\\" + type.FullName + ".txt";
-
-            File.WriteAllText(resultPath, json);
-            MessageBox.Show("Success!!");
-            //if you want to start 
-            //System.Diagnostics.Process.Start(resultPath);
-        }
-
-        private string FindSelectedNode(TreeNodeCollection collection)
-        {
-            string selected = null;
-            foreach (TreeNode node in collection)
-            {
-                selected = FindSelected(node);
-                if (selected != null)
-                {
-                    selected = node.Text + '.' + selected;
-                    break;
-                }
-            }
-            return selected;
-        }
+        Dictionary<string, TypeDefinition> nodeTypeDefs = new Dictionary<string, TypeDefinition>();
+        Dictionary<string, TreeNode> nodeTreeNodes = new Dictionary<string, TreeNode>();
 
         private string FindSelected(TreeNode node)
         {
@@ -262,6 +370,21 @@ namespace ManualILSpy
             return null;
         }
 
+        private string FindSelectedNode(TreeNodeCollection collection)
+        {
+            string selected = null;
+            foreach (TreeNode node in collection)
+            {
+                selected = FindSelected(node);
+                if (selected != null)
+                {
+                    selected = node.Text + '.' + selected;
+                    break;
+                }
+            }
+            return selected;
+        }
+
         private string GetJson(IMemberDefinition node, bool debug)
         {
             StringBuilderTextOutput output = new StringBuilderTextOutput();
@@ -285,95 +408,162 @@ namespace ManualILSpy
             return null;
         }
 
-        string _lastDir;
-        private string BrowsePath(OpenFileDialog openFileDialog)
+        private TreeNode GetTreeNodeByCondition(IEnumerable<TypeDefinition> types, string condition)
         {
-            string path = null;
-            DialogResult result = openFileDialog.ShowDialog();
-            if (result == DialogResult.OK)
+            TypeDefinition def;
+            TreeNode node = new TreeNode(condition);
+            foreach (TypeDefinition type in types)
             {
-                openFileDialog.Multiselect = false;
-                if (_lastDir != null)
+                if (nodeTypeDefs.TryGetValue(condition, out def))
                 {
-                    openFileDialog.InitialDirectory = _lastDir;
+                    break;
                 }
-                path = openFileDialog.FileName;
-                _lastDir = path;
+                if (condition == type.Namespace)
+                {
+                    treeView1.Nodes.Add(type.FullName);
+                    node.Nodes.Add(type.FullName);
+                    nodeTypeDefs.Add(type.FullName, type);
+                }
             }
-            else if (result != DialogResult.Cancel)
+            return node;
+        }
+        #endregion
+
+        #region Widget Events
+        private void browsePathTb_TextChanged(object sender, EventArgs e)
+        {
+            scan_btn.Enabled = !string.IsNullOrEmpty(browsePathTb.Text);
+        }
+
+        private void browse_btn_Click(object sender, EventArgs e)
+        {
+            _browsePath = BrowsePath(_browseExeOrDll);
+            browsePathTb.Text = _browsePath;
+            scan_btn.Enabled = !string.IsNullOrEmpty(browsePathTb.Text);
+        }
+
+        private void scan_Click(object sender, EventArgs e)
+        {
+            nodeTypeDefs.Clear();
+            nodeTreeNodes.Clear();
+            treeView1.Nodes.Clear();
+
+            DefaultAssemblyResolver asmResolver = new DefaultAssemblyResolver();
+            ReaderParameters readPars = new ReaderParameters(ReadingMode.Deferred);
+            readPars.AssemblyResolver = asmResolver;
+            //temp
+            asmResolver.AddSearchDirectory(Path.GetDirectoryName(_browsePath));
+
+
+            AssemblyDefinition assem = AssemblyDefinition.ReadAssembly(_browsePath, readPars);
+            var types = assem.MainModule.Types;
+            var nameSpace = assem.MainModule.Types;
+            TreeNode node = new TreeNode();
+            foreach (TypeDefinition type in types)
             {
-                MessageBox.Show("Can't Open OpenFileDialog");
+                if (nodeTreeNodes.TryGetValue(type.Namespace, out node))
+                {
+                    node.Nodes.Add(type.Name);
+                }
+                else
+                {
+                    node = new TreeNode(type.Namespace);
+                    node.Nodes.Add(type.Name);
+                }
+                nodeTreeNodes[type.Namespace] = node;
+                nodeTypeDefs.Add(type.FullName, type);
             }
-            return path;
+            List<string> keys = new List<string>(nodeTreeNodes.Keys);
+            foreach (string key in keys)
+            {
+                if (nodeTreeNodes.TryGetValue(key, out node))
+                    treeView1.Nodes.Add(node);
+            }
+            decompile_panel.Enabled = true;
         }
 
-        private void DecompileMethod(Language language, MethodDefinition method, ITextOutput output, DecompilationOptions options)
+        private void decompileSelected_btn_Click(object sender, EventArgs e)
         {
-            language.DecompileMethod(method, output, options);
+            DecompileAny(DecompileSelectedType);
         }
 
-        private void DecompileField(Language language, FieldDefinition field, ITextOutput output, DecompilationOptions options)
+        private void decompileAll_btn_Click(object sender, EventArgs e)
         {
-            language.DecompileField(field, output, options);
+            DecompileAny(DecompileAll);
         }
 
-        private void DecomplieType(Language language, TypeDefinition type, ITextOutput output, DecompilationOptions options)
+        private void decompileError_Click(object sender, EventArgs e)
         {
-            language.DecompileType(type, output, options);
+            _lastSaveOutputPath = DEFAULT_SAVEPATH + "mscorlib.dll\\Debug\\";
+            DecompileAny(DecompileAllErrorTypes);
         }
 
-        private void DecompileProperty(Language language, PropertyDefinition property, ITextOutput output, DecompilationOptions options)
+        private void testReadWriteJsonBtn_Click(object sender, EventArgs e)
         {
-            language.DecompileProperty(property, output, options);
+            string inputPath = @"D:\[]Documents\testAstJsonRelease.json";
+            string outputPath = @"D:\[]Documents\testWriteJson.json";
+
+            string jsonString = File.ReadAllText(inputPath);
+            JsonReader reader = new JsonReader(jsonString);
+            JsonValue value = reader.Read();
+
+            StringBuilderTextOutput output = new StringBuilderTextOutput();
+            JsonWriterVisitor writer = new JsonWriterVisitor(output);
+            value.AcceptVisitor(writer);
+
+            string jsonOut = writer.ToString();
+            File.WriteAllText(outputPath, jsonOut);
         }
 
-        private void DecompileNameSpace(Language language, string nameSpace, IEnumerable<TypeDefinition> types, ITextOutput output, DecompilationOptions options)
+        private void errorLogBtn_Click(object sender, EventArgs e)
         {
-            language.DecompileNamespace(nameSpace, types, output, options);
+            System.Diagnostics.Process.Start(_lastSaveOutputPath + "..\\ErrorLog.txt");
         }
 
-        public DecompilerSettings LoadDecompilerSettings()
+        bool isPause = false;
+        private void pauseBtn_Click(object sender, EventArgs e)
         {
-            //XElement e = settings["DecompilerSettings"];
-            DecompilerSettings s = new DecompilerSettings();
-            s.AnonymousMethods = true;//(bool?)e.Attribute("anonymousMethods") ?? s.AnonymousMethods;
-            s.YieldReturn = true; //(bool?)e.Attribute("yieldReturn") ?? s.YieldReturn;
-            s.AsyncAwait = true; //(bool?)e.Attribute("asyncAwait") ?? s.AsyncAwait;
-            s.QueryExpressions = true; //(bool?)e.Attribute("queryExpressions") ?? s.QueryExpressions;
-            s.ExpressionTrees = true; //(bool?)e.Attribute("expressionTrees") ?? s.ExpressionTrees;
-            s.UseDebugSymbols = true; //(bool?)e.Attribute("useDebugSymbols") ?? s.UseDebugSymbols;
-            s.ShowXmlDocumentation = true;//(bool?)e.Attribute("xmlDoc") ?? s.ShowXmlDocumentation;
-            s.FoldBraces = false;//(bool?)e.Attribute("foldBraces") ?? s.FoldBraces;
-            return s;
+            if (isPause)
+            {
+                isPause = false;
+                pauseBtn.Text = "Pause";
+            }
+            else
+            {
+                isPause = true;
+                pauseBtn.Text = "Continue";
+            }
         }
 
-        private void debug_path_txt_TextChanged(object sender, EventArgs e)
+        bool isStop = false;
+        private void stopBtn_Click(object sender, EventArgs e)
         {
-            _debugPath = debug_path_txt.Text;
+            if (!isStop)
+            {
+                isStop = true;
+                EnableControlDecompileBtn(false);
+                EnableDecompileBtn(true);
+            }
         }
 
-        private void release_path_txt_TextChanged(object sender, EventArgs e)
+        private void typesListView_DoubleClick(object sender, MouseEventArgs e)
         {
-            _releasePath = release_path_txt.Text;
-        }
+            var items = typesListView.SelectedItems;
+            ListViewItem item = items[0];
+            if (item != null)
+            {
+                string fileTarget = item.Text.Trim(_specialChar) + ".txt";
+                try
+                {
+                    System.Diagnostics.Process.Start(_lastSaveOutputPath + "\\" + fileTarget);
+                }
+                catch (Exception expection)
+                {
+                    MessageBox.Show(expection.Message);
+                }
 
-        private void debug_path_btn_Click(object sender, EventArgs e)
-        {
-            debug_path_txt.Text = BrowsePath(_browseOutput);
-            _debugPath = debug_path_txt.Text;
-            WriteNewPath();
+            }
         }
-
-        private void release_path_btn_Click(object sender, EventArgs e)
-        {
-            release_path_txt.Text = BrowsePath(_browseOutput);
-            _releasePath = release_path_txt.Text;
-            WriteNewPath();
-        }
-
-        private void textBox1_TextChanged(object sender, EventArgs e)
-        {
-            scan_btn.Enabled = !string.IsNullOrEmpty(textBox1.Text);
-        }
+        #endregion
     }
 }

@@ -158,7 +158,14 @@ namespace ManualILSpy.Extention
                             JsonObject localVarSymbol = new JsonObject();
                             localVarSymbol.AddJsonValue("kind", "local");
                             localVarSymbol.AddJsonValue("name", localvar.Name);
-                            localVarSymbol.AddJsonValue("original", localvar.OriginalVariable.ToString());
+                            if (localvar.OriginalVariable != null)
+                            {
+                                localVarSymbol.AddJsonValue("original", localvar.OriginalVariable.ToString());
+                            }
+                            else
+                            {
+                                localVarSymbol.AddJsonValue("original", "null");
+                            }
                             jsonArray.AddJsonValue(localVarSymbol);
                         }
 
