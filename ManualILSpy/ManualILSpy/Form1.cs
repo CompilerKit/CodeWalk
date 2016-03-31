@@ -20,7 +20,7 @@ namespace ManualILSpy
     public partial class Form1 : Form
     {
         string _browsePath;
-        const string DEFAULT_SAVEPATH = "d:\\WImageTest\\test_output\\";
+        const string DEFAULT_SAVEPATH = "d:\\WImageTest\\test_output";
         private string _lastSaveOutputPath = DEFAULT_SAVEPATH;
         OpenFileDialog _browseExeOrDll;
         OpenFileDialog _browseOutput;
@@ -107,6 +107,34 @@ namespace ManualILSpy
         }
         #endregion
 
+        static void EnsureFolder(string rootFolder, string fullFolder)
+        {
+            //ensure folder and subfodlers existing
+            if (!fullFolder.StartsWith(rootFolder))
+            {
+                throw new NotSupportedException();
+            }
+            //---------------------------------------
+            int rootFolderLen = rootFolder.Length;
+            if (!Directory.Exists(rootFolder))
+            {
+                throw new NotSupportedException("root folder must exist");
+            }
+            //---------------------------------------
+            string[] subFolders = fullFolder.Substring(rootFolderLen).Split(new string[] { "\\" }, StringSplitOptions.RemoveEmptyEntries);
+            int j = subFolders.Length;
+            string curFolder = rootFolder;
+            for (int i = 0; i < j; ++i)
+            {
+                string subfolder = curFolder += "\\" + subFolders[i];
+                if (!Directory.Exists(subfolder))
+                {
+                    Directory.CreateDirectory(subfolder);
+                }
+                curFolder = subfolder;
+            }
+        }
+
         #region Decompile
         private void DecompileSelectedType(bool debug)
         {
@@ -123,13 +151,18 @@ namespace ManualILSpy
             {
                 json = GetJson(type, debug);
             }
+
             string dllFileName = Path.GetFileName(_browsePath);
+
             if (type != null)
             {
                 try
                 {
-                    string resultPath = DEFAULT_SAVEPATH + dllFileName + "\\" + (debug ? "Debug\\" : "Release\\");
+                    string resultPath = DEFAULT_SAVEPATH + "\\" + dllFileName + "\\" + (debug ? "Debug\\" : "Release\\");
+                    EnsureFolder(DEFAULT_SAVEPATH, resultPath);
+
                     _lastSaveOutputPath = resultPath;
+
                     File.WriteAllText(resultPath + "\\" + type.FullName.Trim(_specialChar) + ".txt", json);
 
                     ListViewItem item = new ListViewItem(new string[] { type.FullName, "Success!!" });
@@ -137,19 +170,19 @@ namespace ManualILSpy
 
                     MessageBox.Show(type.FullName + " Decompile Success!!");
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     MessageBox.Show("Error : " + e.Message);
                     File.WriteAllText(_lastSaveOutputPath + "..\\" + _errorLogFile, type.FullName + " - [ " + e.Message + " ]");
                     File.WriteAllText(_lastSaveOutputPath + "..\\" + _errorListFile, type.FullName);
                 }
-                
+
             }
             else
             {
                 MessageBox.Show("Not Writable Json");
             }
-            
+
         }
 
         private void DecompileAll(bool debug)
@@ -160,8 +193,9 @@ namespace ManualILSpy
             string dllFileName = Path.GetFileName(_browsePath);
             string json;
 
-            string resultPath = DEFAULT_SAVEPATH + dllFileName + "\\" + (debug ? "Debug\\" : "Release\\");
-            Directory.CreateDirectory(resultPath);
+            string resultPath = DEFAULT_SAVEPATH + "\\" + dllFileName + "\\" + (debug ? "Debug\\" : "Release\\");
+            EnsureFolder(DEFAULT_SAVEPATH, resultPath);
+
             StringBuilder unwritable = new StringBuilder();
             _lastSaveOutputPath = resultPath;
 
@@ -187,7 +221,7 @@ namespace ManualILSpy
                         arr[1] = "Success!!";
                         successCount++;
                     }
-                    catch(ManualILSpy.Extention.FirstTimeUseException e)
+                    catch (ManualILSpy.Extention.FirstTimeUseException e)
                     {
                         //json = GetJson(type, debug);
                         unwritable.Append(type.FullName + " - [ " + e.Message + " ]\n");
@@ -197,7 +231,7 @@ namespace ManualILSpy
 
                         errorList.Add(type.FullName);
                     }
-                    catch(Exception e)
+                    catch (Exception e)
                     {
                         unwritable.Append(type.FullName + " - [ " + e.Message + " ]\n");
                         arr[1] = e.Message;
@@ -250,7 +284,7 @@ namespace ManualILSpy
             //{
             //    MessageBox.Show("Error : " + e.Message);
             //}
-            
+
         }
 
         private void DecompileAny(DecompileTypeAny decompileMethod)
@@ -494,7 +528,9 @@ namespace ManualILSpy
 
         private void decompileError_Click(object sender, EventArgs e)
         {
-            _lastSaveOutputPath = DEFAULT_SAVEPATH + "mscorlib.dll\\Debug\\";
+            _lastSaveOutputPath = DEFAULT_SAVEPATH + "\\" + "mscorlib.dll\\Debug\\";
+            EnsureFolder(DEFAULT_SAVEPATH, _lastSaveOutputPath);
+
             DecompileAny(DecompileAllErrorTypes);
         }
 
