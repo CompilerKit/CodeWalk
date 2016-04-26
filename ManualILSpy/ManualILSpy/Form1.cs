@@ -59,6 +59,35 @@ namespace ManualILSpy
             }
             return path;
         }
+        static void EnsureFolder(string rootFolder, string fullFolder)
+        {
+            //ensure folder and subfodlers existing
+            if (!fullFolder.StartsWith(rootFolder))
+            {
+                throw new NotSupportedException();
+            }
+            //---------------------------------------
+            int rootFolderLen = rootFolder.Length;
+            if (!Directory.Exists(rootFolder))
+            {
+                throw new NotSupportedException("root folder must exist");
+            }
+            //---------------------------------------
+            string[] subFolders = fullFolder.Substring(rootFolderLen).Split(new string[] { "\\" }, StringSplitOptions.RemoveEmptyEntries);
+            int j = subFolders.Length;
+            string curFolder = rootFolder;
+            for (int i = 0; i < j; ++i)
+            {
+                string subfolder = curFolder += "\\" + subFolders[i];
+                if (!Directory.Exists(subfolder))
+                {
+                    Directory.CreateDirectory(subfolder);
+                }
+                curFolder = subfolder;
+            }
+        }
+
+
 
         #region Control Conponents
         private void SetUpComponent()
@@ -121,7 +150,7 @@ namespace ManualILSpy
             {
                 return OutputOptions.Json;
             }
-            else if(csharpOutRBtn.Checked)
+            else if (csharpOutRBtn.Checked)
             {
                 return OutputOptions.CSharp;
             }
@@ -219,8 +248,10 @@ namespace ManualILSpy
             string result;
 
             string resultPath = DEFAULT_SAVEPATH + dllFileName + "\\" + (debug ? "Debug\\" : "Release\\");
-            Directory.CreateDirectory(resultPath + @"\Json");
-            Directory.CreateDirectory(resultPath + @"\CSharp");
+            
+            EnsureFolder(DEFAULT_SAVEPATH, resultPath + @"\Json");
+            EnsureFolder(DEFAULT_SAVEPATH, resultPath + @"\CSharp");
+
             StringBuilder unwritable = new StringBuilder();
             _lastSaveOutputPath = resultPath;
 
@@ -271,7 +302,7 @@ namespace ManualILSpy
                         typesListView.Items.Add(new ListViewItem(arr));
                         successCount++;
                     }
-                    catch(ManualILSpy.Extention.FirstTimeUseException e)
+                    catch (ManualILSpy.Extention.FirstTimeUseException e)
                     {
                         unwritable.Append(type.FullName + " - [ " + e.Message + " ]\n");
                         arr[1] = e.Message;
@@ -281,7 +312,7 @@ namespace ManualILSpy
                         typesListView.Items.Add(item);
                         errorList.Add(type.FullName);
                     }
-                    catch(Exception e)
+                    catch (Exception e)
                     {
                         unwritable.Append(type.FullName + " - [ " + e.Message + " ]\n");
                         arr[1] = e.Message;
@@ -338,7 +369,7 @@ namespace ManualILSpy
                             items[1] = e.Message;
                             typesListView.Items.Add(new ListViewItem(items));
                         }
-                        catch(Exception e)
+                        catch (Exception e)
                         {
                             items[0] = fileName;
                             items[1] = e.Message;
@@ -358,7 +389,7 @@ namespace ManualILSpy
             //{
             //    MessageBox.Show("Error : " + e.Message);
             //}
-            
+
         }
 
         private void DecompileAny(DecompileTypeAny decompileMethod)
@@ -683,11 +714,11 @@ namespace ManualILSpy
                 string fileTarget = item.Text.Trim(_specialChar);
                 try
                 {
-                    if(fileTarget[fileTarget.Length-1]=='n')//from .json
+                    if (fileTarget[fileTarget.Length - 1] == 'n')//from .json
                     {
                         System.Diagnostics.Process.Start(_lastSaveOutputPath + @"\Json\" + fileTarget);
                     }
-                    else if(fileTarget[fileTarget.Length - 1] == 's')//from .cs
+                    else if (fileTarget[fileTarget.Length - 1] == 's')//from .cs
                     {
                         System.Diagnostics.Process.Start(_lastSaveOutputPath + @"\CSharp\" + fileTarget);
                     }
@@ -705,7 +736,7 @@ namespace ManualILSpy
             typesListView.Clear();
             typesListView.Columns.Add("Fullname", 200);
             typesListView.Columns.Add("Status", 100);
-            
+
         }
         #endregion
     }
