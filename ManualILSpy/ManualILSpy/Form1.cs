@@ -20,13 +20,15 @@ namespace ManualILSpy
     public partial class Form1 : Form
     {
         string _browsePath;
-        const string DEFAULT_SAVEPATH = "d:\\WImageTest\\test_output";
+        const string DEFAULT_SAVEPATH = "d:\\WImageTest\\test_output\\";
         private string _lastSaveOutputPath = DEFAULT_SAVEPATH;
         OpenFileDialog _browseExeOrDll;
         OpenFileDialog _browseOutput;
         const string _errorLogFile = "ErrorLog.txt";
         const string _errorListFile = "ErrorListFile.txt";
         char[] _specialChar = new char[] { '<', '>' };
+        const string JsonExtention = ".json";
+        const string CSharpExtention = ".cs";
 
         delegate void DecompileTypeAny(bool debug);
 
@@ -62,8 +64,12 @@ namespace ManualILSpy
         private void SetUpComponent()
         {
             scan_btn.Enabled = false;
-            decompile_panel.Enabled = false;
+
+            EnableDecompileWidget(false);
+            jsonOutRBtn.Checked = true;
             enable_rbtn.Checked = true;
+
+            EnableControlDecompileWidget(false);
 
             browsePathTb.ReadOnly = true;
             browsePathTb.BackColor = System.Drawing.SystemColors.Window;
@@ -87,55 +93,44 @@ namespace ManualILSpy
 
             typesListView.MouseDoubleClick += typesListView_DoubleClick;
             errorLogBtn.Enabled = false;
-
-            EnableControlDecompileBtn(false);
         }
 
-        private void EnableDecompileBtn(bool enable)
+        private void EnableDecompileWidget(bool enable)
         {
-            browse_btn.Enabled = enable;
-            scan_btn.Enabled = enable;
-            decompile_panel.Enabled = enable;
-            testReadWriteJsonBtn.Enabled = enable;
-            decompileErrorBtn.Enabled = enable;
+            outOptGroup.Enabled = enable;
+            decompileOptGroup.Enabled = enable;
         }
 
-        private void EnableControlDecompileBtn(bool enable)
+        private void EnableControlDecompileWidget(bool enable)
         {
             pauseBtn.Enabled = false;
             stopBtn.Enabled = enable;
         }
         #endregion
 
-        static void EnsureFolder(string rootFolder, string fullFolder)
+        #region Decompile
+        enum OutputOptions
         {
-            //ensure folder and subfodlers existing
-            if (!fullFolder.StartsWith(rootFolder))
+            Json,
+            CSharp,
+            Both
+        }
+        private OutputOptions CheckOutputOptions()
+        {
+            if (jsonOutRBtn.Checked)
             {
-                throw new NotSupportedException();
+                return OutputOptions.Json;
             }
-            //---------------------------------------
-            int rootFolderLen = rootFolder.Length;
-            if (!Directory.Exists(rootFolder))
+            else if (csharpOutRBtn.Checked)
             {
-                throw new NotSupportedException("root folder must exist");
+                return OutputOptions.CSharp;
             }
-            //---------------------------------------
-            string[] subFolders = fullFolder.Substring(rootFolderLen).Split(new string[] { "\\" }, StringSplitOptions.RemoveEmptyEntries);
-            int j = subFolders.Length;
-            string curFolder = rootFolder;
-            for (int i = 0; i < j; ++i)
+            else//both
             {
-                string subfolder = curFolder += "\\" + subFolders[i];
-                if (!Directory.Exists(subfolder))
-                {
-                    Directory.CreateDirectory(subfolder);
-                }
-                curFolder = subfolder;
+                return OutputOptions.Both;
             }
         }
 
-        #region Decompile
         private void DecompileSelectedType(bool debug)
         {
             string selected = FindSelectedNode(treeView1.Nodes);
@@ -146,89 +141,144 @@ namespace ManualILSpy
             }
 
             TypeDefinition type;
-            string json = "null";
+            string result = "null";
+            OutputOptions opt = CheckOutputOptions();
+            string dllFileName = Path.GetFileName(_browsePath);
             if (nodeTypeDefs.TryGetValue(selected, out type))
             {
-                json = GetJson(type, debug);
-            }
-
-            string dllFileName = Path.GetFileName(_browsePath);
-
-            if (type != null)
-            {
-                try
+                if (type != null)
                 {
-                    string resultPath = DEFAULT_SAVEPATH + "\\" + dllFileName + "\\" + (debug ? "Debug\\" : "Release\\");
-                    EnsureFolder(DEFAULT_SAVEPATH, resultPath);
+                    try
+                    {
+                        string resultPath = DEFAULT_SAVEPATH + dllFileName + "\\" + (debug ? "Debug\\" : "Release\\");
+                        Directory.CreateDirectory(resultPath + @"\Json");
+                        Directory.CreateDirectory(resultPath + @"\CSharp");
+                        _lastSaveOutputPath = resultPath;
+                        string filename = type.FullName.Trim(_specialChar);
+                        switch (opt)
+                        {
+                            case OutputOptions.Json:
+                                result = GetJson(type, debug);
+                                File.WriteAllText(resultPath + @"\Json\" + filename + JsonExtention, result, Encoding.UTF8);
+                                typesListView.Items.Add(new ListViewItem(new string[] { filename + JsonExtention, "Success!!" }));
+                                break;
+                            case OutputOptions.CSharp:
+                                result = GetCSharpCode(type, debug);
+                                File.WriteAllText(resultPath + @"\CSharp\" + filename + CSharpExtention, result, Encoding.UTF8);
+                                typesListView.Items.Add(new ListViewItem(new string[] { filename + CSharpExtention, "Success!!" }));
+                                break;
+                            case OutputOptions.Both:
+                                result = GetJson(type, debug);
+                                File.WriteAllText(resultPath + @"\Json\" + filename + JsonExtention, result, Encoding.UTF8);
+                                typesListView.Items.Add(new ListViewItem(new string[] { filename + JsonExtention, "Success!!" }));
+                                result = GetCSharpCode(type, debug);
+                                File.WriteAllText(resultPath + @"\CSharp\" + filename + CSharpExtention, result, Encoding.UTF8);
+                                typesListView.Items.Add(new ListViewItem(new string[] { filename + CSharpExtention, "Success!!" }));
+                                break;
+                            default:
+                                break;
+                        }
 
-                    _lastSaveOutputPath = resultPath;
+                        MessageBox.Show(type.FullName + " Decompile Success!!");
+                    }
+                    catch (DirectoryNotFoundException e)
+                    {
+                        MessageBox.Show("Error : " + e.Message);
+                        File.WriteAllText(_lastSaveOutputPath + "..\\" + _errorLogFile, type.FullName + " - [ " + e.Message + " ]");
+                        File.WriteAllText(_lastSaveOutputPath + "..\\" + _errorListFile, type.FullName);
+                    }
+                    //catch(NotSupportedException n)
+                    //{
+                    //    MessageBox.Show("Error : " + n.Message);
+                    //    File.WriteAllText(_lastSaveOutputPath + "..\\" + _errorLogFile, type.FullName + " - [ " + n.Message + " ]");
+                    //    File.WriteAllText(_lastSaveOutputPath + "..\\" + _errorListFile, type.FullName);
+                    //}
 
-                    File.WriteAllText(resultPath + "\\" + type.FullName.Trim(_specialChar) + ".txt", json);
-
-                    ListViewItem item = new ListViewItem(new string[] { type.FullName, "Success!!" });
-                    typesListView.Items.Add(item);
-
-                    MessageBox.Show(type.FullName + " Decompile Success!!");
                 }
-                catch (Exception e)
+                else
                 {
-                    MessageBox.Show("Error : " + e.Message);
-                    File.WriteAllText(_lastSaveOutputPath + "..\\" + _errorLogFile, type.FullName + " - [ " + e.Message + " ]");
-                    File.WriteAllText(_lastSaveOutputPath + "..\\" + _errorListFile, type.FullName);
+                    MessageBox.Show("Not Writable");
                 }
-
             }
             else
             {
-                MessageBox.Show("Not Writable Json");
+                MessageBox.Show("Not Writable");
             }
-
         }
 
         private void DecompileAll(bool debug)
         {
-            EnableDecompileBtn(false);
-            EnableControlDecompileBtn(true);
+            errorLogBtn.Enabled = false;
+            browse_btn.Enabled = false;
+            scan_btn.Enabled = false;
+            EnableDecompileWidget(false);
+            EnableControlDecompileWidget(true);
+
             var allTypes = nodeTypeDefs.Values.ToArray();
             string dllFileName = Path.GetFileName(_browsePath);
-            string json;
+            string result;
 
-            string resultPath = DEFAULT_SAVEPATH + "\\" + dllFileName + "\\" + (debug ? "Debug\\" : "Release\\");
-            EnsureFolder(DEFAULT_SAVEPATH, resultPath);
-
+            string resultPath = DEFAULT_SAVEPATH + dllFileName + "\\" + (debug ? "Debug\\" : "Release\\");
+            Directory.CreateDirectory(resultPath + @"\Json");
+            Directory.CreateDirectory(resultPath + @"\CSharp");
             StringBuilder unwritable = new StringBuilder();
             _lastSaveOutputPath = resultPath;
 
             string[] arr = new string[2];
             ListViewItem item;
 
-            int typeCount = allTypes.Count();
-            lbCountAll.Text = dllFileName + " have " + typeCount + " types.";
+            int typeCount = nodeTypeDefs.Count;
 
             int successCount = 0;
             int errorCount = 0;
 
+            OutputOptions opt = CheckOutputOptions();
             List<string> errorList = new List<string>();
+            string filename;
             foreach (TypeDefinition type in allTypes)
             {
                 if (type != null)
                 {
-                    arr[0] = type.FullName;
+                    arr[0] = filename = type.FullName.Trim(_specialChar);
                     try
                     {
-                        json = GetJson(type, debug);
-                        File.WriteAllText(resultPath + type.FullName.Trim(_specialChar) + ".txt", json);
                         arr[1] = "Success!!";
+                        switch (opt)
+                        {
+                            case OutputOptions.Json:
+                                result = GetJson(type, debug);
+                                arr[0] = filename + JsonExtention;
+                                File.WriteAllText(resultPath + @"\Json\" + arr[0], result, Encoding.UTF8);
+                                break;
+                            case OutputOptions.CSharp:
+                                result = GetCSharpCode(type, debug);
+                                arr[0] = filename + CSharpExtention;
+                                File.WriteAllText(resultPath + @"\CSharp\" + arr[0], result, Encoding.UTF8);
+                                break;
+                            case OutputOptions.Both:
+                                result = GetJson(type, debug);
+                                arr[0] = filename + JsonExtention;
+                                File.WriteAllText(resultPath + @"\Json" + arr[0], result, Encoding.UTF8);
+                                typesListView.Items.Add(new ListViewItem(arr));
+
+                                result = GetCSharpCode(type, debug);
+                                arr[0] = filename + CSharpExtention;
+                                File.WriteAllText(resultPath + @"\CSharp" + arr[0], result, Encoding.UTF8);
+                                break;
+                            default:
+                                break;
+                        }
+                        typesListView.Items.Add(new ListViewItem(arr));
                         successCount++;
                     }
                     catch (ManualILSpy.Extention.FirstTimeUseException e)
                     {
-                        //json = GetJson(type, debug);
                         unwritable.Append(type.FullName + " - [ " + e.Message + " ]\n");
                         arr[1] = e.Message;
                         errorCount++;
                         //isStop = true;
-
+                        item = new ListViewItem(arr);
+                        typesListView.Items.Add(item);
                         errorList.Add(type.FullName);
                     }
                     catch (Exception e)
@@ -236,12 +286,10 @@ namespace ManualILSpy
                         unwritable.Append(type.FullName + " - [ " + e.Message + " ]\n");
                         arr[1] = e.Message;
                         errorCount++;
-
+                        item = new ListViewItem(arr);
+                        typesListView.Items.Add(item);
                         errorList.Add(type.FullName);
                     }
-
-                    item = new ListViewItem(arr);
-                    typesListView.Items.Add(item);
                     lbSuccessCounter.Text = "Success " + successCount + " / " + typeCount + " types";
                     lbErrorCounter.Text = "Error " + errorCount + " / " + typeCount + " types";
                 }
@@ -253,8 +301,11 @@ namespace ManualILSpy
             File.WriteAllLines(_lastSaveOutputPath + "..\\" + _errorListFile, errorList.ToArray());
             MessageBox.Show("Decompile Success " + successCount + " files.\nDecompile Error " + errorCount + " files.");
             errorLogBtn.Enabled = true;
-            EnableDecompileBtn(true);
-            EnableControlDecompileBtn(false);
+
+            browse_btn.Enabled = true;
+            scan_btn.Enabled = true;
+            EnableDecompileWidget(true);
+            EnableControlDecompileWidget(false);
             isPause = false;
             isStop = false;
         }
@@ -266,20 +317,43 @@ namespace ManualILSpy
                 string[] errorList = File.ReadAllLines(_lastSaveOutputPath + "..\\" + _errorListFile);
                 TypeDefinition typeDef;
                 string jsonOutput = "";
+                string[] items = new string[2];
+                string fileName;
                 foreach (string typeName in errorList)
                 {
                     if (nodeTypeDefs.TryGetValue(typeName, out typeDef))
                     {
-                        jsonOutput = GetJson(typeDef, debug);
-                        File.WriteAllText(_lastSaveOutputPath + typeDef.FullName.Trim(_specialChar) + ".txt", jsonOutput);
+                        fileName = typeDef.FullName.Trim(_specialChar);
+                        try
+                        {
+                            jsonOutput = GetJson(typeDef, debug);
+                            File.WriteAllText(_lastSaveOutputPath + fileName + JsonExtention, jsonOutput, Encoding.UTF8);
+                            items[0] = fileName;
+                            items[1] = "Success!!";
+                            typesListView.Items.Add(new ListViewItem(items));
+                        }
+                        catch (NotSupportedException e)
+                        {
+                            items[0] = fileName;
+                            items[1] = e.Message;
+                            typesListView.Items.Add(new ListViewItem(items));
+                        }
+                        catch (Exception e)
+                        {
+                            items[0] = fileName;
+                            items[1] = e.Message;
+                            typesListView.Items.Add(new ListViewItem(items));
+                        }
                     }
                 }
-                MessageBox.Show("End Process");
+                //MessageBox.Show("End Process");
             }
             catch (FileNotFoundException e)
             {
                 MessageBox.Show("Please Decompile First.\n" + "Error : " + e.Message);
+                return;
             }
+            MessageBox.Show("End Process");
             //catch(Exception e)
             //{
             //    MessageBox.Show("Error : " + e.Message);
@@ -422,7 +496,7 @@ namespace ManualILSpy
         private string GetJson(IMemberDefinition node, bool debug)
         {
             StringBuilderTextOutput output = new StringBuilderTextOutput();
-            CSharpLanguage csharp = new CSharpLanguage(output);
+            CSharpLanguage csharp = new CSharpLanguage();
             DecompilationOptions options = new DecompilationOptions();
             options.DecompilerSettings = LoadDecompilerSettings();
 
@@ -434,6 +508,25 @@ namespace ManualILSpy
                 JsonValue value = csharp.result;
                 value.AcceptVisitor(visitor);
                 return visitor.ToString();
+            }
+            else
+            {
+                MessageBox.Show("Not TypeDefinition");
+            }
+            return null;
+        }
+
+        private string GetCSharpCode(IMemberDefinition member, bool debug)
+        {
+            PlainTextOutput output = new PlainTextOutput();
+            CSharpLanguage csharp = new CSharpLanguage();
+            DecompilationOptions options = new DecompilationOptions();
+            options.DecompilerSettings = LoadDecompilerSettings();
+
+            if (member is TypeDefinition)
+            {
+                DecomplieType(csharp, (TypeDefinition)member, output, options);
+                return output.ToString();
             }
             else
             {
@@ -513,7 +606,8 @@ namespace ManualILSpy
                 if (nodeTreeNodes.TryGetValue(key, out node))
                     treeView1.Nodes.Add(node);
             }
-            decompile_panel.Enabled = true;
+            EnableDecompileWidget(true);
+            lbCountAll.Text = Path.GetFileName(_browsePath) + " have " + nodeTypeDefs.Count + " types";
         }
 
         private void decompileSelected_btn_Click(object sender, EventArgs e)
@@ -528,9 +622,7 @@ namespace ManualILSpy
 
         private void decompileError_Click(object sender, EventArgs e)
         {
-            _lastSaveOutputPath = DEFAULT_SAVEPATH + "\\" + "mscorlib.dll\\Debug\\";
-            EnsureFolder(DEFAULT_SAVEPATH, _lastSaveOutputPath);
-
+            _lastSaveOutputPath = DEFAULT_SAVEPATH + "mscorlib.dll\\Debug\\";
             DecompileAny(DecompileAllErrorTypes);
         }
 
@@ -577,8 +669,8 @@ namespace ManualILSpy
             if (!isStop)
             {
                 isStop = true;
-                EnableControlDecompileBtn(false);
-                EnableDecompileBtn(true);
+                EnableControlDecompileWidget(false);
+                EnableDecompileWidget(true);
             }
         }
 
@@ -588,10 +680,17 @@ namespace ManualILSpy
             ListViewItem item = items[0];
             if (item != null)
             {
-                string fileTarget = item.Text.Trim(_specialChar) + ".txt";
+                string fileTarget = item.Text.Trim(_specialChar);
                 try
                 {
-                    System.Diagnostics.Process.Start(_lastSaveOutputPath + "\\" + fileTarget);
+                    if (fileTarget[fileTarget.Length - 1] == 'n')//from .json
+                    {
+                        System.Diagnostics.Process.Start(_lastSaveOutputPath + @"\Json\" + fileTarget);
+                    }
+                    else if (fileTarget[fileTarget.Length - 1] == 's')//from .cs
+                    {
+                        System.Diagnostics.Process.Start(_lastSaveOutputPath + @"\CSharp\" + fileTarget);
+                    }
                 }
                 catch (Exception expection)
                 {
@@ -599,6 +698,14 @@ namespace ManualILSpy
                 }
 
             }
+        }
+
+        private void clearBtn_Click(object sender, EventArgs e)
+        {
+            typesListView.Clear();
+            typesListView.Columns.Add("Fullname", 200);
+            typesListView.Columns.Add("Status", 100);
+
         }
         #endregion
     }
