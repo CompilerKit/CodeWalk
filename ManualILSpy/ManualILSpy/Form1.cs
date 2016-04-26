@@ -600,6 +600,8 @@ namespace ManualILSpy
             _browsePath = BrowsePath(_browseExeOrDll);
             browsePathTb.Text = _browsePath;
             scan_btn.Enabled = !string.IsNullOrEmpty(browsePathTb.Text);
+            //auto scan 
+            scan_Click(this, EventArgs.Empty);
         }
         private void scan_Click(object sender, EventArgs e)
         {
