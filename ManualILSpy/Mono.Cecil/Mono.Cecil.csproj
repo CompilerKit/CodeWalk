@@ -5,6 +5,9 @@
     <RootNamespace>Mono.Cecil</RootNamespace>
     <AssemblyName>Mono.Cecil</AssemblyName>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'pcl_Debug'">
+    <DefineConstants>TRACE;DEBUG;NET_3_5;NET_4_0;</DefineConstants>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="Mono.Cecil.Cil\Code.cs" />
     <Compile Include="Mono.Cecil.Cil\CodeWriter.cs" />

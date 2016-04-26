@@ -23,6 +23,12 @@ using ICSharpCode.Decompiler;
 
 namespace ICSharpCode.ILSpy
 {
+    namespace Options
+    {
+        class dummy { }
+    }
+
+
     /// <summary>
     /// Options passed to the decompiler.
     /// </summary>
@@ -53,17 +59,17 @@ namespace ICSharpCode.ILSpy
         /// </summary>
         public DecompilerSettings DecompilerSettings { get; set; }
 
-        /// <summary>
-        /// Gets/sets an optional state of a decompiler text view.
-        /// </summary>
-        /// <remarks>
-        /// This state is used to restore test view's state when decompilation is started by Go Back/Forward action.
-        /// </remarks>
+        ///// <summary>
+        ///// Gets/sets an optional state of a decompiler text view.
+        ///// </summary>
+        ///// <remarks>
+        ///// This state is used to restore test view's state when decompilation is started by Go Back/Forward action.
+        ///// </remarks>
         //public TextView.DecompilerTextViewState TextViewState { get; set; }
 
         public DecompilationOptions()
         {
-            //this.DecompilerSettings = DecompilerSettingsPanel.CurrentDecompilerSettings;
+           // this.DecompilerSettings = DecompilerSettingsPanel.CurrentDecompilerSettings;
         }
     }
 }

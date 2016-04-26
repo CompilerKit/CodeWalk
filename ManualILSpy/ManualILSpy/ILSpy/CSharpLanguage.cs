@@ -19,6 +19,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+
 using System.IO;
 using System.Linq;
 using System.Resources;
@@ -29,34 +30,25 @@ using System.Xml;
 using ICSharpCode.Decompiler;
 using ICSharpCode.Decompiler.Ast;
 using ICSharpCode.Decompiler.Ast.Transforms;
+using ICSharpCode.ILSpy.Options;
 using ICSharpCode.ILSpy.XmlDoc;
 using ICSharpCode.NRefactory.CSharp;
-using ManualILSpy.Extention;
 using Mono.Cecil;
-
+using ManualILSpy.Extention;
 namespace ICSharpCode.ILSpy
 {
-    /// <summary>
-    /// Decompiler logic for C#.
-    /// </summary>
+    ///// <summary>
+    ///// Decompiler logic for C#.
+    ///// </summary>
     //[Export(typeof(Language))]
     public class CSharpLanguage : Language
     {
         string name = "C#";
         bool showAllMembers = false;
         Predicate<IAstTransform> transformAbortCondition = null;
-        public JsonTokenWriter writer;// = new ManualILSpy.Extention.JsonTokenWriter(output);
-        IAstVisitor visitor;
+
         public CSharpLanguage()
         {
-
-        }
-
-        public CSharpLanguage(ITextOutput output)
-        {
-            //writer = new JsonTokenWriter(output);
-            ////visitor = new ManualILSpy.Extention.JsonCSharpVisitor(writer);
-            //visitor = new AstCsToJsonVisitor(output);
         }
 
 #if DEBUG
@@ -100,7 +92,7 @@ namespace ICSharpCode.ILSpy
 
         public override void DecompileMethod(MethodDefinition method, ITextOutput output, DecompilationOptions options)
         {
-            //WriteCommentLine(output, TypeToString(method.DeclaringType, includeNamespace: true));
+            WriteCommentLine(output, TypeToString(method.DeclaringType, includeNamespace: true));
             AstBuilder codeDomBuilder = CreateAstBuilder(options, currentType: method.DeclaringType, isSingleMember: true);
             if (method.IsConstructor && !method.IsStatic && !method.DeclaringType.IsValueType)
             {
@@ -159,7 +151,7 @@ namespace ICSharpCode.ILSpy
 
         public override void DecompileProperty(PropertyDefinition property, ITextOutput output, DecompilationOptions options)
         {
-            //WriteCommentLine(output, TypeToString(property.DeclaringType, includeNamespace: true));
+            WriteCommentLine(output, TypeToString(property.DeclaringType, includeNamespace: true));
             AstBuilder codeDomBuilder = CreateAstBuilder(options, currentType: property.DeclaringType, isSingleMember: true);
             codeDomBuilder.AddProperty(property);
             RunTransformsAndGenerateCode(codeDomBuilder, output, options);
@@ -167,7 +159,7 @@ namespace ICSharpCode.ILSpy
 
         public override void DecompileField(FieldDefinition field, ITextOutput output, DecompilationOptions options)
         {
-            //WriteCommentLine(output, TypeToString(field.DeclaringType, includeNamespace: true));
+            WriteCommentLine(output, TypeToString(field.DeclaringType, includeNamespace: true));
             AstBuilder codeDomBuilder = CreateAstBuilder(options, currentType: field.DeclaringType, isSingleMember: true);
             if (field.IsLiteral)
             {
@@ -233,8 +225,8 @@ namespace ICSharpCode.ILSpy
             AstBuilder codeDomBuilder = CreateAstBuilder(options, currentType: type);
             codeDomBuilder.AddType(type);
             RunTransformsAndGenerateCode(codeDomBuilder, output, options);
-            
         }
+
         void RunTransformsAndGenerateCode(AstBuilder astBuilder, ITextOutput output, DecompilationOptions options, IAstTransform additionalTransform = null)
         {
             astBuilder.RunTransformations(transformAbortCondition);
@@ -261,7 +253,7 @@ namespace ICSharpCode.ILSpy
             {
                 GenerateAstJson(astBuilder, output);
             }
-            else if(output is PlainTextOutput)
+            else if (output is PlainTextOutput)
             {
                 astBuilder.GenerateCode(output);
             }
@@ -269,7 +261,7 @@ namespace ICSharpCode.ILSpy
         public ManualILSpy.Extention.Json.JsonValue result;
         void GenerateAstJson(AstBuilder astBuilder, ITextOutput output)
         {
-            visitor = new AstCsToJsonVisitor(output);
+            var visitor = new AstCsToJsonVisitor(output);
             astBuilder.SyntaxTree.AcceptVisitor(new InsertParenthesesVisitor { InsertParenthesesForReadability = true });
             astBuilder.SyntaxTree.AcceptVisitor(visitor);
             AstCsToJsonVisitor visit = visitor as AstCsToJsonVisitor;
@@ -282,7 +274,6 @@ namespace ICSharpCode.ILSpy
                 result = null;
             }
         }
-
         public static string GetPlatformDisplayName(ModuleDefinition module)
         {
             switch (module.Architecture)
@@ -344,9 +335,9 @@ namespace ICSharpCode.ILSpy
             if (options.FullDecompilation && options.SaveAsProjectDirectory != null)
             {
                 HashSet<string> directories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                //var files = WriteCodeFilesInProject(assembly.ModuleDefinition, options, directories).ToList();
-                //files.AddRange(WriteResourceFilesInProject(assembly, options, directories));
-                //WriteProjectFile(new TextOutputWriter(output), files, assembly.ModuleDefinition);
+                var files = WriteCodeFilesInProject(assembly.ModuleDefinition, options, directories).ToList();
+                files.AddRange(WriteResourceFilesInProject(assembly, options, directories));
+                WriteProjectFile(new TextOutputWriter(output), files, assembly.ModuleDefinition);
             }
             else
             {
@@ -389,138 +380,138 @@ namespace ICSharpCode.ILSpy
         }
 
         #region WriteProjectFile
-        //void WriteProjectFile(TextWriter writer, IEnumerable<Tuple<string, string>> files, ModuleDefinition module)
-        //{
-        //    const string ns = "http://schemas.microsoft.com/developer/msbuild/2003";
-        //    string platformName = GetPlatformName(module);
-        //    Guid guid = App.CommandLineArguments.FixedGuid ?? Guid.NewGuid();
-        //    using (XmlTextWriter w = new XmlTextWriter(writer))
-        //    {
-        //        w.Formatting = Formatting.Indented;
-        //        w.WriteStartDocument();
-        //        w.WriteStartElement("Project", ns);
-        //        w.WriteAttributeString("ToolsVersion", "4.0");
-        //        w.WriteAttributeString("DefaultTargets", "Build");
+        void WriteProjectFile(TextWriter writer, IEnumerable<Tuple<string, string>> files, ModuleDefinition module)
+        {
+            const string ns = "http://schemas.microsoft.com/developer/msbuild/2003";
+            string platformName = GetPlatformName(module);
+            Guid guid = Guid.NewGuid();
+            using (XmlTextWriter w = new XmlTextWriter(writer))
+            {
+                w.Formatting = Formatting.Indented;
+                w.WriteStartDocument();
+                w.WriteStartElement("Project", ns);
+                w.WriteAttributeString("ToolsVersion", "4.0");
+                w.WriteAttributeString("DefaultTargets", "Build");
 
-        //        w.WriteStartElement("PropertyGroup");
-        //        w.WriteElementString("ProjectGuid", guid.ToString("B").ToUpperInvariant());
+                w.WriteStartElement("PropertyGroup");
+                w.WriteElementString("ProjectGuid", guid.ToString("B").ToUpperInvariant());
 
-        //        w.WriteStartElement("Configuration");
-        //        w.WriteAttributeString("Condition", " '$(Configuration)' == '' ");
-        //        w.WriteValue("Debug");
-        //        w.WriteEndElement(); // </Configuration>
+                w.WriteStartElement("Configuration");
+                w.WriteAttributeString("Condition", " '$(Configuration)' == '' ");
+                w.WriteValue("Debug");
+                w.WriteEndElement(); // </Configuration>
 
-        //        w.WriteStartElement("Platform");
-        //        w.WriteAttributeString("Condition", " '$(Platform)' == '' ");
-        //        w.WriteValue(platformName);
-        //        w.WriteEndElement(); // </Platform>
+                w.WriteStartElement("Platform");
+                w.WriteAttributeString("Condition", " '$(Platform)' == '' ");
+                w.WriteValue(platformName);
+                w.WriteEndElement(); // </Platform>
 
-        //        switch (module.Kind)
-        //        {
-        //            case ModuleKind.Windows:
-        //                w.WriteElementString("OutputType", "WinExe");
-        //                break;
-        //            case ModuleKind.Console:
-        //                w.WriteElementString("OutputType", "Exe");
-        //                break;
-        //            default:
-        //                w.WriteElementString("OutputType", "Library");
-        //                break;
-        //        }
+                switch (module.Kind)
+                {
+                    case ModuleKind.Windows:
+                        w.WriteElementString("OutputType", "WinExe");
+                        break;
+                    case ModuleKind.Console:
+                        w.WriteElementString("OutputType", "Exe");
+                        break;
+                    default:
+                        w.WriteElementString("OutputType", "Library");
+                        break;
+                }
 
-        //        w.WriteElementString("AssemblyName", module.Assembly.Name.Name);
-        //        bool useTargetFrameworkAttribute = false;
-        //        var targetFrameworkAttribute = module.Assembly.CustomAttributes.FirstOrDefault(a => a.AttributeType.FullName == "System.Runtime.Versioning.TargetFrameworkAttribute");
-        //        if (targetFrameworkAttribute != null && targetFrameworkAttribute.ConstructorArguments.Any())
-        //        {
-        //            string frameworkName = (string)targetFrameworkAttribute.ConstructorArguments[0].Value;
-        //            string[] frameworkParts = frameworkName.Split(',');
-        //            string frameworkVersion = frameworkParts.FirstOrDefault(a => a.StartsWith("Version="));
-        //            if (frameworkVersion != null)
-        //            {
-        //                w.WriteElementString("TargetFrameworkVersion", frameworkVersion.Substring("Version=".Length));
-        //                useTargetFrameworkAttribute = true;
-        //            }
-        //            string frameworkProfile = frameworkParts.FirstOrDefault(a => a.StartsWith("Profile="));
-        //            if (frameworkProfile != null)
-        //                w.WriteElementString("TargetFrameworkProfile", frameworkProfile.Substring("Profile=".Length));
-        //        }
-        //        if (!useTargetFrameworkAttribute)
-        //        {
-        //            switch (module.Runtime)
-        //            {
-        //                case TargetRuntime.Net_1_0:
-        //                    w.WriteElementString("TargetFrameworkVersion", "v1.0");
-        //                    break;
-        //                case TargetRuntime.Net_1_1:
-        //                    w.WriteElementString("TargetFrameworkVersion", "v1.1");
-        //                    break;
-        //                case TargetRuntime.Net_2_0:
-        //                    w.WriteElementString("TargetFrameworkVersion", "v2.0");
-        //                    // TODO: Detect when .NET 3.0/3.5 is required
-        //                    break;
-        //                default:
-        //                    w.WriteElementString("TargetFrameworkVersion", "v4.0");
-        //                    break;
-        //            }
-        //        }
-        //        w.WriteElementString("WarningLevel", "4");
+                w.WriteElementString("AssemblyName", module.Assembly.Name.Name);
+                bool useTargetFrameworkAttribute = false;
+                var targetFrameworkAttribute = module.Assembly.CustomAttributes.FirstOrDefault(a => a.AttributeType.FullName == "System.Runtime.Versioning.TargetFrameworkAttribute");
+                if (targetFrameworkAttribute != null && targetFrameworkAttribute.ConstructorArguments.Any())
+                {
+                    string frameworkName = (string)targetFrameworkAttribute.ConstructorArguments[0].Value;
+                    string[] frameworkParts = frameworkName.Split(',');
+                    string frameworkVersion = frameworkParts.FirstOrDefault(a => a.StartsWith("Version="));
+                    if (frameworkVersion != null)
+                    {
+                        w.WriteElementString("TargetFrameworkVersion", frameworkVersion.Substring("Version=".Length));
+                        useTargetFrameworkAttribute = true;
+                    }
+                    string frameworkProfile = frameworkParts.FirstOrDefault(a => a.StartsWith("Profile="));
+                    if (frameworkProfile != null)
+                        w.WriteElementString("TargetFrameworkProfile", frameworkProfile.Substring("Profile=".Length));
+                }
+                if (!useTargetFrameworkAttribute)
+                {
+                    switch (module.Runtime)
+                    {
+                        case TargetRuntime.Net_1_0:
+                            w.WriteElementString("TargetFrameworkVersion", "v1.0");
+                            break;
+                        case TargetRuntime.Net_1_1:
+                            w.WriteElementString("TargetFrameworkVersion", "v1.1");
+                            break;
+                        case TargetRuntime.Net_2_0:
+                            w.WriteElementString("TargetFrameworkVersion", "v2.0");
+                            // TODO: Detect when .NET 3.0/3.5 is required
+                            break;
+                        default:
+                            w.WriteElementString("TargetFrameworkVersion", "v4.0");
+                            break;
+                    }
+                }
+                w.WriteElementString("WarningLevel", "4");
 
-        //        w.WriteEndElement(); // </PropertyGroup>
+                w.WriteEndElement(); // </PropertyGroup>
 
-        //        w.WriteStartElement("PropertyGroup"); // platform-specific
-        //        w.WriteAttributeString("Condition", " '$(Platform)' == '" + platformName + "' ");
-        //        w.WriteElementString("PlatformTarget", platformName);
-        //        w.WriteEndElement(); // </PropertyGroup> (platform-specific)
+                w.WriteStartElement("PropertyGroup"); // platform-specific
+                w.WriteAttributeString("Condition", " '$(Platform)' == '" + platformName + "' ");
+                w.WriteElementString("PlatformTarget", platformName);
+                w.WriteEndElement(); // </PropertyGroup> (platform-specific)
 
-        //        w.WriteStartElement("PropertyGroup"); // Debug
-        //        w.WriteAttributeString("Condition", " '$(Configuration)' == 'Debug' ");
-        //        w.WriteElementString("OutputPath", "bin\\Debug\\");
-        //        w.WriteElementString("DebugSymbols", "true");
-        //        w.WriteElementString("DebugType", "full");
-        //        w.WriteElementString("Optimize", "false");
-        //        w.WriteEndElement(); // </PropertyGroup> (Debug)
+                w.WriteStartElement("PropertyGroup"); // Debug
+                w.WriteAttributeString("Condition", " '$(Configuration)' == 'Debug' ");
+                w.WriteElementString("OutputPath", "bin\\Debug\\");
+                w.WriteElementString("DebugSymbols", "true");
+                w.WriteElementString("DebugType", "full");
+                w.WriteElementString("Optimize", "false");
+                w.WriteEndElement(); // </PropertyGroup> (Debug)
 
-        //        w.WriteStartElement("PropertyGroup"); // Release
-        //        w.WriteAttributeString("Condition", " '$(Configuration)' == 'Release' ");
-        //        w.WriteElementString("OutputPath", "bin\\Release\\");
-        //        w.WriteElementString("DebugSymbols", "true");
-        //        w.WriteElementString("DebugType", "pdbonly");
-        //        w.WriteElementString("Optimize", "true");
-        //        w.WriteEndElement(); // </PropertyGroup> (Release)
+                w.WriteStartElement("PropertyGroup"); // Release
+                w.WriteAttributeString("Condition", " '$(Configuration)' == 'Release' ");
+                w.WriteElementString("OutputPath", "bin\\Release\\");
+                w.WriteElementString("DebugSymbols", "true");
+                w.WriteElementString("DebugType", "pdbonly");
+                w.WriteElementString("Optimize", "true");
+                w.WriteEndElement(); // </PropertyGroup> (Release)
 
 
-        //        w.WriteStartElement("ItemGroup"); // References
-        //        foreach (AssemblyNameReference r in module.AssemblyReferences)
-        //        {
-        //            if (r.Name != "mscorlib")
-        //            {
-        //                w.WriteStartElement("Reference");
-        //                w.WriteAttributeString("Include", r.Name);
-        //                w.WriteEndElement();
-        //            }
-        //        }
-        //        w.WriteEndElement(); // </ItemGroup> (References)
+                w.WriteStartElement("ItemGroup"); // References
+                foreach (AssemblyNameReference r in module.AssemblyReferences)
+                {
+                    if (r.Name != "mscorlib")
+                    {
+                        w.WriteStartElement("Reference");
+                        w.WriteAttributeString("Include", r.Name);
+                        w.WriteEndElement();
+                    }
+                }
+                w.WriteEndElement(); // </ItemGroup> (References)
 
-        //        foreach (IGrouping<string, string> gr in (from f in files group f.Item2 by f.Item1 into g orderby g.Key select g))
-        //        {
-        //            w.WriteStartElement("ItemGroup");
-        //            foreach (string file in gr.OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
-        //            {
-        //                w.WriteStartElement(gr.Key);
-        //                w.WriteAttributeString("Include", file);
-        //                w.WriteEndElement();
-        //            }
-        //            w.WriteEndElement();
-        //        }
+                foreach (IGrouping<string, string> gr in (from f in files group f.Item2 by f.Item1 into g orderby g.Key select g))
+                {
+                    w.WriteStartElement("ItemGroup");
+                    foreach (string file in gr.OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
+                    {
+                        w.WriteStartElement(gr.Key);
+                        w.WriteAttributeString("Include", file);
+                        w.WriteEndElement();
+                    }
+                    w.WriteEndElement();
+                }
 
-        //        w.WriteStartElement("Import");
-        //        w.WriteAttributeString("Project", "$(MSBuildToolsPath)\\Microsoft.CSharp.targets");
-        //        w.WriteEndElement();
+                w.WriteStartElement("Import");
+                w.WriteAttributeString("Project", "$(MSBuildToolsPath)\\Microsoft.CSharp.targets");
+                w.WriteEndElement();
 
-        //        w.WriteEndDocument();
-        //    }
-        //}
+                w.WriteEndDocument();
+            }
+        }
         #endregion
 
         #region WriteCodeFilesInProject
@@ -552,132 +543,137 @@ namespace ICSharpCode.ILSpy
             }
         }
 
-        //IEnumerable<Tuple<string, string>> WriteCodeFilesInProject(ModuleDefinition module, DecompilationOptions options, HashSet<string> directories)
-        //{
-        //    var files = module.Types.Where(t => IncludeTypeWhenDecompilingProject(t, options)).GroupBy(
-        //        delegate (TypeDefinition type) {
-        //            string file = TextView.DecompilerTextView.CleanUpName(type.Name) + this.FileExtension;
-        //            if (string.IsNullOrEmpty(type.Namespace))
-        //            {
-        //                return file;
-        //            }
-        //            else
-        //            {
-        //                string dir = TextView.DecompilerTextView.CleanUpName(type.Namespace);
-        //                if (directories.Add(dir))
-        //                    Directory.CreateDirectory(Path.Combine(options.SaveAsProjectDirectory, dir));
-        //                return Path.Combine(dir, file);
-        //            }
-        //        }, StringComparer.OrdinalIgnoreCase).ToList();
-        //    AstMethodBodyBuilder.ClearUnhandledOpcodes();
-        //    Parallel.ForEach(
-        //        files,
-        //        new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
-        //        delegate (IGrouping<string, TypeDefinition> file) {
-        //            using (StreamWriter w = new StreamWriter(Path.Combine(options.SaveAsProjectDirectory, file.Key)))
-        //            {
-        //                AstBuilder codeDomBuilder = CreateAstBuilder(options, currentModule: module);
-        //                foreach (TypeDefinition type in file)
-        //                {
-        //                    codeDomBuilder.AddType(type);
-        //                }
-        //                codeDomBuilder.RunTransformations(transformAbortCondition);
-        //                codeDomBuilder.GenerateCode(new PlainTextOutput(w));
-        //            }
-        //        });
-        //    AstMethodBodyBuilder.PrintNumberOfUnhandledOpcodes();
-        //    return files.Select(f => Tuple.Create("Compile", f.Key)).Concat(WriteAssemblyInfo(module, options, directories));
-        //}
+        IEnumerable<Tuple<string, string>> WriteCodeFilesInProject(ModuleDefinition module, DecompilationOptions options, HashSet<string> directories)
+        {
+            throw new NotSupportedException();
+            //var files = module.Types.Where(t => IncludeTypeWhenDecompilingProject(t, options)).GroupBy(
+            //    delegate (TypeDefinition type)
+            //    {
+            //        string file = TextView.DecompilerTextView.CleanUpName(type.Name) + this.FileExtension;
+            //        if (string.IsNullOrEmpty(type.Namespace))
+            //        {
+            //            return file;
+            //        }
+            //        else
+            //        {
+            //            string dir = TextView.DecompilerTextView.CleanUpName(type.Namespace);
+            //            if (directories.Add(dir))
+            //                Directory.CreateDirectory(Path.Combine(options.SaveAsProjectDirectory, dir));
+            //            return Path.Combine(dir, file);
+            //        }
+            //    }, StringComparer.OrdinalIgnoreCase).ToList();
+            //AstMethodBodyBuilder.ClearUnhandledOpcodes();
+            //Parallel.ForEach(
+            //    files,
+            //    new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
+            //    delegate (IGrouping<string, TypeDefinition> file)
+            //    {
+            //        using (StreamWriter w = new StreamWriter(Path.Combine(options.SaveAsProjectDirectory, file.Key)))
+            //        {
+            //            AstBuilder codeDomBuilder = CreateAstBuilder(options, currentModule: module);
+            //            foreach (TypeDefinition type in file)
+            //            {
+            //                codeDomBuilder.AddType(type);
+            //            }
+            //            codeDomBuilder.RunTransformations(transformAbortCondition);
+            //            codeDomBuilder.GenerateCode(new PlainTextOutput(w));
+            //        }
+            //    });
+            //AstMethodBodyBuilder.PrintNumberOfUnhandledOpcodes();
+            //return files.Select(f => Tuple.Create("Compile", f.Key)).Concat(WriteAssemblyInfo(module, options, directories));
+        }
         #endregion
 
         #region WriteResourceFilesInProject
-        //IEnumerable<Tuple<string, string>> WriteResourceFilesInProject(LoadedAssembly assembly, DecompilationOptions options, HashSet<string> directories)
-        //{
-        //    //AppDomain bamlDecompilerAppDomain = null;
-        //    //try {
-        //    foreach (EmbeddedResource r in assembly.ModuleDefinition.Resources.OfType<EmbeddedResource>())
-        //    {
-        //        string fileName;
-        //        Stream s = r.GetResourceStream();
-        //        s.Position = 0;
-        //        if (r.Name.EndsWith(".g.resources", StringComparison.OrdinalIgnoreCase))
-        //        {
-        //            IEnumerable<DictionaryEntry> rs = null;
-        //            try
-        //            {
-        //                rs = new ResourceSet(s).Cast<DictionaryEntry>();
-        //            }
-        //            catch (ArgumentException)
-        //            {
-        //            }
-        //            if (rs != null && rs.All(e => e.Value is Stream))
-        //            {
-        //                foreach (var pair in rs)
-        //                {
-        //                    fileName = Path.Combine(((string)pair.Key).Split('/').Select(p => TextView.DecompilerTextView.CleanUpName(p)).ToArray());
-        //                    string dirName = Path.GetDirectoryName(fileName);
-        //                    if (!string.IsNullOrEmpty(dirName) && directories.Add(dirName))
-        //                    {
-        //                        Directory.CreateDirectory(Path.Combine(options.SaveAsProjectDirectory, dirName));
-        //                    }
-        //                    Stream entryStream = (Stream)pair.Value;
-        //                    entryStream.Position = 0;
-        //                    if (fileName.EndsWith(".baml", StringComparison.OrdinalIgnoreCase))
-        //                    {
-        //                        //									MemoryStream ms = new MemoryStream();
-        //                        //									entryStream.CopyTo(ms);
-        //                        // TODO implement extension point
-        //                        //									var decompiler = Baml.BamlResourceEntryNode.CreateBamlDecompilerInAppDomain(ref bamlDecompilerAppDomain, assembly.FileName);
-        //                        //									string xaml = null;
-        //                        //									try {
-        //                        //										xaml = decompiler.DecompileBaml(ms, assembly.FileName, new ConnectMethodDecompiler(assembly), new AssemblyResolver(assembly));
-        //                        //									}
-        //                        //									catch (XamlXmlWriterException) { } // ignore XAML writer exceptions
-        //                        //									if (xaml != null) {
-        //                        //										File.WriteAllText(Path.Combine(options.SaveAsProjectDirectory, Path.ChangeExtension(fileName, ".xaml")), xaml);
-        //                        //										yield return Tuple.Create("Page", Path.ChangeExtension(fileName, ".xaml"));
-        //                        //										continue;
-        //                        //									}
-        //                    }
-        //                    using (FileStream fs = new FileStream(Path.Combine(options.SaveAsProjectDirectory, fileName), FileMode.Create, FileAccess.Write))
-        //                    {
-        //                        entryStream.CopyTo(fs);
-        //                    }
-        //                    yield return Tuple.Create("Resource", fileName);
-        //                }
-        //                continue;
-        //            }
-        //        }
-        //        fileName = GetFileNameForResource(r.Name, directories);
-        //        using (FileStream fs = new FileStream(Path.Combine(options.SaveAsProjectDirectory, fileName), FileMode.Create, FileAccess.Write))
-        //        {
-        //            s.CopyTo(fs);
-        //        }
-        //        yield return Tuple.Create("EmbeddedResource", fileName);
-        //    }
-        //    //}
-        //    //finally {
-        //    //    if (bamlDecompilerAppDomain != null)
-        //    //        AppDomain.Unload(bamlDecompilerAppDomain);
-        //    //}
-        //}
+        IEnumerable<Tuple<string, string>> WriteResourceFilesInProject(LoadedAssembly assembly, DecompilationOptions options, HashSet<string> directories)
+        {
+            throw new NotSupportedException();
+            ////AppDomain bamlDecompilerAppDomain = null;
+            ////try {
+            //foreach (EmbeddedResource r in assembly.ModuleDefinition.Resources.OfType<EmbeddedResource>())
+            //{
+            //    string fileName;
+            //    Stream s = r.GetResourceStream();
+            //    s.Position = 0;
+            //    if (r.Name.EndsWith(".g.resources", StringComparison.OrdinalIgnoreCase))
+            //    {
+            //        IEnumerable<DictionaryEntry> rs = null;
+            //        try
+            //        {
+            //            rs = new ResourceSet(s).Cast<DictionaryEntry>();
+            //        }
+            //        catch (ArgumentException)
+            //        {
+            //        }
+            //        if (rs != null && rs.All(e => e.Value is Stream))
+            //        {
+            //            foreach (var pair in rs)
+            //            {
+            //                fileName = Path.Combine(((string)pair.Key).Split('/').Select(p => TextView.DecompilerTextView.CleanUpName(p)).ToArray());
+            //                string dirName = Path.GetDirectoryName(fileName);
+            //                if (!string.IsNullOrEmpty(dirName) && directories.Add(dirName))
+            //                {
+            //                    Directory.CreateDirectory(Path.Combine(options.SaveAsProjectDirectory, dirName));
+            //                }
+            //                Stream entryStream = (Stream)pair.Value;
+            //                entryStream.Position = 0;
+            //                if (fileName.EndsWith(".baml", StringComparison.OrdinalIgnoreCase))
+            //                {
+            //                    //									MemoryStream ms = new MemoryStream();
+            //                    //									entryStream.CopyTo(ms);
+            //                    // TODO implement extension point
+            //                    //									var decompiler = Baml.BamlResourceEntryNode.CreateBamlDecompilerInAppDomain(ref bamlDecompilerAppDomain, assembly.FileName);
+            //                    //									string xaml = null;
+            //                    //									try {
+            //                    //										xaml = decompiler.DecompileBaml(ms, assembly.FileName, new ConnectMethodDecompiler(assembly), new AssemblyResolver(assembly));
+            //                    //									}
+            //                    //									catch (XamlXmlWriterException) { } // ignore XAML writer exceptions
+            //                    //									if (xaml != null) {
+            //                    //										File.WriteAllText(Path.Combine(options.SaveAsProjectDirectory, Path.ChangeExtension(fileName, ".xaml")), xaml);
+            //                    //										yield return Tuple.Create("Page", Path.ChangeExtension(fileName, ".xaml"));
+            //                    //										continue;
+            //                    //									}
+            //                }
+            //                using (FileStream fs = new FileStream(Path.Combine(options.SaveAsProjectDirectory, fileName), FileMode.Create, FileAccess.Write))
+            //                {
+            //                    entryStream.CopyTo(fs);
+            //                }
+            //                yield return Tuple.Create("Resource", fileName);
+            //            }
+            //            continue;
+            //        }
+            //    }
+            //    fileName = GetFileNameForResource(r.Name, directories);
+            //    using (FileStream fs = new FileStream(Path.Combine(options.SaveAsProjectDirectory, fileName), FileMode.Create, FileAccess.Write))
+            //    {
+            //        s.CopyTo(fs);
+            //    }
+            //    yield return Tuple.Create("EmbeddedResource", fileName);
+            //}
+            ////}
+            ////finally {
+            ////    if (bamlDecompilerAppDomain != null)
+            ////        AppDomain.Unload(bamlDecompilerAppDomain);
+            ////}
+        }
 
-        //string GetFileNameForResource(string fullName, HashSet<string> directories)
-        //{
-        //    string[] splitName = fullName.Split('.');
-        //    string fileName = TextView.DecompilerTextView.CleanUpName(fullName);
-        //    for (int i = splitName.Length - 1; i > 0; i--)
-        //    {
-        //        string ns = string.Join(".", splitName, 0, i);
-        //        if (directories.Contains(ns))
-        //        {
-        //            string name = string.Join(".", splitName, i, splitName.Length - i);
-        //            fileName = Path.Combine(ns, TextView.DecompilerTextView.CleanUpName(name));
-        //            break;
-        //        }
-        //    }
-        //    return fileName;
-        //}
+        string GetFileNameForResource(string fullName, HashSet<string> directories)
+        {
+            //string[] splitName = fullName.Split('.');
+            //string fileName = TextView.DecompilerTextView.CleanUpName(fullName);
+            //for (int i = splitName.Length - 1; i > 0; i--)
+            //{
+            //    string ns = string.Join(".", splitName, 0, i);
+            //    if (directories.Contains(ns))
+            //    {
+            //        string name = string.Join(".", splitName, i, splitName.Length - i);
+            //        fileName = Path.Combine(ns, TextView.DecompilerTextView.CleanUpName(name));
+            //        break;
+            //    }
+            //}
+            //return fileName;
+            return "";
+        }
         #endregion
 
         AstBuilder CreateAstBuilder(DecompilationOptions options, ModuleDefinition currentModule = null, TypeDefinition currentType = null, bool isSingleMember = false)
@@ -685,7 +681,6 @@ namespace ICSharpCode.ILSpy
             if (currentModule == null)
                 currentModule = currentType.Module;
             DecompilerSettings settings = options.DecompilerSettings;
-            
             if (isSingleMember)
             {
                 settings = settings.Clone();
@@ -779,13 +774,14 @@ namespace ICSharpCode.ILSpy
             return showAllMembers || !AstBuilder.MemberIsHidden(member, new DecompilationOptions().DecompilerSettings);
         }
 
-        //public override MemberReference GetOriginalCodeLocation(MemberReference member)
-        //{
-        //    if (showAllMembers || !DecompilerSettingsPanel.CurrentDecompilerSettings.AnonymousMethods)
-        //        return member;
-        //    else
-        //        return TreeNodes.Analyzer.Helpers.GetOriginalCodeLocation(member);
-        //}
+        public override MemberReference GetOriginalCodeLocation(MemberReference member)
+        {
+            throw new NotSupportedException();
+            //if (showAllMembers || !DecompilerSettingsPanel.CurrentDecompilerSettings.AnonymousMethods)
+            //    return member;
+            //else
+            //    return TreeNodes.Analyzer.Helpers.GetOriginalCodeLocation(member);
+        }
 
         public override string GetTooltip(MemberReference member)
         {

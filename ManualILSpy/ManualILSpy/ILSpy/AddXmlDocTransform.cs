@@ -23,58 +23,68 @@ using Mono.Cecil;
 
 namespace ICSharpCode.ILSpy.XmlDoc
 {
-	/// <summary>
-	/// Adds XML documentation for member definitions.
-	/// </summary>
-	static class AddXmlDocTransform
-	{
-		public static void Run(AstNode node)
-		{
-			if (node is EntityDeclaration) {
-				MemberReference mr = node.Annotation<MemberReference>();
-				if (mr != null && mr.Module != null) {
-					var xmldoc = XmlDocLoader.LoadDocumentation(mr.Module);
-					if (xmldoc != null) {
-						string doc = xmldoc.GetDocumentation(XmlDocKeyProvider.GetKey(mr));
-						if (doc != null) {
-							InsertXmlDocumentation(node, new StringReader(doc));
-						}
-					}
-				}
-				if (!(node is TypeDeclaration))
-					return; // don't recurse into attributed nodes, except for type definitions
-			}
-			foreach (AstNode child in node.Children)
-				Run(child);
-		}
-		
-		static void InsertXmlDocumentation(AstNode node, StringReader r)
-		{
-			// Find the first non-empty line:
-			string firstLine;
-			do {
-				firstLine = r.ReadLine();
-				if (firstLine == null)
-					return;
-			} while (string.IsNullOrWhiteSpace(firstLine));
-			string indentation = firstLine.Substring(0, firstLine.Length - firstLine.TrimStart().Length);
-			string line = firstLine;
-			int skippedWhitespaceLines = 0;
-			// Copy all lines from input to output, except for empty lines at the end.
-			while (line != null) {
-				if (string.IsNullOrWhiteSpace(line)) {
-					skippedWhitespaceLines++;
-				} else {
-					while (skippedWhitespaceLines > 0) {
-						node.Parent.InsertChildBefore(node, new Comment(string.Empty, CommentType.Documentation), Roles.Comment);
-						skippedWhitespaceLines--;
-					}
-					if (line.StartsWith(indentation, StringComparison.Ordinal))
-						line = line.Substring(indentation.Length);
-					node.Parent.InsertChildBefore(node, new Comment(" " + line, CommentType.Documentation), Roles.Comment);
-				}
-				line = r.ReadLine();
-			}
-		}
-	}
+    /// <summary>
+    /// Adds XML documentation for member definitions.
+    /// </summary>
+    static class AddXmlDocTransform
+    {
+        public static void Run(AstNode node)
+        {
+            if (node is EntityDeclaration)
+            {
+                MemberReference mr = node.Annotation<MemberReference>();
+                if (mr != null && mr.Module != null)
+                {
+                    var xmldoc = XmlDocLoader.LoadDocumentation(mr.Module);
+                    if (xmldoc != null)
+                    {
+                        string doc = xmldoc.GetDocumentation(XmlDocKeyProvider.GetKey(mr));
+                        if (doc != null)
+                        {
+                            InsertXmlDocumentation(node, new StringReader(doc));
+                        }
+                    }
+                }
+                if (!(node is TypeDeclaration))
+                    return; // don't recurse into attributed nodes, except for type definitions
+            }
+            foreach (AstNode child in node.Children)
+                Run(child);
+        }
+
+        static void InsertXmlDocumentation(AstNode node, StringReader r)
+        {
+            // Find the first non-empty line:
+            string firstLine;
+            do
+            {
+                firstLine = r.ReadLine();
+                if (firstLine == null)
+                    return;
+            } while (string.IsNullOrWhiteSpace(firstLine));
+            string indentation = firstLine.Substring(0, firstLine.Length - firstLine.TrimStart().Length);
+            string line = firstLine;
+            int skippedWhitespaceLines = 0;
+            // Copy all lines from input to output, except for empty lines at the end.
+            while (line != null)
+            {
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    skippedWhitespaceLines++;
+                }
+                else
+                {
+                    while (skippedWhitespaceLines > 0)
+                    {
+                        node.Parent.InsertChildBefore(node, new Comment(string.Empty, CommentType.Documentation), Roles.Comment);
+                        skippedWhitespaceLines--;
+                    }
+                    if (line.StartsWith(indentation, StringComparison.Ordinal))
+                        line = line.Substring(indentation.Length);
+                    node.Parent.InsertChildBefore(node, new Comment(" " + line, CommentType.Documentation), Roles.Comment);
+                }
+                line = r.ReadLine();
+            }
+        }
+    }
 }

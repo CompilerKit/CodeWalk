@@ -19,7 +19,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;PCL</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -52,7 +52,7 @@
     <Compile Include="ILSpy\AddXmlDocTransform.cs" />
     <Compile Include="ILSpy\AssemblyList.cs" />
     <Compile Include="ILSpy\CSharpLanguage.cs" />
-    <Compile Include="ILSpy\DecompilerSetting.cs" />
+    <Compile Include="ILSpy\DecompilerOptions.cs" />
     <Compile Include="ILSpy\ExtentionMethods.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
