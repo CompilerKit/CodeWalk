@@ -23,7 +23,6 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
-//using System.Windows.Threading;
 using System.Xml.Linq;
 
 namespace ICSharpCode.ILSpy
@@ -107,35 +106,35 @@ namespace ICSharpCode.ILSpy
             ClearCache();
             // Whenever the assembly list is modified, mark it as dirty
             // and enqueue a task that saves it once the UI has finished modifying the assembly list.
-            if (!dirty)
-            {
-                dirty = true;
-                //App.Current.Dispatcher.BeginInvoke(
-                //    DispatcherPriority.Background,
-                //    new Action(
-                //        delegate {
-                //            dirty = false;
-                //            AssemblyListManager.SaveList(this);
-                //            ClearCache();
-                //        })
-                //);
-            }
+            //if (!dirty)
+            //{
+            //    dirty = true;
+            //    App.Current.Dispatcher.BeginInvoke(
+            //        DispatcherPriority.Background,
+            //        new Action(
+            //            delegate {
+            //                dirty = false;
+            //                AssemblyListManager.SaveList(this);
+            //                ClearCache();
+            //            })
+            //    );
+            //}
         }
 
         internal void RefreshSave()
         {
-            if (!dirty)
-            {
-                dirty = true;
-                //App.Current.Dispatcher.BeginInvoke(
-                //    DispatcherPriority.Background,
-                //    new Action(
-                //        delegate {
-                //            dirty = false;
-                //            AssemblyListManager.SaveList(this);
-                //        })
-                //);
-            }
+            //if (!dirty)
+            //{
+            //    dirty = true;
+            //    App.Current.Dispatcher.BeginInvoke(
+            //        DispatcherPriority.Background,
+            //        new Action(
+            //            delegate {
+            //                dirty = false;
+            //                AssemblyListManager.SaveList(this);
+            //            })
+            //    );
+            //}
         }
 
         internal void ClearCache()
@@ -175,22 +174,23 @@ namespace ICSharpCode.ILSpy
         /// </summary>
         public LoadedAssembly HotReplaceAssembly(string file, Stream stream)
         {
+            throw new NotSupportedException();
             //App.Current.Dispatcher.VerifyAccess();
-            file = Path.GetFullPath(file);
+            //file = Path.GetFullPath(file);
 
-            var target = this.assemblies.FirstOrDefault(asm => file.Equals(asm.FileName, StringComparison.OrdinalIgnoreCase));
-            if (target == null)
-                return null;
+            //var target = this.assemblies.FirstOrDefault(asm => file.Equals(asm.FileName, StringComparison.OrdinalIgnoreCase));
+            //if (target == null)
+            //    return null;
 
-            var index = this.assemblies.IndexOf(target);
-            var newAsm = new LoadedAssembly(this, file, stream);
-            newAsm.IsAutoLoaded = target.IsAutoLoaded;
-            lock (assemblies)
-            {
-                this.assemblies.Remove(target);
-                this.assemblies.Insert(index, newAsm);
-            }
-            return newAsm;
+            //var index = this.assemblies.IndexOf(target);
+            //var newAsm = new LoadedAssembly(this, file, stream);
+            //newAsm.IsAutoLoaded = target.IsAutoLoaded;
+            //lock (assemblies)
+            //{
+            //    this.assemblies.Remove(target);
+            //    this.assemblies.Insert(index, newAsm);
+            //}
+            //return newAsm;
         }
 
         public void Unload(LoadedAssembly assembly)
@@ -200,21 +200,21 @@ namespace ICSharpCode.ILSpy
             {
                 assemblies.Remove(assembly);
             }
-            //RequestGC();
+            RequestGC();
         }
 
-        //static bool gcRequested;
+        static bool gcRequested;
 
-        //void RequestGC()
-        //{
-        //    if (gcRequested) return;
-        //    gcRequested = true;
-        //    App.Current.Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, new Action(
-        //        delegate {
-        //            gcRequested = false;
-        //            GC.Collect();
-        //        }));
-        //}
+        void RequestGC()
+        {
+            if (gcRequested) return;
+            gcRequested = true;
+            //App.Current.Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, new Action(
+            //    delegate {
+            //        gcRequested = false;
+            //        GC.Collect();
+            //    }));
+        }
 
         public void Sort(IComparer<LoadedAssembly> comparer)
         {
@@ -223,7 +223,7 @@ namespace ICSharpCode.ILSpy
 
         public void Sort(int index, int count, IComparer<LoadedAssembly> comparer)
         {
-            //App.Current.Dispatcher.VerifyAccess();
+            // App.Current.Dispatcher.VerifyAccess();
             lock (assemblies)
             {
                 List<LoadedAssembly> list = new List<LoadedAssembly>(assemblies);

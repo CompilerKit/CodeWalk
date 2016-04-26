@@ -19,7 +19,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;PCL</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -49,10 +49,10 @@
     <Compile Include="Extention\MyJson.cs" />
     <Compile Include="Extention\SemanticSymbol.cs" />
     <Compile Include="Extention\TextOutput.cs" />
-    <Compile Include="ILSpy\AddXmlDocTransform.cs" />
+    <Compile Include="ILSpy\XmlDoc\AddXmlDocTransform.cs" />
     <Compile Include="ILSpy\AssemblyList.cs" />
-    <Compile Include="ILSpy\CSharpLanguage.cs" />
-    <Compile Include="ILSpy\DecompilerSetting.cs" />
+    <Compile Include="ILSpy\Languages\CSharpLanguage.cs" />
+    <Compile Include="ILSpy\DecompilationOptions.cs" />
     <Compile Include="ILSpy\ExtentionMethods.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
@@ -62,10 +62,10 @@
     </Compile>
     <Compile Include="ILSpy\Fusion.cs" />
     <Compile Include="ILSpy\GacInterop.cs" />
-    <Compile Include="ILSpy\Language.cs" />
+    <Compile Include="ILSpy\Languages\Language.cs" />
     <Compile Include="ILSpy\LoadAssembly.cs" />
-    <Compile Include="ILSpy\XmlDocKeyProvider.cs" />
-    <Compile Include="ILSpy\XmlDocLoader.cs" />
+    <Compile Include="ILSpy\XmlDoc\XmlDocKeyProvider.cs" />
+    <Compile Include="ILSpy\XmlDoc\XmlDocLoader.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Form1.resx">

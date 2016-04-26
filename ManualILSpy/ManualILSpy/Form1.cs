@@ -14,6 +14,7 @@ using ICSharpCode.Decompiler;
 using ManualILSpy.Extention;
 using ManualILSpy.Extention.Json;
 using System.Threading.Tasks;
+ 
 
 namespace ManualILSpy
 {
@@ -248,7 +249,7 @@ namespace ManualILSpy
             string result;
 
             string resultPath = DEFAULT_SAVEPATH + dllFileName + "\\" + (debug ? "Debug\\" : "Release\\");
-            
+
             EnsureFolder(DEFAULT_SAVEPATH, resultPath + @"\Json");
             EnsureFolder(DEFAULT_SAVEPATH, resultPath + @"\CSharp");
 
@@ -599,7 +600,6 @@ namespace ManualILSpy
             browsePathTb.Text = _browsePath;
             scan_btn.Enabled = !string.IsNullOrEmpty(browsePathTb.Text);
         }
-
         private void scan_Click(object sender, EventArgs e)
         {
             nodeTypeDefs.Clear();
@@ -611,7 +611,6 @@ namespace ManualILSpy
             readPars.AssemblyResolver = asmResolver;
             //temp
             asmResolver.AddSearchDirectory(Path.GetDirectoryName(_browsePath));
-
 
             AssemblyDefinition assem = AssemblyDefinition.ReadAssembly(_browsePath, readPars);
             var types = assem.MainModule.Types;

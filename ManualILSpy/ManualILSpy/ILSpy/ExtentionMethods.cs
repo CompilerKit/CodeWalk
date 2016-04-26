@@ -19,7 +19,7 @@
 using System;
 using System.Collections.Generic;
 using Mono.Cecil;
-//using ICSharpCode.ILSpy.Options;
+using ICSharpCode.ILSpy.Options;
 
 namespace ICSharpCode.ILSpy
 {
@@ -49,10 +49,11 @@ namespace ICSharpCode.ILSpy
             return false;
         }
 
+        static bool showMetadataTokens = false;
         public static string ToSuffixString(this MetadataToken token)
         {
-            //if (!DisplaySettingsPanel.CurrentDisplaySettings.ShowMetadataTokens)
-            //    return string.Empty;
+            if (!showMetadataTokens)
+                return string.Empty;
 
             return " @" + token.ToInt32().ToString("x8");
         }
