@@ -59,6 +59,35 @@ namespace ManualILSpy
             }
             return path;
         }
+        static void EnsureFolder(string rootFolder, string fullFolder)
+        {
+            //ensure folder and subfodlers existing
+            if (!fullFolder.StartsWith(rootFolder))
+            {
+                throw new NotSupportedException();
+            }
+            //---------------------------------------
+            int rootFolderLen = rootFolder.Length;
+            if (!Directory.Exists(rootFolder))
+            {
+                throw new NotSupportedException("root folder must exist");
+            }
+            //---------------------------------------
+            string[] subFolders = fullFolder.Substring(rootFolderLen).Split(new string[] { "\\" }, StringSplitOptions.RemoveEmptyEntries);
+            int j = subFolders.Length;
+            string curFolder = rootFolder;
+            for (int i = 0; i < j; ++i)
+            {
+                string subfolder = curFolder += "\\" + subFolders[i];
+                if (!Directory.Exists(subfolder))
+                {
+                    Directory.CreateDirectory(subfolder);
+                }
+                curFolder = subfolder;
+            }
+        }
+
+
 
         #region Control Conponents
         private void SetUpComponent()
@@ -219,8 +248,10 @@ namespace ManualILSpy
             string result;
 
             string resultPath = DEFAULT_SAVEPATH + dllFileName + "\\" + (debug ? "Debug\\" : "Release\\");
-            Directory.CreateDirectory(resultPath + @"\Json");
-            Directory.CreateDirectory(resultPath + @"\CSharp");
+            
+            EnsureFolder(DEFAULT_SAVEPATH, resultPath + @"\Json");
+            EnsureFolder(DEFAULT_SAVEPATH, resultPath + @"\CSharp");
+
             StringBuilder unwritable = new StringBuilder();
             _lastSaveOutputPath = resultPath;
 
