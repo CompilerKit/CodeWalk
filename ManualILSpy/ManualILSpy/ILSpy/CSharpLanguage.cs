@@ -49,22 +49,14 @@ namespace ICSharpCode.ILSpy
         IAstVisitor visitor;
         public CSharpLanguage()
         {
-            writer = new JsonTokenWriter(new StringBuilderTextOutput());
-            //visitor = new ManualILSpy.Extention.JsonCSharpVisitor(writer);
-            visitor = new AstCsToJsonVisitor(new StringBuilderTextOutput());
+
         }
 
         public CSharpLanguage(ITextOutput output)
         {
-            writer = new JsonTokenWriter(output);
-            //visitor = new ManualILSpy.Extention.JsonCSharpVisitor(writer);
-            visitor = new AstCsToJsonVisitor(output);
-        }
-
-        public CSharpLanguage(IAstVisitor visitor, ITextOutput output)
-        {
-            this.visitor = visitor;
-            writer = new JsonTokenWriter(output);
+            //writer = new JsonTokenWriter(output);
+            ////visitor = new ManualILSpy.Extention.JsonCSharpVisitor(writer);
+            //visitor = new AstCsToJsonVisitor(output);
         }
 
 #if DEBUG
@@ -241,6 +233,7 @@ namespace ICSharpCode.ILSpy
             AstBuilder codeDomBuilder = CreateAstBuilder(options, currentType: type);
             codeDomBuilder.AddType(type);
             RunTransformsAndGenerateCode(codeDomBuilder, output, options);
+            
         }
         void RunTransformsAndGenerateCode(AstBuilder astBuilder, ITextOutput output, DecompilationOptions options, IAstTransform additionalTransform = null)
         {
@@ -263,12 +256,21 @@ namespace ICSharpCode.ILSpy
                         astBuilder.SyntaxTree.InsertChildBefore(insertionPoint, new Comment(msg[i], CommentType.Documentation), Roles.Comment);
                 }
             }
-            GenerateAstJson(astBuilder, output);
-            //astBuilder.GenerateCode(output);
+
+            if (output is StringBuilderTextOutput)
+            {
+                GenerateAstJson(astBuilder, output);
+            }
+            else if(output is PlainTextOutput)
+            {
+                astBuilder.GenerateCode(output);
+            }
         }
         public ManualILSpy.Extention.Json.JsonValue result;
         void GenerateAstJson(AstBuilder astBuilder, ITextOutput output)
         {
+            visitor = new AstCsToJsonVisitor(output);
+            astBuilder.SyntaxTree.AcceptVisitor(new InsertParenthesesVisitor { InsertParenthesesForReadability = true });
             astBuilder.SyntaxTree.AcceptVisitor(visitor);
             AstCsToJsonVisitor visit = visitor as AstCsToJsonVisitor;
             if (visit != null)

@@ -136,14 +136,20 @@ namespace ManualILSpy.Extention
             }
             return typeArr;
         }
-
+        bool isSuspectLambda = false;
+        int countLamda = 0;
         JsonElement GetIdentifier(Identifier identifier)
         {
             //TODO: review here
             string name = identifier.Name;
             if (name[0] == '<' && name[1] == '>')
             {
-                isLambda = true;
+                isSuspectLambda = true;
+                countLamda++;
+                if (countLamda == 4)
+                {
+
+                }
             }
             return new JsonElement(name);
         }
@@ -293,7 +299,7 @@ namespace ManualILSpy.Extention
                 var pop = Pop();
                 if (pop != null)
                 {
-                    specifierArr.AddJsonValue(Pop());
+                    specifierArr.AddJsonValue(pop);
                 }
             }
             if (specifierArr.Count == 0)
@@ -396,8 +402,7 @@ namespace ManualILSpy.Extention
             expression.AddJsonValue("left-operand", GenExpression(binaryOperatorExpression.Left));
             expression.AddJsonValue("operator", BinaryOperatorExpression.GetOperatorRole(binaryOperatorExpression.Operator).Token);
             expression.AddJsonValue("right-operand", GenExpression(binaryOperatorExpression.Right));
-
-
+            
             Push(expression);
         }
         public void VisitCastExpression(CastExpression castExpression)
@@ -414,9 +419,6 @@ namespace ManualILSpy.Extention
             AddKeyword(expression, CheckedExpression.CheckedKeywordRole);
             expression.AddJsonValue("expression", GenExpression(checkedExpression.Expression));
             Push(expression);
-
-            throw new FirstTimeUseException();
-
         }
 
         public void VisitConditionalExpression(ConditionalExpression conditionalExpression)
@@ -438,7 +440,6 @@ namespace ManualILSpy.Extention
             expression.AddJsonValue("type-info", GenTypeInfo(defaultValueExpression.Type));
 
             Push(expression);
-
         }
 
         public void VisitDirectionExpression(DirectionExpression directionExpression)
@@ -619,7 +620,6 @@ namespace ManualILSpy.Extention
             expression.AddJsonValue("type-arguments", GetTypeArguments(pointerReferenceExpression.TypeArguments));
 
             Push(expression);
-            throw new FirstTimeUseException();
         }
         public void VisitPrimitiveExpression(PrimitiveExpression primitiveExpression)
         {
@@ -640,7 +640,6 @@ namespace ManualILSpy.Extention
             expression.AddJsonValue("type-info", GenTypeInfo(sizeOfExpression.Type));
 
             Push(expression);
-            throw new FirstTimeUseException();
         }
 
         public void VisitStackAllocExpression(StackAllocExpression stackAllocExpression)
@@ -698,7 +697,6 @@ namespace ManualILSpy.Extention
             expression.AddJsonValue("expression", GenExpression(uncheckedExpression.Expression));
 
             Push(expression);
-            throw new FirstTimeUseException();
         }
 
         #endregion
@@ -867,8 +865,10 @@ namespace ManualILSpy.Extention
                     break;
             }
             JsonElement identifier = GetIdentifier(typeDeclaration.NameToken);
-
-
+            if (identifier.ElementValue[0] == '<' && identifier.ElementValue[0] == '>')
+            {
+                isLambda = true;
+            }
 
             bool thisTypeIsLamda = false;
             if (isLambda)
@@ -982,8 +982,6 @@ namespace ManualILSpy.Extention
             AddKeyword(statement, CheckedStatement.CheckedKeywordRole);
             statement.AddJsonValue("body", GenStatement(checkedStatement.Body));
             Push(statement);
-            //implement already, but not tested
-            throw new FirstTimeUseException();
         }
 
         public void VisitContinueStatement(ContinueStatement continueStatement)
@@ -991,8 +989,6 @@ namespace ManualILSpy.Extention
             JsonObject statement = CreateJsonStatement(continueStatement);
             AddKeyword(statement, ContinueStatement.ContinueKeywordRole);
             Push(statement);
-            //implement already, but not tested
-            throw new FirstTimeUseException();
         }
 
         public void VisitDoWhileStatement(DoWhileStatement doWhileStatement)
@@ -1014,7 +1010,6 @@ namespace ManualILSpy.Extention
         public void VisitExpressionStatement(ExpressionStatement expressionStatement)
         {
             //expression statemenrt !!
-
             expressionStatement.Expression.AcceptVisitor(this);
         }
 
@@ -1092,7 +1087,11 @@ namespace ManualILSpy.Extention
             statement.AddJsonValue("condition", GenExpression(ifElseStatement.Condition));
             statement.AddJsonValue("true-statement", GenStatement(ifElseStatement.TrueStatement));
             statement.AddJsonValue("false-statement", GenStatement(ifElseStatement.FalseStatement));
+            //TODO: ckeck lambda
+            if (isSuspectLambda)
+            {
 
+            }
             if (isLambda)
             {
                 //TODO: review here
@@ -1201,8 +1200,6 @@ namespace ManualILSpy.Extention
             statement.AddJsonValue("embedded-statement", GenStatement(lockStatement.EmbeddedStatement));
 
             Push(statement);
-
-            throw new FirstTimeUseException();
         }
 
         public void VisitReturnStatement(ReturnStatement returnStatement)
@@ -1509,8 +1506,6 @@ namespace ManualILSpy.Extention
             declaration.AddJsonValue("body", GetMethodBody(destructorDeclaration.Body));
 
             Push(declaration);
-
-            throw new FirstTimeUseException();
         }
 
         public void VisitEnumMemberDeclaration(EnumMemberDeclaration enumMemberDeclaration)
@@ -1562,7 +1557,6 @@ namespace ManualILSpy.Extention
             declaration.AddJsonValue("children", children);
 
             Push(declaration);
-            throw new FirstTimeUseException();
         }
 
         public void VisitFieldDeclaration(FieldDeclaration fieldDeclaration)
@@ -1833,19 +1827,30 @@ namespace ManualILSpy.Extention
 
         public void VisitComposedType(ComposedType composedType)
         {
+            JsonObject jsonComposedType = new JsonObject();
+            jsonComposedType.Comment = "VisitComposedType";
             composedType.BaseType.AcceptVisitor(this);
+            jsonComposedType.AddJsonValue("basetype", Pop());
+            if (composedType.HasNullableSpecifier)
+            {
+                jsonComposedType.AddJsonValue("nullable-specifier", ComposedType.NullableRole.Token);
+            }
+            jsonComposedType.AddJsonValue("pointerrank", composedType.PointerRank);
+            JsonArray arraySpecifier = new JsonArray();
+            foreach (var node in composedType.ArraySpecifiers)
+            {
+                node.AcceptVisitor(this);
+                arraySpecifier.AddJsonValue(Pop());
+            }
+            Push(jsonComposedType);
         }
 
         public void VisitArraySpecifier(ArraySpecifier arraySpecifier)
         {
-            JsonArray arrSpec = new JsonArray();
+            JsonObject arrSpec = new JsonObject();
             arrSpec.Comment = "VisitArraySpecifier";
-            foreach (var spec in arraySpecifier.GetChildrenByRole(Roles.Comma))
-            {
-                spec.AcceptVisitor(this);
-                arrSpec.AddJsonValue(Pop());
-            }
-            if (arrSpec.Count == 0)
+            arrSpec.AddJsonValue("array-specifier", arraySpecifier.GetChildrenByRole(Roles.Comma).Count);
+            if (arraySpecifier.GetChildrenByRole(Roles.Comma).Count == 0)
             {
                 arrSpec = null;
             }
@@ -1959,11 +1964,15 @@ namespace ManualILSpy.Extention
             visit.AddJsonValue("base-types", GetCommaSeparatedList(constraint.BaseTypes));
 
             Push(visit);
-            throw new FirstTimeUseException();
         }
-
+        int tokennodeCounter = 0;
         public void VisitCSharpTokenNode(CSharpTokenNode cSharpTokenNode)
         {
+            tokennodeCounter++;
+            if (tokennodeCounter == 26)
+            {
+
+            }
             CSharpModifierToken mod = cSharpTokenNode as CSharpModifierToken;
             if (mod != null)
             {

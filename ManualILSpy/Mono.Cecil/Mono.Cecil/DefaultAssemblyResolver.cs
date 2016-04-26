@@ -21,7 +21,7 @@ namespace Mono.Cecil {
 
 		public DefaultAssemblyResolver ()
 		{
-			cache = new Dictionary<string, AssemblyDefinition> (StringComparer.Ordinal); 
+			cache = new Dictionary<string, AssemblyDefinition> (StringComparer.Ordinal);
 		}
 
 		public override AssemblyDefinition Resolve (AssemblyNameReference name)
