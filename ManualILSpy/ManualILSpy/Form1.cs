@@ -14,7 +14,7 @@ using ICSharpCode.Decompiler;
 using ManualILSpy.Extention;
 using ManualILSpy.Extention.Json;
 using System.Threading.Tasks;
- 
+
 
 namespace ManualILSpy
 {
@@ -528,7 +528,8 @@ namespace ManualILSpy
         private string GetJson(IMemberDefinition node, bool debug)
         {
             StringBuilderTextOutput output = new StringBuilderTextOutput();
-            CSharpLanguage csharp = new CSharpLanguage();
+
+            MyCsLang csharp = new MyCsLang();
             DecompilationOptions options = new DecompilationOptions();
             options.DecompilerSettings = LoadDecompilerSettings();
 

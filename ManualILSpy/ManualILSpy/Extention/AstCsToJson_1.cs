@@ -83,10 +83,6 @@ namespace ManualILSpy.Extention
                         methodSymbol.TypeNameIndex = RegisterType(methodDef.ReturnType.FullName);
                         break;
                 }
-
-
-
-
                 memberReferences.Add(id, methodSymbol);
                 //--------------------------------------------
             }
