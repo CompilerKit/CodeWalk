@@ -19,7 +19,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-
+//using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
 using System.Resources;
@@ -34,7 +34,7 @@ using ICSharpCode.ILSpy.Options;
 using ICSharpCode.ILSpy.XmlDoc;
 using ICSharpCode.NRefactory.CSharp;
 using Mono.Cecil;
-using ManualILSpy.Extention;
+
 namespace ICSharpCode.ILSpy
 {
     ///// <summary>
@@ -248,31 +248,11 @@ namespace ICSharpCode.ILSpy
                         astBuilder.SyntaxTree.InsertChildBefore(insertionPoint, new Comment(msg[i], CommentType.Documentation), Roles.Comment);
                 }
             }
-
-            if (output is StringBuilderTextOutput)
-            {
-                GenerateAstJson(astBuilder, output);
-            }
-            else if (output is PlainTextOutput)
-            {
-                astBuilder.GenerateCode(output);
-            }
+            InnerGenerateCode(astBuilder, output);
         }
-        public ManualILSpy.Extention.Json.JsonValue result;
-        void GenerateAstJson(AstBuilder astBuilder, ITextOutput output)
+        protected virtual void InnerGenerateCode(AstBuilder astBuilder, ITextOutput output)
         {
-            var visitor = new AstCsToJsonVisitor(output);
-            astBuilder.SyntaxTree.AcceptVisitor(new InsertParenthesesVisitor { InsertParenthesesForReadability = true });
-            astBuilder.SyntaxTree.AcceptVisitor(visitor);
-            AstCsToJsonVisitor visit = visitor as AstCsToJsonVisitor;
-            if (visit != null)
-            {
-                result = visit.LastValue;
-            }
-            else
-            {
-                result = null;
-            }
+            astBuilder.GenerateCode(output);
         }
         public static string GetPlatformDisplayName(ModuleDefinition module)
         {
@@ -384,6 +364,7 @@ namespace ICSharpCode.ILSpy
         {
             const string ns = "http://schemas.microsoft.com/developer/msbuild/2003";
             string platformName = GetPlatformName(module);
+            //Guid guid = App.CommandLineArguments.FixedGuid ?? Guid.NewGuid();
             Guid guid = Guid.NewGuid();
             using (XmlTextWriter w = new XmlTextWriter(writer))
             {
@@ -547,8 +528,7 @@ namespace ICSharpCode.ILSpy
         {
             throw new NotSupportedException();
             //var files = module.Types.Where(t => IncludeTypeWhenDecompilingProject(t, options)).GroupBy(
-            //    delegate (TypeDefinition type)
-            //    {
+            //    delegate (TypeDefinition type) {
             //        string file = TextView.DecompilerTextView.CleanUpName(type.Name) + this.FileExtension;
             //        if (string.IsNullOrEmpty(type.Namespace))
             //        {
@@ -566,8 +546,7 @@ namespace ICSharpCode.ILSpy
             //Parallel.ForEach(
             //    files,
             //    new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
-            //    delegate (IGrouping<string, TypeDefinition> file)
-            //    {
+            //    delegate (IGrouping<string, TypeDefinition> file) {
             //        using (StreamWriter w = new StreamWriter(Path.Combine(options.SaveAsProjectDirectory, file.Key)))
             //        {
             //            AstBuilder codeDomBuilder = CreateAstBuilder(options, currentModule: module);
@@ -659,6 +638,8 @@ namespace ICSharpCode.ILSpy
 
         string GetFileNameForResource(string fullName, HashSet<string> directories)
         {
+            throw new NotSupportedException();
+
             //string[] splitName = fullName.Split('.');
             //string fileName = TextView.DecompilerTextView.CleanUpName(fullName);
             //for (int i = splitName.Length - 1; i > 0; i--)
@@ -672,7 +653,6 @@ namespace ICSharpCode.ILSpy
             //    }
             //}
             //return fileName;
-            return "";
         }
         #endregion
 
@@ -774,13 +754,18 @@ namespace ICSharpCode.ILSpy
             return showAllMembers || !AstBuilder.MemberIsHidden(member, new DecompilationOptions().DecompilerSettings);
         }
 
+        bool useAnonymousMethod;
         public override MemberReference GetOriginalCodeLocation(MemberReference member)
         {
-            throw new NotSupportedException();
-            //if (showAllMembers || !DecompilerSettingsPanel.CurrentDecompilerSettings.AnonymousMethods)
-            //    return member;
-            //else
-            //    return TreeNodes.Analyzer.Helpers.GetOriginalCodeLocation(member);
+            if (showAllMembers || !useAnonymousMethod)
+            {
+                return member;
+            }
+            else
+            {
+                throw new NotSupportedException();
+                //return TreeNodes.Analyzer.Helpers.GetOriginalCodeLocation(member);
+            }
         }
 
         public override string GetTooltip(MemberReference member)
