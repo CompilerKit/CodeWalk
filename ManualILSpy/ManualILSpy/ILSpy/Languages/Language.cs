@@ -21,6 +21,7 @@ using System.Collections.Generic;
 
 using ICSharpCode.Decompiler;
 using Mono.Cecil;
+using ManualILSpy.Extention;
 
 namespace ICSharpCode.ILSpy
 {
@@ -44,9 +45,9 @@ namespace ICSharpCode.ILSpy
             get { return null; }
         }
 
-        /// <summary>
-        /// Gets the syntax highlighting used for this language.
-        /// </summary>
+        ///// <summary>
+        ///// Gets the syntax highlighting used for this language.
+        ///// </summary>
         //public virtual ICSharpCode.AvalonEdit.Highlighting.IHighlightingDefinition SyntaxHighlighting
         //{
         //    get
