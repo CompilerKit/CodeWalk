@@ -37,8 +37,7 @@ namespace ManualILSpy.Extention
         Dictionary<string, int> typeReferences = new Dictionary<string, int>();
 
 
-        bool isLambda = false;
-
+        bool isLambda = false; 
         public JsonValue LastValue { get; private set; }
 
         public AstCsToJsonVisitor(ITextOutput output)
