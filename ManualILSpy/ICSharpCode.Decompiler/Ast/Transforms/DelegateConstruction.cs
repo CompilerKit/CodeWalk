@@ -126,9 +126,25 @@ namespace ICSharpCode.Decompiler.Ast.Transforms
 		{
 			if (!context.Settings.AnonymousMethods)
 				return false; // anonymous method decompilation is disabled
-			if (target != null && !(target is IdentifierExpression || target is ThisReferenceExpression || target is NullReferenceExpression))
-				return false; // don't copy arbitrary expressions, deal with identifiers only
-			
+
+            bool skip1 = false;
+            if(target is MemberReferenceExpression )
+            {
+                MemberReferenceExpression mbRef = (MemberReferenceExpression)target;
+                if (mbRef.ToString().Contains("<>"))
+                {
+                    //special member name
+                    //may be anonymous method ref
+                    //please check type of member
+                    skip1 = true;
+                }
+            }
+            if (!skip1)
+            {
+                if (target != null && !(target is IdentifierExpression || target is ThisReferenceExpression || target is NullReferenceExpression))
+                    return false; // don't copy arbitrary expressions, deal with identifiers only
+            }
+
 			// Anonymous methods are defined in the same assembly
 			MethodDefinition method = methodRef.ResolveWithinSameModule();
 			if (!IsAnonymousMethod(context, method))
