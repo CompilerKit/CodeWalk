@@ -1,4 +1,4 @@
-﻿//MIT, 2016, Brezza27, EngineKit
+﻿//MIT, 2016, Brezza92, EngineKit
 using System;
 using System.Collections.Generic; 
 using ICSharpCode.NRefactory.CSharp;
