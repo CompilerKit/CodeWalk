@@ -105,7 +105,7 @@ namespace ManualILSpy
             browsePathTb.BackColor = System.Drawing.SystemColors.Window;
 
             _browseExeOrDll = new OpenFileDialog();
-            _browseExeOrDll.Filter = "Execution File|*.exe|Dynamic-link library(dll) file|*.dll";
+            _browseExeOrDll.Filter = ".NET Assembly file| *.exe; *.dll";
             _browseOutput = new OpenFileDialog();
             _browseOutput.Filter = "Text Files)|*.txt|Json Files|*.json";
 
@@ -601,10 +601,16 @@ namespace ManualILSpy
             browsePathTb.Text = _browsePath;
             scan_btn.Enabled = !string.IsNullOrEmpty(browsePathTb.Text);
             //auto scan 
+
             scan_Click(this, EventArgs.Empty);
         }
         private void scan_Click(object sender, EventArgs e)
         {
+            if (_browsePath == null)
+            {
+                return;
+            }
+
             nodeTypeDefs.Clear();
             nodeTreeNodes.Clear();
             treeView1.Nodes.Clear();
