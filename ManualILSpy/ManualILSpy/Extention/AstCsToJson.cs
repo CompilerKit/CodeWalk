@@ -37,7 +37,7 @@ namespace ManualILSpy.Extention
         Dictionary<string, int> typeReferences = new Dictionary<string, int>();
 
 
-        bool isLambda = false; 
+        bool isLambda = false;
         public JsonValue LastValue { get; private set; }
 
         public AstCsToJsonVisitor(ITextOutput output)
@@ -61,7 +61,7 @@ namespace ManualILSpy.Extention
             typeReferences.Clear();
             memberReferences.Clear();
         }
-      
+
         int RegisterType(string type)
         {
             int index = 0;
@@ -401,7 +401,7 @@ namespace ManualILSpy.Extention
             expression.AddJsonValue("left-operand", GenExpression(binaryOperatorExpression.Left));
             expression.AddJsonValue("operator", BinaryOperatorExpression.GetOperatorRole(binaryOperatorExpression.Operator).Token);
             expression.AddJsonValue("right-operand", GenExpression(binaryOperatorExpression.Right));
-            
+
             Push(expression);
         }
         public void VisitCastExpression(CastExpression castExpression)
@@ -1000,10 +1000,10 @@ namespace ManualILSpy.Extention
 
         public void VisitEmptyStatement(EmptyStatement emptyStatement)
         {
+            //empty statement
+
             JsonObject statement = CreateJsonStatement(emptyStatement);
             Push(statement);
-            //implement already, but not tested
-            throw new FirstTimeUseException();
         }
 
         public void VisitExpressionStatement(ExpressionStatement expressionStatement)
@@ -1621,7 +1621,7 @@ namespace ManualILSpy.Extention
 
             declaration.AddJsonValue("local_symbols", GetLocalSymbolReferences());
             Push(declaration);
-             
+
         }
 
         public void VisitMethodDeclaration(MethodDeclaration methodDeclaration)
