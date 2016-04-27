@@ -96,7 +96,7 @@ namespace ManualILSpy
             scan_btn.Enabled = false;
 
             EnableDecompileWidget(false);
-            jsonOutRBtn.Checked = true;
+            bothOutRBtn.Checked = true;
             enable_rbtn.Checked = true;
 
             EnableControlDecompileWidget(false);
