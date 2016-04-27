@@ -54,7 +54,9 @@ namespace ICSharpCode.Decompiler.Ast.Transforms
 		}
 		
 		List<string> currentlyUsedVariableNames = new List<string>();
-		
+
+        bool enableFixLambda2 = true; //temp here, before official new lambda fixed accept
+
 		public DelegateConstruction(DecompilerContext context) : base(context)
 		{
 		}
@@ -128,7 +130,7 @@ namespace ICSharpCode.Decompiler.Ast.Transforms
 				return false; // anonymous method decompilation is disabled
 
             bool skip1 = false;
-            if(target is MemberReferenceExpression )
+            if(enableFixLambda2 && target is MemberReferenceExpression)
             {
                 MemberReferenceExpression mbRef = (MemberReferenceExpression)target;
                 if (mbRef.ToString().Contains("<>"))
@@ -136,7 +138,7 @@ namespace ICSharpCode.Decompiler.Ast.Transforms
                     //special member name
                     //may be anonymous method ref
                     //please check type of member
-                    skip1 = true;
+                    skip1 = true;                     
                 }
             }
             if (!skip1)
@@ -149,7 +151,9 @@ namespace ICSharpCode.Decompiler.Ast.Transforms
 			MethodDefinition method = methodRef.ResolveWithinSameModule();
 			if (!IsAnonymousMethod(context, method))
 				return false;
-			
+
+            matchWithLambda = true;
+
 			// Create AnonymousMethodExpression and prepare parameters
 			AnonymousMethodExpression ame = new AnonymousMethodExpression();
 			ame.CopyAnnotationsFrom(objectCreateExpression); // copy ILRanges etc.
@@ -321,17 +325,192 @@ namespace ICSharpCode.Decompiler.Ast.Transforms
 				new NamedNode("variable", new IdentifierExpression(Pattern.AnyString)),
 				new ObjectCreateExpression { Type = new AnyNode("type") }
 			));
-		
-		public override object VisitBlockStatement(BlockStatement blockStatement, object data)
+
+        
+
+        bool matchWithLambda = false;
+        static string FindLeftLocalVarName(BinaryOperatorExpression binOpExpr)
+        {
+            var t= binOpExpr.Left.GetType();
+            AssignmentExpression assignmentExpr = (AssignmentExpression)binOpExpr.Left;
+            t = assignmentExpr.Left.GetType();
+            IdentifierExpression leftId = (IdentifierExpression)assignmentExpr.Left;
+
+            return leftId.ToString();
+        }
+        static VariableDeclarationStatement FindUpperVarDeclStatement(BlockStatement block,Statement stopAt, string varname)
+        {
+            foreach(var stmt in block)
+            {
+                var vardecl = stmt as VariableDeclarationStatement;
+                if(vardecl != null)
+                {
+                    //var allVars= vardecl.Variables;
+                    //int allVarCount = allVars.Count;
+                    VariableInitializer varInit = vardecl.GetVariable(varname);
+                    if (varInit != null && varInit != VariableInitializer.Null)
+                    {
+                        //found
+                        return vardecl;
+                    }
+                }
+                if(stmt == stopAt)
+                {
+                    return null;
+                }
+                
+            }
+            return null;
+        }
+        void RemoveLocalVarInitializer(VariableDeclarationStatement vardecl,string varname)
+        {
+            var allVars= vardecl.Variables;
+            if(allVars.Count <= 1)
+            {
+                //replace with empty
+                vardecl.Remove();
+            }
+            else
+            {
+                //remove specific var
+                VariableInitializer varInit = vardecl.GetVariable(varname);
+                if (varInit != null && varInit != VariableInitializer.Null)
+                {
+                    //found
+                    allVars.Remove(varInit);
+                }
+            }
+        }
+        Expression FindRightMostDelegateExpr(Expression expr)
+        {
+            if(expr is AssignmentExpression)
+            {
+                var assignmentExpr= (AssignmentExpression)expr;
+                AssignmentExpression rightAssignment = (AssignmentExpression)assignmentExpr.Right;
+                return rightAssignment.Right;
+            }
+            return null;
+        }
+        Expression FindRightMostDelegateExpr(BlockStatement blockStmt)
+        {
+            foreach(var stmt in blockStmt)
+            {
+                var exprStmt = stmt as ExpressionStatement;
+                if(exprStmt != null)
+                {
+                    var found= FindRightMostDelegateExpr(exprStmt.Expression);
+                    if(found!= null)
+                    {
+                        return found;
+                    }
+                }
+                
+            }
+            return null;
+        }
+        IdentifierExpression CheckAndExtractDelAssignement(Statement stmt,string varname)
+        {
+            var exprStmt = stmt as ExpressionStatement;
+            if(exprStmt == null)
+            {
+                return null ;
+            }
+            var assignmentExpr = exprStmt.Expression as AssignmentExpression;
+            if(assignmentExpr == null)
+            {
+                return null;
+            }
+            var leftAsId= assignmentExpr.Left as IdentifierExpression;
+            var rightAsId = assignmentExpr.Right as IdentifierExpression;
+            if(rightAsId.ToString() == varname)
+            {
+                return leftAsId;
+            }
+
+            return null;
+        }
+        bool ReplaceDelAssignment(Statement stmt, string varname,Expression rightExpr)
+        {
+            var exprStmt = stmt as ExpressionStatement;
+            if (exprStmt == null)
+            {
+                return false;
+            }
+            var assignmentExpr = exprStmt.Expression as AssignmentExpression;
+            if (assignmentExpr == null)
+            {
+                return false;
+            }
+            var leftAsId = assignmentExpr.Left as IdentifierExpression;
+            var rightAsId = assignmentExpr.Right as IdentifierExpression;
+            if (rightAsId.ToString() == varname)
+            {
+                rightAsId.Remove();
+                rightExpr.Remove(); //remove from current owner
+                assignmentExpr.Right = rightExpr; //assign to new owner
+                return true;
+            }
+
+            return false;
+        }
+        public override object VisitIfElseStatement(IfElseStatement ifElseStatement, object data)
+        {
+            matchWithLambda = false;
+            object o= base.VisitIfElseStatement(ifElseStatement, data);
+            if (enableFixLambda2)
+            {
+                if (matchWithLambda)
+                {
+
+                    //find parent of ifelse block
+                    BlockStatement parentNode = (BlockStatement)ifElseStatement.Parent;
+                    //----------------------
+                    //remove compiler generated local var
+                    // var t= ifElseStatement.Condition.GetType();
+                    string leftLocalVarName = FindLeftLocalVarName((BinaryOperatorExpression)ifElseStatement.Condition);
+                    //----------------------
+                    //find local var decl in upper parent node and replace with empty
+                    VariableDeclarationStatement found = FindUpperVarDeclStatement(parentNode, ifElseStatement, leftLocalVarName);
+                    if (found != null)
+                    {
+                        //replace
+                        RemoveLocalVarInitializer(found, leftLocalVarName);
+                        Statement trueStmt = ifElseStatement.TrueStatement;
+                        //  t = trueStmt.GetType();
+                        var rightMostDelExpr = FindRightMostDelegateExpr((BlockStatement)trueStmt);
+                        //replace assignment  next to this if-else
+                        AstNode nextNode = ifElseStatement.NextSibling;
+                        IdentifierExpression leftSimpleDel = CheckAndExtractDelAssignement(nextNode as Statement, leftLocalVarName);
+                        VariableDeclarationStatement found2 = FindUpperVarDeclStatement(parentNode, ifElseStatement, leftSimpleDel.ToString());
+                        if (found2 != null)
+                        {
+
+                            if (ReplaceDelAssignment((Statement)nextNode, leftLocalVarName, rightMostDelExpr))
+                            {
+                                ifElseStatement.ReplaceWith(new EmptyStatement());
+                            }
+                        }
+                    }
+                }
+            }
+            matchWithLambda = false;
+            return o;
+        }
+        public override object VisitBlockStatement(BlockStatement blockStatement, object data)
 		{
+            
 			int numberOfVariablesOutsideBlock = currentlyUsedVariableNames.Count;
 			base.VisitBlockStatement(blockStatement, data);
 			foreach (ExpressionStatement stmt in blockStatement.Statements.OfType<ExpressionStatement>().ToArray()) {
-				Match displayClassAssignmentMatch = displayClassAssignmentPattern.Match(stmt);
-				if (!displayClassAssignmentMatch.Success)
-					continue;
-				
-				ILVariable variable = displayClassAssignmentMatch.Get<AstNode>("variable").Single().Annotation<ILVariable>();
+
+                Match displayClassAssignmentMatch = displayClassAssignmentPattern.Match(stmt);
+                if (!displayClassAssignmentMatch.Success)
+                { 
+                    continue;
+                } 
+                matchWithLambda = false; 
+                //--------------------------------------------------------------------------------------------------------------
+                ILVariable variable = displayClassAssignmentMatch.Get<AstNode>("variable").Single().Annotation<ILVariable>();
 				if (variable == null)
 					continue;
 				TypeDefinition type = variable.Type.ResolveWithinSameModule();
