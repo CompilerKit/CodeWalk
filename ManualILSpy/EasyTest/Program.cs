@@ -13,7 +13,7 @@ namespace EasyTest
             var a = new SimpleDel(b1 =>
             {
                 Console.WriteLine("OKOK" + b1);
-                int c = args.Length;
+                //int c = args.Length;
             });
             a(b); 
         }

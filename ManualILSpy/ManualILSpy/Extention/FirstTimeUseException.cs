@@ -6,7 +6,11 @@ namespace ManualILSpy.Extention
     /// implement already, but not tested
     /// </summary>
     class FirstTimeUseException : Exception
-    {
+    {   
+        public FirstTimeUseException()
+        {
+
+        }
         public override string Message
         {
             get

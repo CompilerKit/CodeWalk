@@ -53,8 +53,9 @@ namespace ICSharpCode.Decompiler.Ast.Transforms
 			Debug.Assert(context.CurrentMethod == null);
 			try {
 				context.CurrentMethod = methodDeclaration.Annotation<MethodDefinition>();
-				return base.VisitMethodDeclaration(methodDeclaration, data);
-			} finally {
+				return base.VisitMethodDeclaration(methodDeclaration, data); 
+			} 
+            finally {
 				context.CurrentMethod = null;
 			}
 		}
