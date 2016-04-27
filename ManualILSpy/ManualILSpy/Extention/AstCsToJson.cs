@@ -37,7 +37,7 @@ namespace ManualILSpy.Extention
         Dictionary<string, int> typeReferences = new Dictionary<string, int>();
 
 
-        bool isLambda = false;
+
         public JsonValue LastValue { get; private set; }
 
         public AstCsToJsonVisitor(ITextOutput output)
@@ -135,22 +135,10 @@ namespace ManualILSpy.Extention
             }
             return typeArr;
         }
-        bool isSuspectLambda = false;
-        int countLamda = 0;
+
         JsonElement GetIdentifier(Identifier identifier)
         {
-            //TODO: review here
-            string name = identifier.Name;
-            if (name[0] == '<' && name[1] == '>')
-            {
-                isSuspectLambda = true;
-                countLamda++;
-                if (countLamda == 4)
-                {
-
-                }
-            }
-            return new JsonElement(name);
+            return new JsonElement(identifier.Name);
         }
 
         JsonValue GetKeyword(TokenRole tokenRole)
@@ -466,18 +454,9 @@ namespace ManualILSpy.Extention
         public void VisitIdentifierExpression(IdentifierExpression identifierExpression)
         {
             JsonValue getIdentifier = GetIdentifier(identifierExpression.IdentifierToken);
-            if (isLambda)
-            {
-                //?
-                //TODO: review here
-                Push(getIdentifier);
-            }
-            else
-            {
-                JsonObject jsonIdenExpr = CreateJsonExpression(identifierExpression);
-                jsonIdenExpr.AddJsonValue("name", getIdentifier);
-                Push(jsonIdenExpr);
-            }
+            JsonObject jsonIdenExpr = CreateJsonExpression(identifierExpression);
+            jsonIdenExpr.AddJsonValue("name", getIdentifier);
+            Push(jsonIdenExpr);
         }
 
         public void VisitIndexerExpression(IndexerExpression indexerExpression)
@@ -825,11 +804,10 @@ namespace ManualILSpy.Extention
             {
                 member.AcceptVisitor(this);
                 var temp = Pop();
-                if (temp != null && !isLambda)
+                if (temp != null)
                 {
                     memberList.AddJsonValue(temp);
                 }
-                isLambda = false;
             }
             if (memberList.Count == 0)
             {
@@ -838,9 +816,8 @@ namespace ManualILSpy.Extention
             declaration.AddJsonValue("members", memberList);
 
             Push(declaration);
-        }
-
-        Dictionary<string, TypeDeclaration> lambdaClass = new Dictionary<string, TypeDeclaration>();
+        } 
+         
         public void VisitTypeDeclaration(TypeDeclaration typeDeclaration)
         {
             JsonObject declaration = new JsonObject();
@@ -864,18 +841,9 @@ namespace ManualILSpy.Extention
                     break;
             }
             JsonElement identifier = GetIdentifier(typeDeclaration.NameToken);
-            if (identifier.ElementValue[0] == '<' && identifier.ElementValue[0] == '>')
-            {
-                isLambda = true;
-            }
+             
 
-            bool thisTypeIsLamda = false;
-            if (isLambda)
-            {
-                thisTypeIsLamda = true;
-                lambdaClass[identifier.ElementValue] = typeDeclaration;
-                isLambda = false;
-            }
+            bool thisTypeIsLamda = false; 
             declaration.AddJsonValue("identifier", identifier);
             declaration.AddJsonValue("parameters", GetTypeParameters(typeDeclaration.TypeParameters));
             if (typeDeclaration.BaseTypes.Any())
@@ -900,8 +868,7 @@ namespace ManualILSpy.Extention
             {
                 declaration = null;
             }
-            Push(declaration);
-            isLambda = false;
+            Push(declaration); 
         }
 
         public void VisitUsingAliasDeclaration(UsingAliasDeclaration usingAliasDeclaration)
@@ -1086,59 +1053,10 @@ namespace ManualILSpy.Extention
             statement.AddJsonValue("condition", GenExpression(ifElseStatement.Condition));
             statement.AddJsonValue("true-statement", GenStatement(ifElseStatement.TrueStatement));
             statement.AddJsonValue("false-statement", GenStatement(ifElseStatement.FalseStatement));
-            //TODO: ckeck lambda
-            if (isSuspectLambda)
-            {
-
-            }
-            if (isLambda)
-            {
-                //TODO: review here
-                //?
-                CreateLamda(statement);
-                isLambda = false;
-                return;
-            }
-
+           
             Push(statement);
         }
-        void CreateLamda(JsonObject ifElseNode)
-        {
-            JsonObject condition = GetValue("condition", ifElseNode);
-            JsonObject leftOperand = GetValue("left-operand", condition);
-            JsonElement identifier = GetElement("left-operand", leftOperand);
-
-            JsonObject trueStatement = GetValue("true-statement", ifElseNode);
-            JsonArray list = GetArray("statement-list", trueStatement);
-            JsonObject statement = (JsonObject)list.ValueList[0];
-            JsonObject rigthOperand = GetValue("right-operand", statement);
-            JsonObject arguments = GetValue("arguments", rigthOperand);
-            JsonElement methodName = GetElement("identifier-name", arguments);
-            JsonObject typeInfo = GetValue("type-info", arguments);
-            JsonObject memberRef = GetValue("type-info", typeInfo);
-            JsonElement memName = GetElement("member-name", memberRef);
-
-            TypeDeclaration typeDeclare;
-            JsonObject lambdaExpression = new JsonObject();
-            if (lambdaClass.TryGetValue(memName.ElementValue, out typeDeclare))
-            {
-                lambdaExpression.Comment = "CreateLamda";
-                lambdaExpression.AddJsonValue("expression-type", new JsonElement("lambda-expression"));
-                foreach (var member in typeDeclare.Members)
-                {
-                    if (member is MethodDeclaration)
-                    {
-                        MethodDeclaration method = (MethodDeclaration)member;
-                        if (method.Name == methodName.ElementValue)
-                        {
-                            lambdaExpression.AddJsonValue("parameters", GetCommaSeparatedList(method.Parameters));
-                            lambdaExpression.AddJsonValue("body", GenStatement(method.Body));
-                        }
-                    }
-                }
-                Push(lambdaExpression);
-            }
-        }
+        
 
         JsonObject GetValue(string key, JsonObject obj)
         {
